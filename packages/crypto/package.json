@@ -1,0 +1,96 @@
+{
+  "name": "@justwant/crypto",
+  "version": "0.0.0",
+  "description": "Simple crypto for apps: passwords, tokens, JWT, encrypt, sign. Audited deps (argon2, jose, @noble).",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/crypto"
+  },
+  "keywords": [
+    "crypto",
+    "password",
+    "argon2",
+    "jwt",
+    "encrypt",
+    "sign",
+    "token",
+    "hash",
+    "hmac",
+    "key-derivation"
+  ],
+  "sideEffects": false,
+  "exports": {
+    "./password": {
+      "types": "./dist/password.d.ts",
+      "import": "./dist/password.js",
+      "default": "./dist/password.js"
+    },
+    "./derive-key": {
+      "types": "./dist/kdf.d.ts",
+      "import": "./dist/kdf.js",
+      "default": "./dist/kdf.js"
+    },
+    "./encrypt": {
+      "types": "./dist/encrypt.d.ts",
+      "import": "./dist/encrypt.js",
+      "default": "./dist/encrypt.js"
+    },
+    "./rotating-encryption": {
+      "types": "./dist/keyring.d.ts",
+      "import": "./dist/keyring.js",
+      "default": "./dist/keyring.js"
+    },
+    "./hash": {
+      "types": "./dist/hash.d.ts",
+      "import": "./dist/hash.js",
+      "default": "./dist/hash.js"
+    },
+    "./token": {
+      "types": "./dist/token.d.ts",
+      "import": "./dist/token.js",
+      "default": "./dist/token.js"
+    },
+    "./compare": {
+      "types": "./dist/timing.d.ts",
+      "import": "./dist/timing.js",
+      "default": "./dist/timing.js"
+    },
+    "./sign": {
+      "types": "./dist/sign.d.ts",
+      "import": "./dist/sign.js",
+      "default": "./dist/sign.js"
+    },
+    "./jwt": {
+      "types": "./dist/jwt.d.ts",
+      "import": "./dist/jwt.js",
+      "default": "./dist/jwt.js"
+    },
+    "./primitives": {
+      "types": "./dist/primitives.d.ts",
+      "import": "./dist/primitives.js",
+      "default": "./dist/primitives.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^2.1.0",
+    "@noble/hashes": "^2.0.0",
+    "argon2": "^0.44.0",
+    "jose": "^5.9.0"
+  },
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}

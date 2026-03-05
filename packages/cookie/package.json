@@ -1,0 +1,24 @@
+{
+  "name": "@justwant/cookie",
+  "version": "0.0.0",
+  "description": "Lecture/écriture de cookies",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": ["dist"],
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}

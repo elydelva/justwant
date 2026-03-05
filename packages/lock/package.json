@@ -1,0 +1,27 @@
+{
+  "name": "@justwant/lock",
+  "version": "0.0.0",
+  "description": "Verrous distribués",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": ["dist"],
+  "peerDependencies": {
+    "ioredis": "*"
+  },
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}
