@@ -76,6 +76,10 @@ async function getDocuments(requestCtx) {
 | **request** | At `forRequest()`   | Depends on `initial` (requestId…) |
 | **on-demand** | At first `get()`  | Expensive (DB, JWT, etc.)         |
 
+## Integration with user, org, group
+
+See [docs/INTEGRATION_USER_ORG_GROUP.md](./docs/INTEGRATION_USER_ORG_GROUP.md) for examples of flexible context injection with user, organisation, and group packages.
+
 ## Subpath exports
 
 ```ts
