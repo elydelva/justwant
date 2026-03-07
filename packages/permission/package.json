@@ -1,9 +1,16 @@
 {
   "name": "@justwant/permission",
-  "private": true,
-  "version": "0.0.0",
-  "description": "RBAC/ABAC",
+  "version": "0.1.0",
+  "description": "RBAC/ABAC with data-agnostic repos. Scopes, actors, roles, realms, grant/deny overrides.",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/permission"
+  },
+  "keywords": ["rbac", "abac", "permission", "authorization", "roles", "scopes", "typescript"],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -11,13 +18,28 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js",
+      "default": "./dist/errors/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "default": "./dist/types/index.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run build"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
     "typescript": "^5.7.0"
