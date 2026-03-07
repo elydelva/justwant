@@ -1,24 +1,55 @@
 {
   "name": "@justwant/id",
-  "version": "0.0.0",
-  "description": "Génération d'IDs",
+  "version": "0.1.0",
+  "description": "ID generation: sortable (by time) and short (URL-safe). Simple names, tool-agnostic. Subpath imports only.",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/id"
+  },
+  "keywords": [
+    "id",
+    "ulid",
+    "nanoid",
+    "unique-id",
+    "sortable",
+    "url-safe"
+  ],
+  "sideEffects": false,
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "./sortable": {
+      "types": "./dist/sortable.d.ts",
+      "import": "./dist/sortable.js",
+      "default": "./dist/sortable.js"
+    },
+    "./short": {
+      "types": "./dist/short.d.ts",
+      "import": "./dist/short.js",
+      "default": "./dist/short.js"
+    },
+    "./primitives": {
+      "types": "./dist/primitives.d.ts",
+      "import": "./dist/primitives.js",
+      "default": "./dist/primitives.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
-  "files": ["dist"],
-  "peerDependencies": {
-    "ulid": "*"
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "nanoid": "^5.0.0",
+    "ulid": "^3.0.0"
   },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",

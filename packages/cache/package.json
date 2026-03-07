@@ -1,8 +1,25 @@
 {
   "name": "@justwant/cache",
-  "version": "0.0.0",
-  "description": "Store clé-valeur",
+  "version": "0.1.0",
+  "description": "Unified key-value cache with interchangeable adapters. TTL, tag invalidation, namespacing, plugins.",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/cache"
+  },
+  "keywords": [
+    "cache",
+    "key-value",
+    "redis",
+    "ttl",
+    "invalidation",
+    "upstash",
+    "vercel-kv",
+    "cloudflare-kv"
+  ],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -10,13 +27,135 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./entry": {
+      "types": "./dist/entry/index.d.ts",
+      "import": "./dist/entry/index.js",
+      "default": "./dist/entry/index.js"
+    },
+    "./collection": {
+      "types": "./dist/collection/index.d.ts",
+      "import": "./dist/collection/index.js",
+      "default": "./dist/collection/index.js"
+    },
+    "./store": {
+      "types": "./dist/store/index.d.ts",
+      "import": "./dist/store/index.js",
+      "default": "./dist/store/index.js"
+    },
+    "./adapters/memory": {
+      "types": "./dist/adapters/memory.d.ts",
+      "import": "./dist/adapters/memory.js",
+      "default": "./dist/adapters/memory.js"
+    },
+    "./adapters/storage": {
+      "types": "./dist/adapters/storage.d.ts",
+      "import": "./dist/adapters/storage.js",
+      "default": "./dist/adapters/storage.js"
+    },
+    "./adapters/redis": {
+      "types": "./dist/adapters/redis.d.ts",
+      "import": "./dist/adapters/redis.js",
+      "default": "./dist/adapters/redis.js"
+    },
+    "./adapters/upstash": {
+      "types": "./dist/adapters/upstash.d.ts",
+      "import": "./dist/adapters/upstash.js",
+      "default": "./dist/adapters/upstash.js"
+    },
+    "./adapters/cf-kv": {
+      "types": "./dist/adapters/cf-kv.d.ts",
+      "import": "./dist/adapters/cf-kv.js",
+      "default": "./dist/adapters/cf-kv.js"
+    },
+    "./adapters/vercel-kv": {
+      "types": "./dist/adapters/vercel-kv.d.ts",
+      "import": "./dist/adapters/vercel-kv.js",
+      "default": "./dist/adapters/vercel-kv.js"
+    },
+    "./adapters/tiered": {
+      "types": "./dist/adapters/tiered.d.ts",
+      "import": "./dist/adapters/tiered.js",
+      "default": "./dist/adapters/tiered.js"
+    },
+    "./plugins/namespace": {
+      "types": "./dist/plugins/namespace.d.ts",
+      "import": "./dist/plugins/namespace.js",
+      "default": "./dist/plugins/namespace.js"
+    },
+    "./plugins/serialize": {
+      "types": "./dist/plugins/serialize.d.ts",
+      "import": "./dist/plugins/serialize.js",
+      "default": "./dist/plugins/serialize.js"
+    },
+    "./plugins/encrypt": {
+      "types": "./dist/plugins/encrypt.d.ts",
+      "import": "./dist/plugins/encrypt.js",
+      "default": "./dist/plugins/encrypt.js"
+    },
+    "./plugins/stats": {
+      "types": "./dist/plugins/stats.d.ts",
+      "import": "./dist/plugins/stats.js",
+      "default": "./dist/plugins/stats.js"
+    },
+    "./plugins/stale": {
+      "types": "./dist/plugins/stale.d.ts",
+      "import": "./dist/plugins/stale.js",
+      "default": "./dist/plugins/stale.js"
+    },
+    "./plugins/dedupe": {
+      "types": "./dist/plugins/dedupe.d.ts",
+      "import": "./dist/plugins/dedupe.js",
+      "default": "./dist/plugins/dedupe.js"
+    },
+    "./plugins/prefetch": {
+      "types": "./dist/plugins/prefetch.d.ts",
+      "import": "./dist/plugins/prefetch.js",
+      "default": "./dist/plugins/prefetch.js"
+    },
+    "./plugins/audit": {
+      "types": "./dist/plugins/audit.d.ts",
+      "import": "./dist/plugins/audit.js",
+      "default": "./dist/plugins/audit.js"
+    },
+    "./serializers/superjson": {
+      "types": "./dist/serializers/superjson.d.ts",
+      "import": "./dist/serializers/superjson.js",
+      "default": "./dist/serializers/superjson.js"
+    },
+    "./serializers/msgpack": {
+      "types": "./dist/serializers/msgpack.d.ts",
+      "import": "./dist/serializers/msgpack.js",
+      "default": "./dist/serializers/msgpack.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@justwant/crypto": "^0.1.0",
+    "@standard-schema/spec": "^1.1.0"
+  },
+  "peerDependencies": {
+    "ioredis": "^5.0.0",
+    "@upstash/redis": "^1.0.0",
+    "@vercel/kv": "^1.0.0",
+    "superjson": "^2.0.0",
+    "@msgpack/msgpack": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": { "optional": true },
+    "@upstash/redis": { "optional": true },
+    "@vercel/kv": { "optional": true },
+    "superjson": { "optional": true },
+    "@msgpack/msgpack": { "optional": true }
+  },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
     "typescript": "^5.7.0"

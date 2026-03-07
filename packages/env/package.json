@@ -1,27 +1,75 @@
 {
   "name": "@justwant/env",
-  "version": "0.0.0",
-  "description": "Lecture typée de process.env",
+  "version": "0.1.0",
+  "description": "Typed, validated environment variables. Node, Bun, Edge compatible.",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/env"
+  },
+  "keywords": [
+    "env",
+    "environment",
+    "variables",
+    "validation",
+    "zod",
+    "standard-schema",
+    "dotenv",
+    "nextjs",
+    "edge"
+  ],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "edge-light": {
+        "types": "./dist/edge.d.ts",
+        "import": "./dist/edge.js",
+        "default": "./dist/edge.js"
+      },
+      "workerd": {
+        "types": "./dist/edge.d.ts",
+        "import": "./dist/edge.js",
+        "default": "./dist/edge.js"
+      },
+      "edge": {
+        "types": "./dist/edge.d.ts",
+        "import": "./dist/edge.js",
+        "default": "./dist/edge.js"
+      },
+      "worker": {
+        "types": "./dist/edge.d.ts",
+        "import": "./dist/edge.js",
+        "default": "./dist/edge.js"
+      },
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./edge": {
+      "types": "./dist/edge.d.ts",
+      "import": "./dist/edge.js",
+      "default": "./dist/edge.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "zod": "*"
+    "@standard-schema/spec": "^1.1.0"
   },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "zod": "^4.3.6"
   }
 }

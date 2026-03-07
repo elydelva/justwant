@@ -1,8 +1,23 @@
 {
   "name": "@justwant/event",
-  "version": "0.0.0",
-  "description": "Event bus interne",
+  "version": "1.0.0",
+  "description": "Typed event bus. Root = defineEvent, createEventBus. /primitive = createPrimitiveEventBus (primitive).",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/event"
+  },
+  "keywords": [
+    "event",
+    "event-bus",
+    "pubsub",
+    "typed",
+    "emit",
+    "listen"
+  ],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -10,13 +25,25 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./primitive": {
+      "types": "./dist/primitive.d.ts",
+      "import": "./dist/primitive.js",
+      "default": "./dist/primitive.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
     "typescript": "^5.7.0"

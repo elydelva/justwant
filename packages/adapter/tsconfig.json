@@ -1,0 +1,6 @@
+{
+  "extends": "@justwant/tsconfig/node.json",
+  "compilerOptions": { "outDir": "dist", "rootDir": "src" },
+  "include": ["src"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/*.type-test.ts"]
+}

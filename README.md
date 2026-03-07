@@ -7,20 +7,16 @@ That's a complete platform.
 
 ```ts
 import { createEverything }    from '@justwant/everything'
-import { pgAdapter }           from '@justwant/adapter/pg'
-import { redisAdapter }        from '@justwant/cache/adapter-redis'
+import { createDrizzleAdapter } from '@justwant/adapter/drizzle'
 import { emailPasswordPlugin } from '@justwant/auth/plugin-email-password'
 import { oauthPlugin }         from '@justwant/auth/plugin-oauth'
 import { twoFactorPlugin }     from '@justwant/auth/plugin-two-factor'
 import { integrityPlugin }     from '@justwant/audit/plugin-integrity'
 import { retentionPlugin }     from '@justwant/audit/plugin-retention'
-import { tieredPlugin }        from '@justwant/cache/plugin-tiered'
-import { memoryAdapter }       from '@justwant/cache/adapter-memory'
 
-export const { auth, audit, cache, keys, notify } = createEverything({
+export const { auth, audit, keys, notify } = createEverything({
   adapters: {
-    db:    pgAdapter({ connectionString: env.DATABASE_URL }),
-    cache: redisAdapter({ url: env.REDIS_URL }),
+    db: createDrizzleAdapter(db, { dialect: 'pg' }),
   },
   auth: {
     plugins: [
@@ -33,11 +29,6 @@ export const { auth, audit, cache, keys, notify } = createEverything({
     plugins: [
       integrityPlugin(),
       retentionPlugin({ after: '90d', action: 'anonymize' }),
-    ],
-  },
-  cache: {
-    plugins: [
-      tieredPlugin({ l1: memoryAdapter({ maxSize: 500 }) }),
     ],
   },
 })
@@ -62,7 +53,7 @@ const audit = createAudit({
 
 With a backend, a database, and a storage bucket, you now have:
 
-Authentication · Permissions · Consent · Audit trail · Observability · Analytics · File storage · Notifications · Webhooks · Rate limiting · Feature flags · API key management · Caching · Scheduled jobs · Task queues · Full-text search · Billing · CMS · Session replay · Onboarding · Real-time · Data pipeline · Waitlist
+Authentication · Permissions · Consent · Audit trail · Observability · Analytics · File storage · Notifications · Webhooks · Rate limiting · Feature flags · API key management · Scheduled jobs · Task queues · Billing · CMS · Session replay · Onboarding · Real-time · Data pipeline · Waitlist
 
 **No vendor lock-in. No data leaving your infrastructure. No third-party terms applied to your users.**
 
@@ -76,12 +67,11 @@ Small, focused packages with no inter-package dependencies. Everything else is b
 
 | Package | Role |
 |---|---|
-| [`@justwant/adapter`](./packages/adapter) | Adapter contracts and validation. `defineAdapter()`, `AdapterError` |
+| [`@justwant/adapter`](./packages/adapter) | Adapter contracts, base, Drizzle & Prisma. `defineContract()`, `AdapterError`, `createDrizzleAdapter` |
 | [`@justwant/plugin`](./packages/plugin) | Plugin system. `createPlugin()`, dependency graph, declaration merging |
 | [`@justwant/id`](./packages/id) | ID generation. `ulid()`, `uuid()`, `prefixed('key')` → `key_01J8X` |
 | [`@justwant/crypto`](./packages/crypto) | HMAC, hash, sign, verify, encrypt, decrypt |
 | [`@justwant/env`](./packages/env) | Typed environment variables. Zod schema, coercion, expansion, redaction |
-| [`@justwant/cache`](./packages/cache) | Key-value store. TTL, tags, namespace, tiered, invalidation |
 | [`@justwant/lock`](./packages/lock) | Distributed locks. `acquire(key, fn, { ttl })` |
 | [`@justwant/retry`](./packages/retry) | Retry with backoff. Exponential, linear, and fixed strategies |
 | [`@justwant/event`](./packages/event) | Internal event bus. Decouples packages from each other |
@@ -118,7 +108,6 @@ Higher-level packages that expose direct product value, built entirely on top of
 | [`@justwant/analytics`](./packages/analytics) | Plausible, Mixpanel | Events, sessions, funnels, retention, privacy-first |
 | [`@justwant/monitor`](./packages/monitor) | Sentry, Bugsnag | Error tracking, performance, source maps, alerting |
 | [`@justwant/billing`](./packages/billing) | Stripe Billing, Paddle | Plans, credits, usage-based billing, trials, dunning |
-| [`@justwant/search`](./packages/search) | Algolia, Meilisearch | Indexing, full-text, facets, suggestions, typo-tolerance |
 | [`@justwant/cms`](./packages/cms) | Contentful, Sanity | Typed schemas, CRUD, versioning, preview, i18n, media |
 | [`@justwant/support`](./packages/support) | Intercom, Crisp | Conversations, tickets, agents, automatic user context |
 | [`@justwant/onboarding`](./packages/onboarding) | Userflow, Appcues | Steps, progress tracking, nudges, completion hooks |
@@ -180,14 +169,14 @@ const audit = createAudit({
 Adapters and plugins are isolated subpath exports. Your bundler only loads what you import — nothing else is included.
 
 ```ts
-// Only these two files end up in your bundle
-import { createCache }   from '@justwant/cache'
-import { redisAdapter }  from '@justwant/cache/adapter-redis'
+// Only these files end up in your bundle
+import { createAudit }     from '@justwant/audit'
+import { integrityPlugin } from '@justwant/audit/plugin-integrity'
+import { pgAdapter }       from '@justwant/audit/adapter-pg'
 
-// These are never loaded, never bundled
-// @justwant/cache/adapter-upstash
-// @justwant/cache/adapter-cf-kv
-// @justwant/cache/adapter-memory
+// Other adapters are never loaded, never bundled
+// @justwant/audit/adapter-prisma
+// @justwant/audit/adapter-drizzle
 ```
 
 ### Declaration merging
@@ -212,10 +201,9 @@ result.permissions         // typed — only when permissionPlugin is active
 pnpm add @justwant/everything
 
 # Then add the packages you need
-pnpm add @justwant/auth @justwant/audit @justwant/cache
+pnpm add @justwant/auth @justwant/audit
 
 # Peer dependencies — install only what your adapters require
-pnpm add ioredis      # Redis-based adapters
 pnpm add drizzle-orm  # Drizzle adapters
 ```
 
@@ -269,7 +257,6 @@ npx justwant migrate generate --adapter drizzle  # outputs table definitions
 │   ├── analytics/
 │   ├── monitor/
 │   ├── billing/
-│   ├── search/
 │   ├── cms/
 │   ├── support/
 │   ├── onboarding/
@@ -293,7 +280,7 @@ This is a [pnpm workspace](https://pnpm.io/workspaces) monorepo.
 pnpm install                # install all dependencies
 pnpm build                  # build all packages
 pnpm test                   # run all tests
-cd packages/cache && pnpm dev  # work on a single package
+cd packages/adapter && pnpm dev  # work on a single package
 ```
 
 Each package has its own `CONTRIBUTING.md` with adapter and plugin authoring guidelines.

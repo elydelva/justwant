@@ -1,8 +1,23 @@
 {
   "name": "@justwant/cookie",
-  "version": "0.0.0",
-  "description": "Lecture/écriture de cookies",
+  "version": "0.1.0",
+  "description": "Typed cookie parse/serialize. Root = typed API. /primitive = parseCookies, serializeCookie.",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/cookie"
+  },
+  "keywords": [
+    "cookie",
+    "cookies",
+    "parse",
+    "serialize",
+    "set-cookie",
+    "typed"
+  ],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -10,13 +25,50 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./primitive": {
+      "types": "./dist/primitive.d.ts",
+      "import": "./dist/primitive.js",
+      "default": "./dist/primitive.js"
+    },
+    "./adapters/document": {
+      "types": "./dist/adapters/document.d.ts",
+      "import": "./dist/adapters/document.js",
+      "default": "./dist/adapters/document.js"
+    },
+    "./adapters/header": {
+      "types": "./dist/adapters/header.d.ts",
+      "import": "./dist/adapters/header.js",
+      "default": "./dist/adapters/header.js"
+    },
+    "./adapters/request-response": {
+      "types": "./dist/adapters/request-response.d.ts",
+      "import": "./dist/adapters/request-response.js",
+      "default": "./dist/adapters/request-response.js"
+    },
+    "./adapters/nextjs": {
+      "types": "./dist/adapters/nextjs.d.ts",
+      "import": "./dist/adapters/nextjs.js",
+      "default": "./dist/adapters/nextjs.js"
+    },
+    "./adapters/express": {
+      "types": "./dist/adapters/express.d.ts",
+      "import": "./dist/adapters/express.js",
+      "default": "./dist/adapters/express.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
     "typescript": "^5.7.0"
