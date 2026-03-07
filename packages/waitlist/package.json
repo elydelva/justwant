@@ -1,5 +1,6 @@
 {
   "name": "@justwant/waitlist",
+  "private": true,
   "version": "0.0.0",
   "description": "Inscription, referral, position, invitations",
   "type": "module",

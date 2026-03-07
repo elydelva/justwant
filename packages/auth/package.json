@@ -1,5 +1,6 @@
 {
   "name": "@justwant/auth",
+  "private": true,
   "version": "0.0.0",
   "description": "Sessions, OAuth 40+, 2FA, passkeys, orgs, SCIM",
   "type": "module",

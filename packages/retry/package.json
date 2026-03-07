@@ -1,5 +1,6 @@
 {
   "name": "@justwant/retry",
+  "private": true,
   "version": "0.0.0",
   "description": "Retry avec backoff",
   "type": "module",

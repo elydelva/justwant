@@ -1,5 +1,6 @@
 {
   "name": "@justwant/lock",
+  "private": true,
   "version": "0.0.0",
   "description": "Verrous distribués",
   "type": "module",

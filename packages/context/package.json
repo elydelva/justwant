@@ -1,5 +1,6 @@
 {
   "name": "@justwant/context",
+  "private": true,
   "version": "0.0.0",
   "description": "Propagation de contexte via AsyncLocalStorage",
   "type": "module",

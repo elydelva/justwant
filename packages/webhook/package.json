@@ -1,5 +1,6 @@
 {
   "name": "@justwant/webhook",
+  "private": true,
   "version": "0.0.0",
   "description": "Emission de webhooks",
   "type": "module",

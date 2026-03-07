@@ -1,5 +1,6 @@
 {
   "name": "@justwant/notify",
+  "private": true,
   "version": "0.0.0",
   "description": "Envoi de notifications",
   "type": "module",

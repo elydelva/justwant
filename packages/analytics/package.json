@@ -1,5 +1,6 @@
 {
   "name": "@justwant/analytics",
+  "private": true,
   "version": "0.0.0",
   "description": "Events, sessions, funnels, rétention, privacy-first",
   "type": "module",

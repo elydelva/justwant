@@ -1,5 +1,6 @@
 {
   "name": "@justwant/support",
+  "private": true,
   "version": "0.0.0",
   "description": "Conversations, tickets, agents, contexte user automatique",
   "type": "module",

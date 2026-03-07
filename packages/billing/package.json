@@ -1,5 +1,6 @@
 {
   "name": "@justwant/billing",
+  "private": true,
   "version": "0.0.0",
   "description": "Plans, crédits, usage-based, trial, dunning, invoices",
   "type": "module",

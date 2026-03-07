@@ -1,5 +1,6 @@
 {
   "name": "@justwant/feature",
+  "private": true,
   "version": "0.0.0",
   "description": "Session replay, heatmaps, surveys, breadcrumbs",
   "type": "module",

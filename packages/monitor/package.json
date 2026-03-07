@@ -1,5 +1,6 @@
 {
   "name": "@justwant/monitor",
+  "private": true,
   "version": "0.0.0",
   "description": "Error tracking, performance, source maps, alerting",
   "type": "module",

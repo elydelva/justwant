@@ -1,5 +1,6 @@
 {
   "name": "@justwant/consent",
+  "private": true,
   "version": "0.0.0",
   "description": "Consentement RGPD",
   "type": "module",

@@ -1,5 +1,6 @@
 {
   "name": "@justwant/queue",
+  "private": true,
   "version": "0.0.0",
   "description": "Jobs déclenchés par event",
   "type": "module",

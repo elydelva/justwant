@@ -1,5 +1,6 @@
 {
   "name": "@justwant/cron",
+  "private": true,
   "version": "0.0.0",
   "description": "Jobs planifiés",
   "type": "module",

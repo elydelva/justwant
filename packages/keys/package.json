@@ -1,5 +1,6 @@
 {
   "name": "@justwant/keys",
+  "private": true,
   "version": "0.0.0",
   "description": "API keys hashées, rate limit par clé, crédits, rotation",
   "type": "module",

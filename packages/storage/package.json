@@ -1,5 +1,6 @@
 {
   "name": "@justwant/storage",
+  "private": true,
   "version": "0.0.0",
   "description": "Upload/download fichiers",
   "type": "module",
