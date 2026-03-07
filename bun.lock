@@ -13,6 +13,24 @@
         "typescript": "^5.7.0",
       },
     },
+    "examples/warehouse-clickhouse": {
+      "name": "warehouse-clickhouse-example",
+      "dependencies": {
+        "@clickhouse/client": "*",
+        "@justwant/contract": "workspace:*",
+        "@justwant/warehouse": "workspace:*",
+        "waddler": "*",
+      },
+    },
+    "examples/warehouse-duckdb": {
+      "name": "warehouse-duckdb-example",
+      "dependencies": {
+        "@duckdb/node-api": "*",
+        "@justwant/contract": "workspace:*",
+        "@justwant/warehouse": "workspace:*",
+        "waddler": "*",
+      },
+    },
     "packages/analytics": {
       "name": "@justwant/analytics",
       "version": "0.0.0",
@@ -92,7 +110,7 @@
     },
     "packages/context": {
       "name": "@justwant/context",
-      "version": "0.0.0",
+      "version": "0.2.0",
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
@@ -100,7 +118,7 @@
     },
     "packages/contract": {
       "name": "@justwant/contract",
-      "version": "0.1.0",
+      "version": "0.2.1",
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "@standard-schema/spec": "^1.1.0",
@@ -187,7 +205,7 @@
     },
     "packages/event": {
       "name": "@justwant/event",
-      "version": "1.0.0",
+      "version": "0.1.0",
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
@@ -231,13 +249,18 @@
     },
     "packages/lock": {
       "name": "@justwant/lock",
-      "version": "0.0.0",
+      "version": "0.2.0",
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
       },
-      "peerDependencies": {
-        "ioredis": "*",
+    },
+    "packages/membership": {
+      "name": "@justwant/membership",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@justwant/tsconfig": "workspace:*",
+        "typescript": "^5.7.0",
       },
     },
     "packages/monitor": {
@@ -256,9 +279,21 @@
         "typescript": "^5.7.0",
       },
     },
+    "packages/organisation": {
+      "name": "@justwant/organisation",
+      "version": "0.1.0",
+      "dependencies": {
+        "@justwant/membership": "workspace:*",
+        "@justwant/permission": "workspace:*",
+      },
+      "devDependencies": {
+        "@justwant/tsconfig": "workspace:*",
+        "typescript": "^5.7.0",
+      },
+    },
     "packages/permission": {
       "name": "@justwant/permission",
-      "version": "0.0.0",
+      "version": "2.0.0",
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
@@ -266,14 +301,6 @@
     },
     "packages/pipeline": {
       "name": "@justwant/pipeline",
-      "version": "0.0.0",
-      "devDependencies": {
-        "@justwant/tsconfig": "workspace:*",
-        "typescript": "^5.7.0",
-      },
-    },
-    "packages/plugin": {
-      "name": "@justwant/plugin",
       "version": "0.0.0",
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
@@ -332,6 +359,14 @@
       "name": "@justwant/tsconfig",
       "version": "0.0.0",
     },
+    "packages/user": {
+      "name": "@justwant/user",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@justwant/tsconfig": "workspace:*",
+        "typescript": "^5.7.0",
+      },
+    },
     "packages/waitlist": {
       "name": "@justwant/waitlist",
       "version": "0.0.0",
@@ -342,24 +377,20 @@
     },
     "packages/warehouse": {
       "name": "@justwant/warehouse",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@justwant/contract": "workspace:*",
       },
       "devDependencies": {
-        "@duckdb/node-api": "^1.4.0-r.1",
+        "@duckdb/node-api": "*",
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
         "waddler": "*",
       },
       "peerDependencies": {
-        "@clickhouse/client": "*",
-        "@duckdb/node-api": "*",
         "waddler": "*",
       },
       "optionalPeers": [
-        "@clickhouse/client",
-        "@duckdb/node-api",
         "waddler",
       ],
     },
@@ -371,6 +402,9 @@
         "typescript": "^5.7.0",
       },
     },
+  },
+  "overrides": {
+    "@duckdb/node-api": "1.4.0-r.2",
   },
   "packages": {
     "@babel/runtime": ["@babel/runtime@7.28.6", "", {}, "sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA=="],
@@ -427,6 +461,10 @@
 
     "@changesets/write": ["@changesets/write@0.4.0", "", { "dependencies": { "@changesets/types": "^6.1.0", "fs-extra": "^7.0.1", "human-id": "^4.1.1", "prettier": "^2.7.1" } }, "sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q=="],
 
+    "@clickhouse/client": ["@clickhouse/client@1.18.1", "", { "dependencies": { "@clickhouse/client-common": "1.18.1" } }, "sha512-fO4QggCOSr0WBS9oGIFa83FUhbweP8VTFGOXF51DJQbR/oEXegdocNSma3Gp6F4Km9A1Xm1ZAhwrldtg3prPiQ=="],
+
+    "@clickhouse/client-common": ["@clickhouse/client-common@1.18.1", "", {}, "sha512-kDk8miGZVDAzqFrBZRmD9rD82Li8gwaGlJ5MNUpWgxx1OUXRBUkcV6ULysWP1C9Jinb3yle3YLz/XbNOPVgVtQ=="],
+
     "@duckdb/node-api": ["@duckdb/node-api@1.4.0-r.2", "", { "dependencies": { "@duckdb/node-bindings": "1.4.0-r.2" } }, "sha512-kt5598+3L1TiSUCyNZ5Zh12hHIQeAzUj51CXKXycQaobEf3KooXZJhjiM1RkELKoGW+GeRotgPw2QUoIyeaWVg=="],
 
     "@duckdb/node-bindings": ["@duckdb/node-bindings@1.4.0-r.2", "", { "optionalDependencies": { "@duckdb/node-bindings-darwin-arm64": "1.4.0-r.2", "@duckdb/node-bindings-darwin-x64": "1.4.0-r.2", "@duckdb/node-bindings-linux-arm64": "1.4.0-r.2", "@duckdb/node-bindings-linux-x64": "1.4.0-r.2", "@duckdb/node-bindings-win32-x64": "1.4.0-r.2" } }, "sha512-FZEWyV16aQix8rD2BZtcnY3EFw4i+1xP8WRbo1UampJve7krrLV4t9jMSmh4r+Nc5BRJ006A4/jwD6OpNhbR2g=="],
@@ -444,8 +482,6 @@
     "@epic-web/invariant": ["@epic-web/invariant@1.0.0", "", {}, "sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA=="],
 
     "@inquirer/external-editor": ["@inquirer/external-editor@1.0.3", "", { "dependencies": { "chardet": "^2.1.1", "iconv-lite": "^0.7.0" }, "peerDependencies": { "@types/node": ">=18" }, "optionalPeers": ["@types/node"] }, "sha512-RWbSrDiYmO4LbejWY7ttpxczuwQyZLBUyygsA9Nsv95hpzUWwnNTVQmAq3xuh7vNwCp07UTmE5i11XAEExx4RA=="],
-
-    "@ioredis/commands": ["@ioredis/commands@1.5.1", "", {}, "sha512-JH8ZL/ywcJyR9MmJ5BNqZllXNZQqQbnVZOqpPQqE1vHiFgAw4NHbvE0FOduNU8IX9babitBT46571OnPTT0Zcw=="],
 
     "@justwant/analytics": ["@justwant/analytics@workspace:packages/analytics"],
 
@@ -487,15 +523,17 @@
 
     "@justwant/lock": ["@justwant/lock@workspace:packages/lock"],
 
+    "@justwant/membership": ["@justwant/membership@workspace:packages/membership"],
+
     "@justwant/monitor": ["@justwant/monitor@workspace:packages/monitor"],
 
     "@justwant/notify": ["@justwant/notify@workspace:packages/notify"],
 
+    "@justwant/organisation": ["@justwant/organisation@workspace:packages/organisation"],
+
     "@justwant/permission": ["@justwant/permission@workspace:packages/permission"],
 
     "@justwant/pipeline": ["@justwant/pipeline@workspace:packages/pipeline"],
-
-    "@justwant/plugin": ["@justwant/plugin@workspace:packages/plugin"],
 
     "@justwant/preference": ["@justwant/preference@workspace:packages/preference"],
 
@@ -510,6 +548,8 @@
     "@justwant/support": ["@justwant/support@workspace:packages/support"],
 
     "@justwant/tsconfig": ["@justwant/tsconfig@workspace:packages/tsconfig"],
+
+    "@justwant/user": ["@justwant/user@workspace:packages/user"],
 
     "@justwant/waitlist": ["@justwant/waitlist@workspace:packages/waitlist"],
 
@@ -631,8 +671,6 @@
 
     "cli-truncate": ["cli-truncate@4.0.0", "", { "dependencies": { "slice-ansi": "^5.0.0", "string-width": "^7.0.0" } }, "sha512-nPdaFdQ0h/GEigbPClz11D0v/ZJEwxmeVZGeMo3Z5StPtUTkA9o1lD6QwoirYiSDzbcwn2XcjwmCp68W1IS4TA=="],
 
-    "cluster-key-slot": ["cluster-key-slot@1.1.2", "", {}, "sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA=="],
-
     "colorette": ["colorette@2.0.20", "", {}, "sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w=="],
 
     "commander": ["commander@13.1.0", "", {}, "sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw=="],
@@ -749,8 +787,6 @@
 
     "ini": ["ini@1.3.8", "", {}, "sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew=="],
 
-    "ioredis": ["ioredis@5.10.0", "", { "dependencies": { "@ioredis/commands": "1.5.1", "cluster-key-slot": "^1.1.0", "debug": "^4.3.4", "denque": "^2.1.0", "lodash.defaults": "^4.2.0", "lodash.isarguments": "^3.1.0", "redis-errors": "^1.2.0", "redis-parser": "^3.0.0", "standard-as-callback": "^2.1.0" } }, "sha512-HVBe9OFuqs+Z6n64q09PQvP1/R4Bm+30PAyyD4wIEqssh3v9L21QjCVk4kRLucMBcDokJTcLjsGeVRlq/nH6DA=="],
-
     "is-extglob": ["is-extglob@2.1.1", "", {}, "sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ=="],
 
     "is-fullwidth-code-point": ["is-fullwidth-code-point@4.0.0", "", {}, "sha512-O4L094N2/dZ7xqVdrXhh9r1KODPJpFms8B5sGdJLPy664AgvXsreZUyCQQNItZRDlYug4xStLjNp/sz3HvBowQ=="],
@@ -788,10 +824,6 @@
     "listr2": ["listr2@8.3.3", "", { "dependencies": { "cli-truncate": "^4.0.0", "colorette": "^2.0.20", "eventemitter3": "^5.0.1", "log-update": "^6.1.0", "rfdc": "^1.4.1", "wrap-ansi": "^9.0.0" } }, "sha512-LWzX2KsqcB1wqQ4AHgYb4RsDXauQiqhjLk+6hjbaeHG4zpjjVAB6wC/gz6X0l+Du1cN3pUB5ZlrvTbhGSNnUQQ=="],
 
     "locate-path": ["locate-path@5.0.0", "", { "dependencies": { "p-locate": "^4.1.0" } }, "sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g=="],
-
-    "lodash.defaults": ["lodash.defaults@4.2.0", "", {}, "sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ=="],
-
-    "lodash.isarguments": ["lodash.isarguments@3.1.0", "", {}, "sha512-chi4NHZlZqZD18a0imDHnZPrDeBbTtVN7GXMwuGdRH9qotxAjYs3aVLKc7zNOG9eddR5Ksd8rvFEBc9SsggPpg=="],
 
     "lodash.startcase": ["lodash.startcase@4.4.0", "", {}, "sha512-+WKqsK294HMSc2jEbNgpHpd0JfIBhp7rEV4aqXWqFr6AlXov+SlcgB1Fv01y2kGe3Gc8nMW7VA0SrGuSkRfIEg=="],
 
@@ -935,10 +967,6 @@
 
     "readdirp": ["readdirp@4.1.2", "", {}, "sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg=="],
 
-    "redis-errors": ["redis-errors@1.2.0", "", {}, "sha512-1qny3OExCf0UvUV/5wpYKf2YwPcOqXzkwKKSmKHiE6ZMQs5heeE/c8eXK+PNllPvmjgAbfnsbpkGZWy8cBpn9w=="],
-
-    "redis-parser": ["redis-parser@3.0.0", "", { "dependencies": { "redis-errors": "^1.0.0" } }, "sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A=="],
-
     "resolve-from": ["resolve-from@5.0.0", "", {}, "sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw=="],
 
     "restore-cursor": ["restore-cursor@5.1.0", "", { "dependencies": { "onetime": "^7.0.0", "signal-exit": "^4.1.0" } }, "sha512-oMA2dcrw6u0YfxJQXm342bFKX/E4sG9rbTzO9ptUcR/e8A33cHuvStiYOwH7fszkZlZ1z/ta9AAoPk2F4qIOHA=="],
@@ -976,8 +1004,6 @@
     "sprintf-js": ["sprintf-js@1.0.3", "", {}, "sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g=="],
 
     "sql-escaper": ["sql-escaper@1.3.3", "", {}, "sha512-BsTCV265VpTp8tm1wyIm1xqQCS+Q9NHx2Sr+WcnUrgLrQ6yiDIvHYJV5gHxsj1lMBy2zm5twLaZao8Jd+S8JJw=="],
-
-    "standard-as-callback": ["standard-as-callback@2.1.0", "", {}, "sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A=="],
 
     "string-argv": ["string-argv@0.3.2", "", {}, "sha512-aqD2Q0144Z+/RqG52NeHEkZauTAUWJO8c6yTftGJKO3Tja5tUgIfmIl6kExvhtxSDP7fXB6DvzkfMpCd/F3G+Q=="],
 
@@ -1020,6 +1046,10 @@
     "util-deprecate": ["util-deprecate@1.0.2", "", {}, "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw=="],
 
     "waddler": ["waddler@0.1.1", "", { "peerDependencies": { "@clickhouse/client": "^1.11.2", "@duckdb/node-api": "^1.1.2-alpha.4", "@electric-sql/pglite": "^0.2.17", "@libsql/client": "^0.15.4", "@libsql/client-wasm": "^0.15.4", "@neondatabase/serverless": "^1.0.0", "@planetscale/database": "^1.19.0", "@tidbcloud/serverless": "^0.2.0", "@vercel/postgres": "^0.10.0", "@xata.io/client": "^0.30.1", "better-sqlite3": "^11.9.1", "bun-types": "*", "duckdb": "^1.2.1", "gel": "^2.0.2", "mysql2": "^3.14.0", "pg": "^8.14.0", "pg-query-stream": "^4.8.0", "postgres": "^3.4.5" }, "optionalPeers": ["@clickhouse/client", "@duckdb/node-api", "@electric-sql/pglite", "@libsql/client", "@libsql/client-wasm", "@neondatabase/serverless", "@planetscale/database", "@tidbcloud/serverless", "@vercel/postgres", "@xata.io/client", "better-sqlite3", "bun-types", "duckdb", "gel", "mysql2", "pg", "pg-query-stream", "postgres"] }, "sha512-lBJXYFBLEpYe+scAeCJmLj6Iqweuq1whM6Am3I9WfopOCFxvKz8Nq5hXoy8/b3zwJqHIQMglFIvM4skRydSpZg=="],
+
+    "warehouse-clickhouse-example": ["warehouse-clickhouse-example@workspace:examples/warehouse-clickhouse"],
+
+    "warehouse-duckdb-example": ["warehouse-duckdb-example@workspace:examples/warehouse-duckdb"],
 
     "web-streams-polyfill": ["web-streams-polyfill@3.3.3", "", {}, "sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw=="],
 

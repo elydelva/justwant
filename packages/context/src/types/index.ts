@@ -22,7 +22,7 @@ export interface RequestContext {
   get<T>(slot: SlotDef<T>): Promise<T>;
 }
 
-/** Options for createContext */
+/** Options for createContextService */
 export interface ContextOptions {
   slots: readonly SlotDef<unknown>[];
 }

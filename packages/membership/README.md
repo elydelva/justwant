@@ -1,12 +1,12 @@
 # @justwant/membership
 
-Member–group liaison via `createMember`, `createGroup`, and `createMembership`. No roles, no within. The member type is declared in the group.
+Member–group liaison via `defineMember`, `defineGroup`, and `createMembershipService`. No roles, no within. The member type is declared in the group.
 
 ## Features
 
-- **createMember** — defines a member type (e.g. `user`, `bot`)
-- **createGroup** — defines a group type and the member type it accepts
-- **createMembership** — links members to groups with add/remove/has/listMembers/listGroups
+- **defineMember** — defines a member type (e.g. `user`, `bot`)
+- **defineGroup** — defines a group type and the member type it accepts
+- **createMembershipService** — links members to groups with add/remove/has/listMembers/listGroups
 - **Type safety** — a member can only be added to a group that accepts its type
 - **Repo aligned** — `MembershipsRepo` follows @justwant/db pattern (findById, findOne, findMany, create, update, delete)
 
@@ -19,15 +19,14 @@ bun add @justwant/membership
 ## Usage
 
 ```ts
-import { createMember, createGroup, createMembership } from "@justwant/membership";
+import { defineMember, defineGroup, createMembershipService } from "@justwant/membership";
 
-const userMember = createMember({ name: "user" });
-const orgGroup = createGroup({ name: "org", member: userMember });
-const groupGroup = createGroup({ name: "group", member: userMember });
+const userMember = defineMember({ name: "user" });
+const orgGroup = defineGroup({ name: "org", member: userMember });
+const groupGroup = defineGroup({ name: "group", member: userMember });
 
-const membership = createMembership({
+const membership = createMembershipService({
   repo: myMembershipsRepo, // implementation via @justwant/db
-  members: [userMember],
   groups: [orgGroup, groupGroup],
 });
 
@@ -39,23 +38,23 @@ const userOrgs = await membership.listGroups(userMember("usr_1"));
 
 ## API
 
-### createMember
+### defineMember
 
 ```ts
-const userMember = createMember({ name: "user" });
+const userMember = defineMember({ name: "user" });
 const member = userMember("usr_1"); // { type: "user", id: "usr_1" }
 ```
 
-### createGroup
+### defineGroup
 
 ```ts
-const orgGroup = createGroup({ name: "org", member: userMember });
+const orgGroup = defineGroup({ name: "org", member: userMember });
 const group = orgGroup("org_1"); // { type: "org", id: "org_1" }
 ```
 
 The `member` option indicates which member type the group accepts.
 
-### createMembership
+### createMembershipService
 
 - `add(member, group)` — add member to group (throws if already member or type invalid)
 - `remove(member, group)` — remove member from group (throws if not member)
@@ -66,7 +65,7 @@ The `member` option indicates which member type the group accepts.
 ## Subpath exports
 
 ```ts
-import { createMember, createGroup, createMembership } from "@justwant/membership";
+import { defineMember, defineGroup, createMembershipService } from "@justwant/membership";
 import type { Member, Group, Membership, MembershipsRepo } from "@justwant/membership/types";
 import {
   MembershipError,

@@ -2,48 +2,50 @@
  * @justwant/permission — RBAC/ABAC with data-agnostic repos
  */
 
-export { createScope } from "./define/scope/createScope.js";
-export type { CreateScopeOptions, ScopeDef } from "./define/scope/createScope.js";
+export { defineScope } from "./define/scope/defineScope.js";
+export type { DefineScopeOptions, ScopeDef } from "./define/scope/defineScope.js";
 
-export { createActor } from "./define/actor/createActor.js";
-export type { CreateActorOptions, ActorDef } from "./define/actor/createActor.js";
+export { defineActor } from "./define/actor/defineActor.js";
+export type {
+  DefineActorOptions,
+  DefineActorOptionsWithName,
+  DefineActorOptionsWithFrom,
+  ActorDef,
+} from "./define/actor/defineActor.js";
 
-export { createResource } from "./define/resource/createResource.js";
-export type { CreateResourceOptions, ResourceDef } from "./define/resource/createResource.js";
+export { defineResource } from "./define/resource/defineResource.js";
+export type { DefineResourceOptions, ResourceDef } from "./define/resource/defineResource.js";
 
-export { createAtomicPermission } from "./define/permission/createAtomicPermission.js";
+export { defineAtomicPermission } from "./define/permission/defineAtomicPermission.js";
 export type {
   AtomicPermission,
-  CreateAtomicPermissionOptions,
-} from "./define/permission/createAtomicPermission.js";
+  DefineAtomicPermissionOptions,
+} from "./define/permission/defineAtomicPermission.js";
 
-export { createPermissionDomain } from "./define/permission/createPermissionDomain.js";
-export type { PermissionDomain } from "./define/permission/createPermissionDomain.js";
+export { defineRole } from "./define/role/defineRole.js";
+export type { DefineRoleOptions, RoleDef } from "./define/role/defineRole.js";
 
-export { createRole } from "./define/role/createRole.js";
-export type { CreateRoleOptions, RoleDef } from "./define/role/createRole.js";
-
-export { createRealm } from "./define/realm/createRealm.js";
+export { defineRealm } from "./define/realm/defineRealm.js";
 export type {
-  CreateRealmOptions,
+  DefineRealmOptions,
   RealmDef,
-} from "./define/realm/createRealm.js";
+} from "./define/realm/defineRealm.js";
 
-export { createPermission } from "./permission.js";
+export { createPermissionService } from "./createPermissionService.js";
 export type {
+  CreatePermissionServiceOptions,
+  PermissionApi,
+  CanParams,
   AssertParams,
   AssignParams,
+  HasRoleParams,
+  UnassignParams,
   CanAllParams,
   CanManyParams,
-  CanParams,
-  CreatePermissionOptions,
-  HasRoleParams,
-  PermissionApi,
-  RealmParams,
-  RevokeAllParams,
   RevokeScopeParams,
-  UnassignParams,
-} from "./permission.js";
+  RevokeAllParams,
+  RealmParams,
+} from "./createPermissionService.js";
 
 export type {
   PermissionRepository,
@@ -52,6 +54,9 @@ export type {
   Assignment,
   Override,
   CreateInput,
+  IdentityLike,
+  ReferenceLike,
+  ScopeLike,
 } from "./types/index.js";
 
 export {

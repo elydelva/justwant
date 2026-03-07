@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import {
   PermissionDeniedError,
-  createActor,
-  createAtomicPermission,
-  createPermission,
-  createRealm,
-  createResource,
-  createRole,
-  createScope,
+  createPermissionService,
+  defineActor,
+  defineAtomicPermission,
+  defineRealm,
+  defineResource,
+  defineRole,
+  defineScope,
 } from "./index.js";
 import type { Assignment, Override } from "./types/index.js";
 
@@ -65,46 +65,40 @@ function createMemoryRepo<T extends { id: string }>() {
   };
 }
 
-describe("createPermission", () => {
+describe("createPermissionService", () => {
   test("can, assign, hasRole, unassign", async () => {
-    const appScope = createScope({ name: "app" });
-    const orgScope = createScope({ name: "org" });
+    const appScope = defineScope({ name: "app" });
+    const orgScope = defineScope({ name: "org" });
 
-    const userActor = createActor({ name: "user" });
+    const userActor = defineActor({ name: "user" });
 
-    const documentRead = createAtomicPermission({
-      domain: "document",
-      action: "read",
-    });
-    const documentWrite = createAtomicPermission({
-      domain: "document",
-      action: "write",
-    });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentWrite = defineAtomicPermission({ action: "document:write" });
 
-    const appMember = createRole({
+    const appMember = defineRole({
       name: "member",
       permissions: [documentRead, documentWrite],
       realm: "app",
     });
-    const orgAdmin = createRole({
+    const orgAdmin = defineRole({
       name: "admin",
       permissions: [documentRead, documentWrite],
       realm: "org",
     });
-    const orgViewer = createRole({
+    const orgViewer = defineRole({
       name: "viewer",
       permissions: [documentRead],
       realm: "org",
     });
 
-    const appRealm = createRealm({
+    const appRealm = defineRealm({
       name: "app",
       scope: appScope,
       actors: [userActor],
       permissions: [documentRead, documentWrite],
       roles: [appMember],
     });
-    const orgRealm = createRealm({
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -115,9 +109,9 @@ describe("createPermission", () => {
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
 
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { app: appRealm, org: orgRealm },
+      realms: [appRealm, orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -145,23 +139,22 @@ describe("createPermission", () => {
   });
 
   test("grant and deny overrides", async () => {
-    const orgScope = createScope({ name: "org" });
+    const orgScope = defineScope({ name: "org" });
 
-    const userActor = createActor({ name: "user" });
-    const documentResource = createResource({ name: "document" });
-    const documentRead = createAtomicPermission({
-      domain: "document",
-      action: "read",
+    const userActor = defineActor({ name: "user" });
+    const documentResource = defineResource({ name: "document" });
+    const documentRead = defineAtomicPermission({
+      action: "document:read",
       resource: documentResource,
     });
 
-    const orgViewer = createRole({
+    const orgViewer = defineRole({
       name: "viewer",
       permissions: [documentRead],
       realm: "org",
     });
 
-    const orgRealm = createRealm({
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -173,9 +166,9 @@ describe("createPermission", () => {
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
 
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -216,20 +209,17 @@ describe("createPermission", () => {
   });
 
   test("explain returns result and reason", async () => {
-    const orgScope = createScope({ name: "org" });
+    const orgScope = defineScope({ name: "org" });
 
-    const userActor = createActor({ name: "user" });
-    const documentRead = createAtomicPermission({
-      domain: "document",
-      action: "read",
-    });
-    const orgAdmin = createRole({
+    const userActor = defineActor({ name: "user" });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const orgAdmin = defineRole({
       name: "admin",
       permissions: [documentRead],
       realm: "org",
     });
 
-    const orgRealm = createRealm({
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -240,9 +230,9 @@ describe("createPermission", () => {
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
 
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -268,11 +258,11 @@ describe("createPermission", () => {
   });
 
   test("assert throws PermissionDeniedError when can returns false", async () => {
-    const orgScope = createScope({ name: "org" });
-    const userActor = createActor({ name: "user" });
-    const documentRead = createAtomicPermission({ domain: "document", action: "read" });
-    const orgAdmin = createRole({ name: "admin", permissions: [documentRead], realm: "org" });
-    const orgRealm = createRealm({
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const orgAdmin = defineRole({ name: "admin", permissions: [documentRead], realm: "org" });
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -281,9 +271,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -299,16 +289,15 @@ describe("createPermission", () => {
   });
 
   test("revokeGrant and revokeDeny remove overrides", async () => {
-    const orgScope = createScope({ name: "org" });
-    const userActor = createActor({ name: "user" });
-    const documentResource = createResource({ name: "document" });
-    const documentRead = createAtomicPermission({
-      domain: "document",
-      action: "read",
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentResource = defineResource({ name: "document" });
+    const documentRead = defineAtomicPermission({
+      action: "document:read",
       resource: documentResource,
     });
-    const orgViewer = createRole({ name: "viewer", permissions: [documentRead], realm: "org" });
-    const orgRealm = createRealm({
+    const orgViewer = defineRole({ name: "viewer", permissions: [documentRead], realm: "org" });
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -318,9 +307,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -388,16 +377,16 @@ describe("createPermission", () => {
   });
 
   test("canAll returns true only when all actions allowed", async () => {
-    const orgScope = createScope({ name: "org" });
-    const userActor = createActor({ name: "user" });
-    const documentRead = createAtomicPermission({ domain: "document", action: "read" });
-    const documentWrite = createAtomicPermission({ domain: "document", action: "write" });
-    const orgAdmin = createRole({
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentWrite = defineAtomicPermission({ action: "document:write" });
+    const orgAdmin = defineRole({
       name: "admin",
       permissions: [documentRead, documentWrite],
       realm: "org",
     });
-    const orgRealm = createRealm({
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -406,9 +395,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -439,12 +428,12 @@ describe("createPermission", () => {
   });
 
   test("canAny returns true when at least one action allowed", async () => {
-    const orgScope = createScope({ name: "org" });
-    const userActor = createActor({ name: "user" });
-    const documentRead = createAtomicPermission({ domain: "document", action: "read" });
-    const documentWrite = createAtomicPermission({ domain: "document", action: "write" });
-    const orgViewer = createRole({ name: "viewer", permissions: [documentRead], realm: "org" });
-    const orgRealm = createRealm({
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentWrite = defineAtomicPermission({ action: "document:write" });
+    const orgViewer = defineRole({ name: "viewer", permissions: [documentRead], realm: "org" });
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -453,9 +442,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -479,11 +468,11 @@ describe("createPermission", () => {
   });
 
   test("canMany returns map of actor id to allowed", async () => {
-    const orgScope = createScope({ name: "org" });
-    const userActor = createActor({ name: "user" });
-    const documentRead = createAtomicPermission({ domain: "document", action: "read" });
-    const orgAdmin = createRole({ name: "admin", permissions: [documentRead], realm: "org" });
-    const orgRealm = createRealm({
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const orgAdmin = defineRole({ name: "admin", permissions: [documentRead], realm: "org" });
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -492,9 +481,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -512,11 +501,11 @@ describe("createPermission", () => {
   });
 
   test("revokeScope removes all assignments and overrides for scope", async () => {
-    const orgScope = createScope({ name: "org" });
-    const userActor = createActor({ name: "user" });
-    const documentRead = createAtomicPermission({ domain: "document", action: "read" });
-    const orgAdmin = createRole({ name: "admin", permissions: [documentRead], realm: "org" });
-    const orgRealm = createRealm({
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const orgAdmin = defineRole({ name: "admin", permissions: [documentRead], realm: "org" });
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -525,9 +514,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -551,11 +540,11 @@ describe("createPermission", () => {
   });
 
   test("revokeAll removes all assignments and overrides for actor", async () => {
-    const orgScope = createScope({ name: "org" });
-    const userActor = createActor({ name: "user" });
-    const documentRead = createAtomicPermission({ domain: "document", action: "read" });
-    const orgAdmin = createRole({ name: "admin", permissions: [documentRead], realm: "org" });
-    const orgRealm = createRealm({
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const orgAdmin = defineRole({ name: "admin", permissions: [documentRead], realm: "org" });
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -564,9 +553,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -585,18 +574,18 @@ describe("createPermission", () => {
   });
 
   test("realm returns realm by name", () => {
-    const appScope = createScope({ name: "app" });
-    const orgScope = createScope({ name: "org" });
-    const userActor = createActor({ name: "user" });
-    const documentRead = createAtomicPermission({ domain: "document", action: "read" });
-    const appRealm = createRealm({
+    const appScope = defineScope({ name: "app" });
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const appRealm = defineRealm({
       name: "app",
       scope: appScope,
       actors: [userActor],
       permissions: [documentRead],
       roles: [],
     });
-    const orgRealm = createRealm({
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -605,9 +594,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { app: appRealm, org: orgRealm },
+      realms: [appRealm, orgRealm],
     });
 
     expect(perm.realm({ name: "app" })).toBe(appRealm);
@@ -615,13 +604,42 @@ describe("createPermission", () => {
     expect(perm.realm({ name: "unknown" })).toBeUndefined();
   });
 
+  test("throws when realms have duplicate scope name", () => {
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const orgRealm1 = defineRealm({
+      name: "org",
+      scope: orgScope,
+      actors: [userActor],
+      permissions: [documentRead],
+      roles: [],
+    });
+    const orgRealm2 = defineRealm({
+      name: "org2",
+      scope: orgScope,
+      actors: [userActor],
+      permissions: [documentRead],
+      roles: [],
+    });
+    const assignments = createMemoryRepo<Assignment>();
+    const overrides = createMemoryRepo<Override>();
+
+    expect(() =>
+      createPermissionService({
+        repos: { assignments, overrides },
+        realms: [orgRealm1, orgRealm2],
+      })
+    ).toThrow(/Duplicate realm scope name: org/);
+  });
+
   test("assign throws when scope type unknown", async () => {
-    const appScope = createScope({ name: "app" });
-    const userActor = createActor({ name: "user" });
-    const documentRead = createAtomicPermission({ domain: "document", action: "read" });
-    const orgAdmin = createRole({ name: "admin", permissions: [documentRead], realm: "org" });
-    const unknownScope = createScope({ name: "unknown" });
-    const appRealm = createRealm({
+    const appScope = defineScope({ name: "app" });
+    const userActor = defineActor({ name: "user" });
+    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const orgAdmin = defineRole({ name: "admin", permissions: [documentRead], realm: "org" });
+    const unknownScope = defineScope({ name: "unknown" });
+    const appRealm = defineRealm({
       name: "app",
       scope: appScope,
       actors: [userActor],
@@ -630,9 +648,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { app: appRealm },
+      realms: [appRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -643,16 +661,15 @@ describe("createPermission", () => {
   });
 
   test("explain returns deny reason when override denies", async () => {
-    const orgScope = createScope({ name: "org" });
-    const userActor = createActor({ name: "user" });
-    const documentResource = createResource({ name: "document" });
-    const documentRead = createAtomicPermission({
-      domain: "document",
-      action: "read",
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentResource = defineResource({ name: "document" });
+    const documentRead = defineAtomicPermission({
+      action: "document:read",
       resource: documentResource,
     });
-    const orgViewer = createRole({ name: "viewer", permissions: [documentRead], realm: "org" });
-    const orgRealm = createRealm({
+    const orgViewer = defineRole({ name: "viewer", permissions: [documentRead], realm: "org" });
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -662,9 +679,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");
@@ -688,15 +705,14 @@ describe("createPermission", () => {
   });
 
   test("explain returns grant reason when override grants", async () => {
-    const orgScope = createScope({ name: "org" });
-    const userActor = createActor({ name: "user" });
-    const documentResource = createResource({ name: "document" });
-    const documentRead = createAtomicPermission({
-      domain: "document",
-      action: "read",
+    const orgScope = defineScope({ name: "org" });
+    const userActor = defineActor({ name: "user" });
+    const documentResource = defineResource({ name: "document" });
+    const documentRead = defineAtomicPermission({
+      action: "document:read",
       resource: documentResource,
     });
-    const orgRealm = createRealm({
+    const orgRealm = defineRealm({
       name: "org",
       scope: orgScope,
       actors: [userActor],
@@ -706,9 +722,9 @@ describe("createPermission", () => {
     });
     const assignments = createMemoryRepo<Assignment>();
     const overrides = createMemoryRepo<Override>();
-    const perm = createPermission({
+    const perm = createPermissionService({
       repos: { assignments, overrides },
-      realms: { org: orgRealm },
+      realms: [orgRealm],
     });
 
     const user1 = userActor("usr_1");

@@ -3,9 +3,9 @@
  * Runtime instance with full API.
  */
 
-import type { AtomicPermission } from "./define/permission/createAtomicPermission.js";
-import type { RealmDef } from "./define/realm/createRealm.js";
-import type { RoleDef } from "./define/role/createRole.js";
+import type { AtomicPermission } from "./define/permission/defineAtomicPermission.js";
+import type { RealmDef } from "./define/realm/defineRealm.js";
+import type { RoleDef } from "./define/role/defineRole.js";
 import { PermissionDeniedError } from "./errors/index.js";
 import {
   type ResolveContext,
@@ -28,11 +28,24 @@ export interface CreatePermissionOptions<ScopeNames extends string = string> {
     assignments: AssignmentsRepo;
     overrides: OverridesRepo;
   };
-  realms: Record<ScopeNames, RealmDef>;
+  /** Realms list. Lookup key is derived from realm.scope.name */
+  realms: readonly RealmDef[];
 }
 
-function getRealmByScope(scope: Scope, realms: Record<string, RealmDef>): RealmDef | null {
-  return realms[scope.type] ?? null;
+function buildRealmMap(realms: readonly RealmDef[]): Map<string, RealmDef> {
+  const map = new Map<string, RealmDef>();
+  for (const realm of realms) {
+    const key = realm.scope.name;
+    if (map.has(key)) {
+      throw new Error(`Duplicate realm scope name: ${key}`);
+    }
+    map.set(key, realm);
+  }
+  return map;
+}
+
+function getRealmByScope(scope: Scope, realmMap: Map<string, RealmDef>): RealmDef | null {
+  return realmMap.get(scope.type) ?? null;
 }
 
 /** Params for can, grant, deny, revokeGrant, revokeDeny, explain */
@@ -125,6 +138,7 @@ export function createPermission<ScopeNames extends string = string>(
   options: CreatePermissionOptions<ScopeNames>
 ): PermissionApi<ScopeNames> {
   const { repos, realms } = options;
+  const realmMap = buildRealmMap(realms);
 
   async function resolve(
     actor: Actor,
@@ -132,7 +146,7 @@ export function createPermission<ScopeNames extends string = string>(
     scope: Scope,
     resource?: Resource
   ): Promise<{ allowed: boolean; reason?: string; role?: string }> {
-    const realm = getRealmByScope(scope, realms);
+    const realm = getRealmByScope(scope, realmMap);
     if (!realm) {
       return { allowed: false, reason: "unknown_scope" };
     }
@@ -211,7 +225,7 @@ export function createPermission<ScopeNames extends string = string>(
 
   async function assign(params: { actor: Actor; role: RoleDef; scope: Scope }): Promise<void> {
     const { actor, role, scope } = params;
-    const realm = getRealmByScope(scope, realms);
+    const realm = getRealmByScope(scope, realmMap);
     if (!realm) {
       throw new Error(`Unknown scope type: ${scope.type}`);
     }
@@ -463,7 +477,7 @@ export function createPermission<ScopeNames extends string = string>(
   }
 
   function realm(params: { name: ScopeNames }): RealmDef | undefined {
-    return realms[params.name];
+    return realmMap.get(params.name);
   }
 
   return {

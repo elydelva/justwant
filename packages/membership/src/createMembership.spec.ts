@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { createGroup } from "./createGroup.js";
-import { createMember } from "./createMember.js";
-import { createMembership } from "./createMembership.js";
+import { createMembershipService } from "./createMembershipService.js";
+import { defineGroup } from "./defineGroup.js";
+import { defineMember } from "./defineMember.js";
 import { AlreadyMemberError, InvalidMemberTypeError, NotMemberError } from "./errors/index.js";
 import type { Membership, MembershipsRepo } from "./types/index.js";
 
@@ -65,13 +65,12 @@ function createMockRepo(): MembershipsRepo {
   };
 }
 
-describe("createMembership", () => {
+describe("createMembershipService", () => {
   test("add adds member to group", async () => {
-    const userMember = createMember({ name: "user" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember],
       groups: [orgGroup],
     });
 
@@ -82,11 +81,10 @@ describe("createMembership", () => {
   });
 
   test("remove removes member from group", async () => {
-    const userMember = createMember({ name: "user" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember],
       groups: [orgGroup],
     });
 
@@ -98,11 +96,10 @@ describe("createMembership", () => {
   });
 
   test("has returns false when member not in group", async () => {
-    const userMember = createMember({ name: "user" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember],
       groups: [orgGroup],
     });
 
@@ -111,12 +108,11 @@ describe("createMembership", () => {
   });
 
   test("add throws InvalidMemberTypeError when member type not accepted by group", async () => {
-    const userMember = createMember({ name: "user" });
-    const botMember = createMember({ name: "bot" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const botMember = defineMember({ name: "bot" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember, botMember],
       groups: [orgGroup],
     });
 
@@ -124,16 +120,15 @@ describe("createMembership", () => {
       InvalidMemberTypeError
     );
     await expect(membership.add(botMember("bot_1"), orgGroup("org_1"))).rejects.toThrow(
-      /accepts member type "user", not "bot"/
+      /not registered/
     );
   });
 
   test("add throws AlreadyMemberError when member already in group", async () => {
-    const userMember = createMember({ name: "user" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember],
       groups: [orgGroup],
     });
 
@@ -145,11 +140,10 @@ describe("createMembership", () => {
   });
 
   test("remove throws NotMemberError when member not in group", async () => {
-    const userMember = createMember({ name: "user" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember],
       groups: [orgGroup],
     });
 
@@ -159,11 +153,10 @@ describe("createMembership", () => {
   });
 
   test("add throws InvalidMemberTypeError when member type not registered", async () => {
-    const userMember = createMember({ name: "user" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember],
       groups: [orgGroup],
     });
 
@@ -176,11 +169,10 @@ describe("createMembership", () => {
   });
 
   test("listMembers returns members of group", async () => {
-    const userMember = createMember({ name: "user" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember],
       groups: [orgGroup],
     });
 
@@ -194,11 +186,10 @@ describe("createMembership", () => {
   });
 
   test("listMembers returns empty array when group has no members", async () => {
-    const userMember = createMember({ name: "user" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember],
       groups: [orgGroup],
     });
 
@@ -207,12 +198,11 @@ describe("createMembership", () => {
   });
 
   test("listGroups returns groups of member", async () => {
-    const userMember = createMember({ name: "user" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const groupGroup = createGroup({ name: "group", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const groupGroup = defineGroup({ name: "group", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember],
       groups: [orgGroup, groupGroup],
     });
 
@@ -226,12 +216,11 @@ describe("createMembership", () => {
   });
 
   test("same member can be in multiple groups", async () => {
-    const userMember = createMember({ name: "user" });
-    const orgGroup = createGroup({ name: "org", member: userMember });
-    const groupGroup = createGroup({ name: "group", member: userMember });
-    const membership = createMembership({
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const groupGroup = defineGroup({ name: "group", member: userMember });
+    const membership = createMembershipService({
       repo: createMockRepo(),
-      members: [userMember],
       groups: [orgGroup, groupGroup],
     });
 
@@ -240,5 +229,18 @@ describe("createMembership", () => {
 
     expect(await membership.has(userMember("usr_1"), orgGroup("org_1"))).toBe(true);
     expect(await membership.has(userMember("usr_1"), groupGroup("grp_1"))).toBe(true);
+  });
+
+  test("MemberLike derived from groups works", async () => {
+    const userMember = defineMember({ name: "user" });
+    const orgGroup = defineGroup({ name: "org", member: userMember });
+    const membership = createMembershipService({
+      repo: createMockRepo(),
+      groups: [orgGroup],
+    });
+
+    await membership.add(userMember("usr_1"), orgGroup("org_1"));
+    const has = await membership.has(userMember("usr_1"), orgGroup("org_1"));
+    expect(has).toBe(true);
   });
 });

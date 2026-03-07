@@ -20,7 +20,7 @@ bun add @justwant/context
 ### 1. Define slots
 
 ```ts
-import { createContext, defineSlot } from "@justwant/context";
+import { createContextService, defineSlot } from "@justwant/context";
 
 const userSlot = defineSlot({
   key: "user",
@@ -45,7 +45,7 @@ const orgSlot = defineSlot({
 ### 2. Create context
 
 ```ts
-const ctx = createContext({ slots: [userSlot, orgSlot] });
+const ctx = createContextService({ slots: [userSlot, orgSlot] });
 ```
 
 ### 3. Use per request
@@ -83,7 +83,7 @@ See [docs/INTEGRATION_USER_ORG_GROUP.md](./docs/INTEGRATION_USER_ORG_GROUP.md) f
 ## Subpath exports
 
 ```ts
-import { createContext, defineSlot } from "@justwant/context";
+import { createContextService, defineSlot } from "@justwant/context";
 import type { SlotDef, RequestContext } from "@justwant/context/types";
 import { SlotNotFoundError, ResolutionError } from "@justwant/context/errors";
 ```

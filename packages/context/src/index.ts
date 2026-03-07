@@ -7,7 +7,7 @@
 export { defineSlot } from "./defineSlot.js";
 export type { DefineSlotOptions } from "./defineSlot.js";
 
-export { createContext } from "./createContext.js";
+export { createContextService } from "./createContextService.js";
 
 export type {
   SlotDef,

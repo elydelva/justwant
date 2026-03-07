@@ -35,5 +35,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": "biome check --write"
+  },
+  "overrides": {
+    "@duckdb/node-api": "1.4.0-r.2"
   }
 }

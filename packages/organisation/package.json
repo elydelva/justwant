@@ -1,0 +1,61 @@
+{
+  "name": "@justwant/organisation",
+  "version": "0.2.0",
+  "description": "Organisation entity and facade with multi-type support. defineOrganisation, createStandardOrganisationMembership, createStandardOrganisationPermission, createOrganisationService. Integrates membership and permission.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/organisation"
+  },
+  "keywords": ["organisation", "organization", "membership", "permission", "typescript"],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./permissions": {
+      "types": "./dist/permissions/index.d.ts",
+      "import": "./dist/permissions/index.js",
+      "default": "./dist/permissions/index.js"
+    },
+    "./membership": {
+      "types": "./dist/membership/index.d.ts",
+      "import": "./dist/membership/index.js",
+      "default": "./dist/membership/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "default": "./dist/types/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js",
+      "default": "./dist/errors/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run typecheck && bun run build && bun test"
+  },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@justwant/membership": "workspace:*",
+    "@justwant/permission": "workspace:*"
+  },
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}

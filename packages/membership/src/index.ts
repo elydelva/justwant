@@ -1,17 +1,20 @@
 /**
  * @justwant/membership — Member–group liaison
- * createMember, createGroup, createMembership.
+ * defineMember, defineGroup, createMembershipService.
  * No roles, no within. Member type declared in group.
  */
 
-export { createMember } from "./createMember.js";
-export type { CreateMemberOptions, MemberDef } from "./createMember.js";
+export { defineMember } from "./defineMember.js";
+export type { DefineMemberOptions, MemberDef } from "./defineMember.js";
 
-export { createGroup } from "./createGroup.js";
-export type { CreateGroupOptions, GroupDef } from "./createGroup.js";
+export { defineGroup } from "./defineGroup.js";
+export type { DefineGroupOptions, GroupDef } from "./defineGroup.js";
 
-export { createMembership } from "./createMembership.js";
-export type { CreateMembershipOptions, MembershipApi } from "./createMembership.js";
+export { createMembershipService } from "./createMembershipService.js";
+export type {
+  CreateMembershipServiceOptions,
+  MembershipApi,
+} from "./createMembershipService.js";
 
 export type {
   Member,
@@ -19,6 +22,8 @@ export type {
   Membership,
   MembershipsRepo,
   CreateInput,
+  MemberLike,
+  GroupLike,
 } from "./types/index.js";
 
 export {

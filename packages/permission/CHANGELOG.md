@@ -1,5 +1,36 @@
 # @justwant/permission
 
+## 3.2.0
+
+### Breaking Changes
+
+- `defineAtomicPermission`: `domain` et `action` remplacés par `action` (string complète, ex. `"document:read"`, `"billing:view"`).
+- `definePermissionDomain` supprimé. Pour regrouper par domaine, utiliser des listes JS.
+
+  **Migration :** `defineAtomicPermission({ domain: "document", action: "read" })` → `defineAtomicPermission({ action: "document:read" })`
+
+## 3.1.0
+
+### Minor Changes
+
+- `createPermissionService`: `realms` accepte une liste au lieu d'un objet. La clé de lookup est dérivée de `realm.scope.name`.
+
+  **Migration :** `realms: { app: appRealm, org: orgRealm }` → `realms: [appRealm, orgRealm]`
+
+## 3.0.0
+
+### Breaking Changes
+
+- `createScope` → `defineScope`
+- `createActor` → `defineActor` (+ option `from: IdentityLike` pour composition avec defineUser)
+- `createResource` → `defineResource`
+- `createAtomicPermission` → `defineAtomicPermission`
+- `createPermissionDomain` → `definePermissionDomain`
+- `createRole` → `defineRole`
+- `createRealm` → `defineRealm`
+- `createPermission` → `createPermissionService`
+- Added `IdentityLike`, `ReferenceLike`, `ScopeLike` structural interfaces for cross-package composition
+
 ## 2.0.0
 
 ### Major Changes

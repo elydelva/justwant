@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { createContext } from "./createContext.js";
+import { createContextService } from "./createContextService.js";
 import { defineSlot } from "./defineSlot.js";
 import { ResolutionError, SlotNotFoundError } from "./errors/index.js";
 
-describe("createContext", () => {
+describe("createContextService", () => {
   test("forRequest returns RequestContext with initial", () => {
-    const ctx = createContext({ slots: [] });
+    const ctx = createContextService({ slots: [] });
     const requestCtx = ctx.forRequest({ userId: "u1", requestId: "r1" });
     expect(requestCtx.initial).toEqual({ userId: "u1", requestId: "r1" });
   });
@@ -21,7 +21,7 @@ describe("createContext", () => {
       },
     });
 
-    const ctx = createContext({ slots: [userSlot] });
+    const ctx = createContextService({ slots: [userSlot] });
     const requestCtx = ctx.forRequest({ userId: "u1" });
 
     const user1 = await requestCtx.get(userSlot);
@@ -44,7 +44,7 @@ describe("createContext", () => {
       resolve: async () => null,
     });
 
-    const ctx = createContext({ slots: [userSlot] });
+    const ctx = createContextService({ slots: [userSlot] });
     const requestCtx = ctx.forRequest({});
 
     await expect(requestCtx.get(otherSlot)).rejects.toThrow(SlotNotFoundError);
@@ -60,7 +60,7 @@ describe("createContext", () => {
       },
     });
 
-    const ctx = createContext({ slots: [userSlot] });
+    const ctx = createContextService({ slots: [userSlot] });
     const requestCtx = ctx.forRequest({});
 
     let err: unknown;
@@ -90,7 +90,7 @@ describe("createContext", () => {
       },
     });
 
-    const ctx = createContext({ slots: [userSlot, orgSlot] });
+    const ctx = createContextService({ slots: [userSlot, orgSlot] });
     const requestCtx = ctx.forRequest({ userId: "u1" });
 
     const org = await requestCtx.get(orgSlot);
@@ -108,7 +108,7 @@ describe("createContext", () => {
       },
     });
 
-    const ctx = createContext({ slots: [eagerSlot] });
+    const ctx = createContextService({ slots: [eagerSlot] });
     ctx.forRequest({});
 
     await new Promise((r) => setTimeout(r, 0));
@@ -126,7 +126,7 @@ describe("createContext", () => {
       },
     });
 
-    const ctx = createContext({ slots: [requestSlot] });
+    const ctx = createContextService({ slots: [requestSlot] });
     ctx.forRequest({ requestId: "r1" });
 
     await new Promise((r) => setTimeout(r, 0));
@@ -144,7 +144,7 @@ describe("createContext", () => {
       },
     });
 
-    const ctx = createContext({ slots: [userSlot] });
+    const ctx = createContextService({ slots: [userSlot] });
     const req1 = ctx.forRequest({ userId: "u1" });
     const req2 = ctx.forRequest({ userId: "u2" });
 

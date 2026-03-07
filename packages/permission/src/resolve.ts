@@ -2,9 +2,9 @@
  * @justwant/permission — Resolution logic
  */
 
-import type { AtomicPermission } from "./define/permission/createAtomicPermission.js";
-import type { RealmDef } from "./define/realm/createRealm.js";
-import type { RoleDef } from "./define/role/createRole.js";
+import type { AtomicPermission } from "./define/permission/defineAtomicPermission.js";
+import type { RealmDef } from "./define/realm/defineRealm.js";
+import type { RoleDef } from "./define/role/defineRole.js";
 import type {
   Actor,
   Assignment,

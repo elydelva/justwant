@@ -1,5 +1,11 @@
 # @justwant/context
 
+## 0.3.0
+
+### Breaking Changes
+
+- `createContext` renamed to `createContextService`
+
 ## 0.2.0
 
 ### Minor Changes

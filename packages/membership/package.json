@@ -1,7 +1,7 @@
 {
   "name": "@justwant/membership",
-  "version": "0.1.0",
-  "description": "Member–group liaison via createMember, createGroup, createMembership. No roles, no within. Member type declared in group.",
+  "version": "0.3.0",
+  "description": "Member–group liaison via defineMember, defineGroup, createMembershipService. No roles, no within. Member type declared in group.",
   "type": "module",
   "license": "MIT",
   "repository": {

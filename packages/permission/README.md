@@ -12,40 +12,41 @@ bun add @justwant/permission
 
 ```ts
 import {
-  createScope,
-  createActor,
-  createAtomicPermission,
-  createRole,
-  createRealm,
-  createPermission,
+  defineScope,
+  defineActor,
+  defineAtomicPermission,
+  defineRole,
+  defineRealm,
+  createPermissionService,
 } from "@justwant/permission";
 
-const appScope = createScope({ name: "app" });
-const orgScope = createScope({ name: "org" });
+const appScope = defineScope({ name: "app" });
+const orgScope = defineScope({ name: "org" });
 
-const userActor = createActor({ name: "user" });
-const documentRead = createAtomicPermission({ domain: "document", action: "read" });
-const documentWrite = createAtomicPermission({ domain: "document", action: "write" });
+const userActor = defineActor({ name: "user" });
+// Or with @justwant/user: defineActor({ from: defineUser() })
+const documentRead = defineAtomicPermission({ action: "document:read" });
+const documentWrite = defineAtomicPermission({ action: "document:write" });
 
-const appMember = createRole({
+const appMember = defineRole({
   name: "member",
   permissions: [documentRead, documentWrite],
   realm: "app",
 });
-const orgAdmin = createRole({
+const orgAdmin = defineRole({
   name: "admin",
   permissions: [documentRead, documentWrite],
   realm: "org",
 });
 
-const appRealm = createRealm({
+const appRealm = defineRealm({
   name: "app",
   scope: appScope,
   actors: [userActor],
   permissions: [documentRead, documentWrite],
   roles: [appMember],
 });
-const orgRealm = createRealm({
+const orgRealm = defineRealm({
   name: "org",
   scope: orgScope,
   actors: [userActor],
@@ -54,9 +55,10 @@ const orgRealm = createRealm({
 });
 
 // Repos: AssignmentsRepo & OverridesRepo — in-memory, DB via @justwant/db, etc.
-const perm = createPermission({
+// Lookup key is derived from realm.scope.name
+const perm = createPermissionService({
   repos: { assignments: myAssignmentsRepo, overrides: myOverridesRepo },
-  realms: { app: appRealm, org: orgRealm },
+  realms: [appRealm, orgRealm],
 });
 
 const user = userActor("usr_1");
@@ -95,8 +97,8 @@ Toutes les méthodes utilisent des paramètres objet avec des noms explicites :
 
 | Path | Description |
 |------|-------------|
-| `@justwant/permission` | API principale (createScope, createActor, createPermission, etc.) |
-| `@justwant/permission/types` | Actor, Scope, Resource, PermissionRepository, Assignment, Override, CreateInput |
+| `@justwant/permission` | API principale (defineScope, defineActor, createPermissionService, etc.) |
+| `@justwant/permission/types` | Actor, Scope, Resource, IdentityLike, ReferenceLike, ScopeLike, Assignment, Override, CreateInput |
 | `@justwant/permission/errors` | PermissionError, PermissionDeniedError, CeilingViolationError |
 
 ## Features
