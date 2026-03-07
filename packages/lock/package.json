@@ -1,9 +1,16 @@
 {
   "name": "@justwant/lock",
-  "private": true,
-  "version": "0.0.0",
-  "description": "Verrous distribués",
+  "version": "0.1.0",
+  "description": "Distributed locks and semaphores. Mutex, ownership, counting semaphore. Declarative createLockable, createLockOwner, hooks.",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/lock"
+  },
+  "keywords": ["lock", "mutex", "semaphore", "distributed", "typescript"],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -11,15 +18,57 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js",
+      "default": "./dist/errors/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "default": "./dist/types/index.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js",
+      "default": "./dist/hooks/index.js"
+    },
+    "./lock": {
+      "types": "./dist/lock/index.d.ts",
+      "import": "./dist/lock/index.js",
+      "default": "./dist/lock/index.js"
+    },
+    "./semaphore": {
+      "types": "./dist/semaphore/index.d.ts",
+      "import": "./dist/semaphore/index.js",
+      "default": "./dist/semaphore/index.js"
+    },
+    "./define": {
+      "types": "./dist/define/index.d.ts",
+      "import": "./dist/define/index.js",
+      "default": "./dist/define/index.js"
+    },
+    "./define/lockable": {
+      "types": "./dist/define/lockable/index.d.ts",
+      "import": "./dist/define/lockable/index.js",
+      "default": "./dist/define/lockable/index.js"
+    },
+    "./define/owner": {
+      "types": "./dist/define/owner/index.d.ts",
+      "import": "./dist/define/owner/index.js",
+      "default": "./dist/define/owner/index.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist"],
-  "peerDependencies": {
-    "ioredis": "*"
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
