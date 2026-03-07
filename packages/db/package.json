@@ -192,7 +192,7 @@
     "pretest": "prisma generate && DATABASE_URL=file:./test.db prisma db push --skip-generate",
     "test": "bun test"
   },
-  "files": ["dist", "README.md", "docs", "prisma"],
+  "files": ["dist", "README.md", "docs", "prisma/schema.prisma"],
   "publishConfig": {
     "access": "public"
   },
