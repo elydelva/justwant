@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import {
-  CeilingViolationError,
   PermissionDeniedError,
   createActor,
   createAtomicPermission,
@@ -68,8 +67,8 @@ function createMemoryRepo<T extends { id: string }>() {
 
 describe("createPermission", () => {
   test("can, assign, hasRole, unassign", async () => {
-    const appScope = createScope({ name: "app", singular: true });
-    const orgScope = createScope({ name: "org", singular: false });
+    const appScope = createScope({ name: "app" });
+    const orgScope = createScope({ name: "org" });
 
     const userActor = createActor({ name: "user" });
 
@@ -90,12 +89,12 @@ describe("createPermission", () => {
     const orgAdmin = createRole({
       name: "admin",
       permissions: [documentRead, documentWrite],
-      ceiling: appMember,
+      realm: "org",
     });
     const orgViewer = createRole({
       name: "viewer",
       permissions: [documentRead],
-      ceiling: appMember,
+      realm: "org",
     });
 
     const appRealm = createRealm({
@@ -122,23 +121,31 @@ describe("createPermission", () => {
     });
 
     const user1 = userActor("usr_1");
-    const orgId = "org_1";
 
-    await perm.assign(user1, appMember, appScope());
-    await perm.assign(user1, orgAdmin, orgScope(orgId));
+    await perm.assign({ actor: user1, role: appMember, scope: appScope() });
+    await perm.assign({ actor: user1, role: orgAdmin, scope: orgScope("org_1") });
 
-    expect(await perm.can(user1, documentRead, orgScope(orgId))).toBe(true);
-    expect(await perm.can(user1, documentWrite, orgScope(orgId))).toBe(true);
-    expect(await perm.hasRole(user1, orgAdmin, orgScope(orgId))).toBe(true);
+    expect(await perm.can({ actor: user1, action: documentRead, scope: orgScope("org_1") })).toBe(
+      true
+    );
+    expect(await perm.can({ actor: user1, action: documentWrite, scope: orgScope("org_1") })).toBe(
+      true
+    );
+    expect(await perm.hasRole({ actor: user1, role: orgAdmin, scope: orgScope("org_1") })).toBe(
+      true
+    );
 
-    await perm.unassign(user1, orgScope(orgId));
-    expect(await perm.hasRole(user1, orgAdmin, orgScope(orgId))).toBe(false);
-    expect(await perm.can(user1, documentRead, orgScope(orgId))).toBe(false);
+    await perm.unassign({ actor: user1, scope: orgScope("org_1") });
+    expect(await perm.hasRole({ actor: user1, role: orgAdmin, scope: orgScope("org_1") })).toBe(
+      false
+    );
+    expect(await perm.can({ actor: user1, action: documentRead, scope: orgScope("org_1") })).toBe(
+      false
+    );
   });
 
   test("grant and deny overrides", async () => {
-    const appScope = createScope({ name: "app", singular: true });
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
 
     const userActor = createActor({ name: "user" });
     const documentResource = createResource({ name: "document" });
@@ -172,83 +179,44 @@ describe("createPermission", () => {
     });
 
     const user1 = userActor("usr_1");
-    const orgId = "org_1";
 
-    await perm.assign(user1, orgViewer, orgScope(orgId));
+    await perm.assign({ actor: user1, role: orgViewer, scope: orgScope("org_1") });
 
-    await perm.grant(user1, documentRead, orgScope(orgId), documentResource("doc_1"));
-
-    expect(await perm.can(user1, documentRead, orgScope(orgId), documentResource("doc_1"))).toBe(
-      true
-    );
-
-    await perm.deny(user1, documentRead, orgScope(orgId), documentResource("doc_1"));
-
-    expect(await perm.can(user1, documentRead, orgScope(orgId), documentResource("doc_1"))).toBe(
-      false
-    );
-  });
-
-  test("ceiling blocks assign when parent role missing", async () => {
-    const appScope = createScope({ name: "app", singular: true });
-    const orgScope = createScope({ name: "org", singular: false });
-
-    const userActor = createActor({ name: "user" });
-    const documentRead = createAtomicPermission({
-      domain: "document",
-      action: "read",
+    await perm.grant({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+      resource: documentResource("doc_1"),
     });
 
-    const appAdmin = createRole({
-      name: "admin",
-      permissions: [documentRead],
-      realm: "app",
-    });
-    const orgOwner = createRole({
-      name: "owner",
-      permissions: [documentRead],
-      ceiling: appAdmin,
-    });
+    expect(
+      await perm.can({
+        actor: user1,
+        action: documentRead,
+        scope: orgScope("org_1"),
+        resource: documentResource("doc_1"),
+      })
+    ).toBe(true);
 
-    const appRealm = createRealm({
-      name: "app",
-      scope: appScope,
-      actors: [userActor],
-      permissions: [documentRead],
-      roles: [appAdmin],
-    });
-    const orgRealm = createRealm({
-      name: "org",
-      scope: orgScope,
-      actors: [userActor],
-      permissions: [documentRead],
-      roles: [orgOwner],
+    await perm.deny({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+      resource: documentResource("doc_1"),
     });
 
-    const assignments = createMemoryRepo<Assignment>();
-    const overrides = createMemoryRepo<Override>();
-
-    const perm = createPermission({
-      repos: { assignments, overrides },
-      realms: { app: appRealm, org: orgRealm },
-    });
-
-    const user1 = userActor("usr_1");
-    const orgId = "org_1";
-
-    await expect(perm.assign(user1, orgOwner, orgScope(orgId))).rejects.toThrow(
-      CeilingViolationError
-    );
-
-    await perm.assign(user1, appAdmin, appScope());
-    await perm.assign(user1, orgOwner, orgScope(orgId));
-
-    expect(await perm.can(user1, documentRead, orgScope(orgId))).toBe(true);
+    expect(
+      await perm.can({
+        actor: user1,
+        action: documentRead,
+        scope: orgScope("org_1"),
+        resource: documentResource("doc_1"),
+      })
+    ).toBe(false);
   });
 
   test("explain returns result and reason", async () => {
-    const appScope = createScope({ name: "app", singular: true });
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
 
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({
@@ -278,22 +246,29 @@ describe("createPermission", () => {
     });
 
     const user1 = userActor("usr_1");
-    const orgId = "org_1";
 
-    const beforeAssign = await perm.explain(user1, documentRead, orgScope(orgId));
+    const beforeAssign = await perm.explain({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+    });
     expect(beforeAssign.result).toBe(false);
     expect(beforeAssign.reason).toBe("no_assignment");
 
-    await perm.assign(user1, orgAdmin, orgScope(orgId));
+    await perm.assign({ actor: user1, role: orgAdmin, scope: orgScope("org_1") });
 
-    const afterAssign = await perm.explain(user1, documentRead, orgScope(orgId));
+    const afterAssign = await perm.explain({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+    });
     expect(afterAssign.result).toBe(true);
     expect(afterAssign.reason).toBe("role");
     expect(afterAssign.role).toBe("admin");
   });
 
   test("assert throws PermissionDeniedError when can returns false", async () => {
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const orgAdmin = createRole({ name: "admin", permissions: [documentRead], realm: "org" });
@@ -313,16 +288,18 @@ describe("createPermission", () => {
 
     const user1 = userActor("usr_1");
 
-    await expect(perm.assert(user1, documentRead, orgScope("org_1"))).rejects.toThrow(
-      PermissionDeniedError
-    );
+    await expect(
+      perm.assert({ actor: user1, action: documentRead, scope: orgScope("org_1") })
+    ).rejects.toThrow(PermissionDeniedError);
 
-    await perm.assign(user1, orgAdmin, orgScope("org_1"));
-    await expect(perm.assert(user1, documentRead, orgScope("org_1"))).resolves.toBeUndefined();
+    await perm.assign({ actor: user1, role: orgAdmin, scope: orgScope("org_1") });
+    await expect(
+      perm.assert({ actor: user1, action: documentRead, scope: orgScope("org_1") })
+    ).resolves.toBeUndefined();
   });
 
   test("revokeGrant and revokeDeny remove overrides", async () => {
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
     const userActor = createActor({ name: "user" });
     const documentResource = createResource({ name: "document" });
     const documentRead = createAtomicPermission({
@@ -348,30 +325,70 @@ describe("createPermission", () => {
 
     const user1 = userActor("usr_1");
 
-    await perm.grant(user1, documentRead, orgScope("org_1"), documentResource("doc_1"));
-    expect(await perm.can(user1, documentRead, orgScope("org_1"), documentResource("doc_1"))).toBe(
-      true
-    );
+    await perm.grant({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+      resource: documentResource("doc_1"),
+    });
+    expect(
+      await perm.can({
+        actor: user1,
+        action: documentRead,
+        scope: orgScope("org_1"),
+        resource: documentResource("doc_1"),
+      })
+    ).toBe(true);
 
-    await perm.revokeGrant(user1, documentRead, orgScope("org_1"), documentResource("doc_1"));
-    expect(await perm.can(user1, documentRead, orgScope("org_1"), documentResource("doc_1"))).toBe(
-      false
-    );
+    await perm.revokeGrant({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+      resource: documentResource("doc_1"),
+    });
+    expect(
+      await perm.can({
+        actor: user1,
+        action: documentRead,
+        scope: orgScope("org_1"),
+        resource: documentResource("doc_1"),
+      })
+    ).toBe(false);
 
-    await perm.assign(user1, orgViewer, orgScope("org_1"));
-    await perm.deny(user1, documentRead, orgScope("org_1"), documentResource("doc_1"));
-    expect(await perm.can(user1, documentRead, orgScope("org_1"), documentResource("doc_1"))).toBe(
-      false
-    );
+    await perm.assign({ actor: user1, role: orgViewer, scope: orgScope("org_1") });
+    await perm.deny({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+      resource: documentResource("doc_1"),
+    });
+    expect(
+      await perm.can({
+        actor: user1,
+        action: documentRead,
+        scope: orgScope("org_1"),
+        resource: documentResource("doc_1"),
+      })
+    ).toBe(false);
 
-    await perm.revokeDeny(user1, documentRead, orgScope("org_1"), documentResource("doc_1"));
-    expect(await perm.can(user1, documentRead, orgScope("org_1"), documentResource("doc_1"))).toBe(
-      true
-    );
+    await perm.revokeDeny({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+      resource: documentResource("doc_1"),
+    });
+    expect(
+      await perm.can({
+        actor: user1,
+        action: documentRead,
+        scope: orgScope("org_1"),
+        resource: documentResource("doc_1"),
+      })
+    ).toBe(true);
   });
 
   test("canAll returns true only when all actions allowed", async () => {
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const documentWrite = createAtomicPermission({ domain: "document", action: "write" });
@@ -396,15 +413,33 @@ describe("createPermission", () => {
 
     const user1 = userActor("usr_1");
 
-    expect(await perm.canAll(user1, [documentRead, documentWrite], orgScope("org_1"))).toBe(false);
+    expect(
+      await perm.canAll({
+        actor: user1,
+        actions: [documentRead, documentWrite],
+        scope: orgScope("org_1"),
+      })
+    ).toBe(false);
 
-    await perm.assign(user1, orgAdmin, orgScope("org_1"));
-    expect(await perm.canAll(user1, [documentRead, documentWrite], orgScope("org_1"))).toBe(true);
-    expect(await perm.canAll(user1, [documentRead, documentWrite], orgScope("org_2"))).toBe(false);
+    await perm.assign({ actor: user1, role: orgAdmin, scope: orgScope("org_1") });
+    expect(
+      await perm.canAll({
+        actor: user1,
+        actions: [documentRead, documentWrite],
+        scope: orgScope("org_1"),
+      })
+    ).toBe(true);
+    expect(
+      await perm.canAll({
+        actor: user1,
+        actions: [documentRead, documentWrite],
+        scope: orgScope("org_2"),
+      })
+    ).toBe(false);
   });
 
   test("canAny returns true when at least one action allowed", async () => {
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const documentWrite = createAtomicPermission({ domain: "document", action: "write" });
@@ -425,14 +460,26 @@ describe("createPermission", () => {
 
     const user1 = userActor("usr_1");
 
-    await perm.assign(user1, orgViewer, orgScope("org_1"));
+    await perm.assign({ actor: user1, role: orgViewer, scope: orgScope("org_1") });
 
-    expect(await perm.canAny(user1, [documentRead, documentWrite], orgScope("org_1"))).toBe(true);
-    expect(await perm.canAny(user1, [documentWrite], orgScope("org_1"))).toBe(false);
+    expect(
+      await perm.canAny({
+        actor: user1,
+        actions: [documentRead, documentWrite],
+        scope: orgScope("org_1"),
+      })
+    ).toBe(true);
+    expect(
+      await perm.canAny({
+        actor: user1,
+        actions: [documentWrite],
+        scope: orgScope("org_1"),
+      })
+    ).toBe(false);
   });
 
   test("canMany returns map of actor id to allowed", async () => {
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const orgAdmin = createRole({ name: "admin", permissions: [documentRead], realm: "org" });
@@ -453,15 +500,19 @@ describe("createPermission", () => {
     const user1 = userActor("usr_1");
     const user2 = userActor("usr_2");
 
-    await perm.assign(user1, orgAdmin, orgScope("org_1"));
+    await perm.assign({ actor: user1, role: orgAdmin, scope: orgScope("org_1") });
 
-    const result = await perm.canMany([user1, user2], documentRead, orgScope("org_1"));
+    const result = await perm.canMany({
+      actors: [user1, user2],
+      action: documentRead,
+      scope: orgScope("org_1"),
+    });
     expect(result.get("usr_1")).toBe(true);
     expect(result.get("usr_2")).toBe(false);
   });
 
   test("revokeScope removes all assignments and overrides for scope", async () => {
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const orgAdmin = createRole({ name: "admin", permissions: [documentRead], realm: "org" });
@@ -482,19 +533,25 @@ describe("createPermission", () => {
     const user1 = userActor("usr_1");
     const user2 = userActor("usr_2");
 
-    await perm.assign(user1, orgAdmin, orgScope("org_1"));
-    await perm.assign(user2, orgAdmin, orgScope("org_1"));
-    await perm.assign(user1, orgAdmin, orgScope("org_2"));
+    await perm.assign({ actor: user1, role: orgAdmin, scope: orgScope("org_1") });
+    await perm.assign({ actor: user2, role: orgAdmin, scope: orgScope("org_1") });
+    await perm.assign({ actor: user1, role: orgAdmin, scope: orgScope("org_2") });
 
-    await perm.revokeScope(orgScope("org_1"));
+    await perm.revokeScope({ scope: orgScope("org_1") });
 
-    expect(await perm.hasRole(user1, orgAdmin, orgScope("org_1"))).toBe(false);
-    expect(await perm.hasRole(user2, orgAdmin, orgScope("org_1"))).toBe(false);
-    expect(await perm.hasRole(user1, orgAdmin, orgScope("org_2"))).toBe(true);
+    expect(await perm.hasRole({ actor: user1, role: orgAdmin, scope: orgScope("org_1") })).toBe(
+      false
+    );
+    expect(await perm.hasRole({ actor: user2, role: orgAdmin, scope: orgScope("org_1") })).toBe(
+      false
+    );
+    expect(await perm.hasRole({ actor: user1, role: orgAdmin, scope: orgScope("org_2") })).toBe(
+      true
+    );
   });
 
   test("revokeAll removes all assignments and overrides for actor", async () => {
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const orgAdmin = createRole({ name: "admin", permissions: [documentRead], realm: "org" });
@@ -514,18 +571,22 @@ describe("createPermission", () => {
 
     const user1 = userActor("usr_1");
 
-    await perm.assign(user1, orgAdmin, orgScope("org_1"));
-    await perm.assign(user1, orgAdmin, orgScope("org_2"));
+    await perm.assign({ actor: user1, role: orgAdmin, scope: orgScope("org_1") });
+    await perm.assign({ actor: user1, role: orgAdmin, scope: orgScope("org_2") });
 
-    await perm.revokeAll(user1);
+    await perm.revokeAll({ actor: user1 });
 
-    expect(await perm.hasRole(user1, orgAdmin, orgScope("org_1"))).toBe(false);
-    expect(await perm.hasRole(user1, orgAdmin, orgScope("org_2"))).toBe(false);
+    expect(await perm.hasRole({ actor: user1, role: orgAdmin, scope: orgScope("org_1") })).toBe(
+      false
+    );
+    expect(await perm.hasRole({ actor: user1, role: orgAdmin, scope: orgScope("org_2") })).toBe(
+      false
+    );
   });
 
   test("realm returns realm by name", () => {
-    const appScope = createScope({ name: "app", singular: true });
-    const orgScope = createScope({ name: "org", singular: false });
+    const appScope = createScope({ name: "app" });
+    const orgScope = createScope({ name: "org" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const appRealm = createRealm({
@@ -549,17 +610,17 @@ describe("createPermission", () => {
       realms: { app: appRealm, org: orgRealm },
     });
 
-    expect(perm.realm("app")).toBe(appRealm);
-    expect(perm.realm("org")).toBe(orgRealm);
-    expect(perm.realm("unknown")).toBeUndefined();
+    expect(perm.realm({ name: "app" })).toBe(appRealm);
+    expect(perm.realm({ name: "org" })).toBe(orgRealm);
+    expect(perm.realm({ name: "unknown" })).toBeUndefined();
   });
 
   test("assign throws when scope type unknown", async () => {
-    const appScope = createScope({ name: "app", singular: true });
+    const appScope = createScope({ name: "app" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const orgAdmin = createRole({ name: "admin", permissions: [documentRead], realm: "org" });
-    const unknownScope = createScope({ name: "unknown", singular: false });
+    const unknownScope = createScope({ name: "unknown" });
     const appRealm = createRealm({
       name: "app",
       scope: appScope,
@@ -576,13 +637,13 @@ describe("createPermission", () => {
 
     const user1 = userActor("usr_1");
 
-    await expect(perm.assign(user1, orgAdmin, unknownScope("x"))).rejects.toThrow(
-      /Unknown scope type: unknown/
-    );
+    await expect(
+      perm.assign({ actor: user1, role: orgAdmin, scope: unknownScope("x") })
+    ).rejects.toThrow(/Unknown scope type: unknown/);
   });
 
   test("explain returns deny reason when override denies", async () => {
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
     const userActor = createActor({ name: "user" });
     const documentResource = createResource({ name: "document" });
     const documentRead = createAtomicPermission({
@@ -608,21 +669,26 @@ describe("createPermission", () => {
 
     const user1 = userActor("usr_1");
 
-    await perm.assign(user1, orgViewer, orgScope("org_1"));
-    await perm.deny(user1, documentRead, orgScope("org_1"), documentResource("doc_1"));
+    await perm.assign({ actor: user1, role: orgViewer, scope: orgScope("org_1") });
+    await perm.deny({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+      resource: documentResource("doc_1"),
+    });
 
-    const explained = await perm.explain(
-      user1,
-      documentRead,
-      orgScope("org_1"),
-      documentResource("doc_1")
-    );
+    const explained = await perm.explain({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+      resource: documentResource("doc_1"),
+    });
     expect(explained.result).toBe(false);
     expect(explained.reason).toBe("deny");
   });
 
   test("explain returns grant reason when override grants", async () => {
-    const orgScope = createScope({ name: "org", singular: false });
+    const orgScope = createScope({ name: "org" });
     const userActor = createActor({ name: "user" });
     const documentResource = createResource({ name: "document" });
     const documentRead = createAtomicPermission({
@@ -647,14 +713,19 @@ describe("createPermission", () => {
 
     const user1 = userActor("usr_1");
 
-    await perm.grant(user1, documentRead, orgScope("org_1"), documentResource("doc_1"));
+    await perm.grant({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+      resource: documentResource("doc_1"),
+    });
 
-    const explained = await perm.explain(
-      user1,
-      documentRead,
-      orgScope("org_1"),
-      documentResource("doc_1")
-    );
+    const explained = await perm.explain({
+      actor: user1,
+      action: documentRead,
+      scope: orgScope("org_1"),
+      resource: documentResource("doc_1"),
+    });
     expect(explained.result).toBe(true);
     expect(explained.reason).toBe("grant");
   });

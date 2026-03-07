@@ -31,8 +31,18 @@ export type {
 
 export { createPermission } from "./permission.js";
 export type {
+  AssertParams,
+  AssignParams,
+  CanAllParams,
+  CanManyParams,
+  CanParams,
   CreatePermissionOptions,
+  HasRoleParams,
   PermissionApi,
+  RealmParams,
+  RevokeAllParams,
+  RevokeScopeParams,
+  UnassignParams,
 } from "./permission.js";
 
 export type {

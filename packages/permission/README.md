@@ -19,8 +19,9 @@ import {
   createRealm,
   createPermission,
 } from "@justwant/permission";
-const appScope = createScope({ name: "app", singular: true });
-const orgScope = createScope({ name: "org", singular: false });
+
+const appScope = createScope({ name: "app" });
+const orgScope = createScope({ name: "org" });
 
 const userActor = createActor({ name: "user" });
 const documentRead = createAtomicPermission({ domain: "document", action: "read" });
@@ -34,7 +35,7 @@ const appMember = createRole({
 const orgAdmin = createRole({
   name: "admin",
   permissions: [documentRead, documentWrite],
-  ceiling: appMember,
+  realm: "org",
 });
 
 const appRealm = createRealm({
@@ -59,12 +60,36 @@ const perm = createPermission({
 });
 
 const user = userActor("usr_1");
-await perm.assign(user, appMember, appScope());
-await perm.assign(user, orgAdmin, orgScope("org_1"));
+await perm.assign({ actor: user, role: appMember, scope: appScope() });
+await perm.assign({ actor: user, role: orgAdmin, scope: orgScope("org_1") });
 
-const canRead = await perm.can(user, documentRead, orgScope("org_1"));
-const hasRole = await perm.hasRole(user, orgAdmin, orgScope("org_1"));
+const canRead = await perm.can({ actor: user, action: documentRead, scope: orgScope("org_1") });
+const hasRole = await perm.hasRole({ actor: user, role: orgAdmin, scope: orgScope("org_1") });
 ```
+
+## API : paramètres objet
+
+Toutes les méthodes utilisent des paramètres objet avec des noms explicites :
+
+| Méthode | Params |
+|---------|--------|
+| `can` | `{ actor, action, scope, resource? }` |
+| `assert` | `{ actor, action, scope, resource?, message? }` |
+| `assign` | `{ actor, role, scope }` |
+| `hasRole` | `{ actor, role, scope }` |
+| `unassign` | `{ actor, scope }` |
+| `grant` / `deny` / `revokeGrant` / `revokeDeny` | `{ actor, action, scope, resource? }` |
+| `canAll` / `canAny` | `{ actor, actions, scope, resource? }` |
+| `canMany` | `{ actors, action, scope, resource? }` |
+| `explain` | `{ actor, action, scope, resource? }` |
+| `revokeScope` | `{ scope }` |
+| `revokeAll` | `{ actor }` |
+| `realm` | `{ name }` |
+
+## Scopes : singular vs plural
+
+- **0 arg** = scope singulier (un seul scope global) : `appScope()` → `{ type: "app", id: null }`
+- **1 arg** = scope pluriel (plusieurs instances) : `orgScope("org_1")` → `{ type: "org", id: "org_1" }`
 
 ## Subpaths
 
@@ -77,7 +102,6 @@ const hasRole = await perm.hasRole(user, orgAdmin, orgScope("org_1"));
 ## Features
 
 - **Data-agnostic** : fournissez vos propres repos (assignments, overrides)
-- **Multi-actor** : user, org, group avec `within`
-- **Ceiling** : un rôle peut exiger un rôle parent dans un realm supérieur
+- **Modèle plat** : Actor, Scope, Resource sans hiérarchie parent-enfant
 - **Grant/deny overrides** : permissions au niveau scope ou resource
 - **Shorthands** : `userId` au lieu de `{ type: "user", id }` quand un user actor existe

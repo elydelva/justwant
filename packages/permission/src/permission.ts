@@ -6,10 +6,9 @@
 import type { AtomicPermission } from "./define/permission/createAtomicPermission.js";
 import type { RealmDef } from "./define/realm/createRealm.js";
 import type { RoleDef } from "./define/role/createRole.js";
-import { CeilingViolationError, PermissionDeniedError } from "./errors/index.js";
+import { PermissionDeniedError } from "./errors/index.js";
 import {
   type ResolveContext,
-  checkCeiling,
   findAssignment,
   findDenyOverride,
   findGrantOverride,
@@ -36,82 +35,96 @@ function getRealmByScope(scope: Scope, realms: Record<string, RealmDef>): RealmD
   return realms[scope.type] ?? null;
 }
 
+/** Params for can, grant, deny, revokeGrant, revokeDeny, explain */
+export interface CanParams<ScopeNames extends string = string> {
+  actor: Actor;
+  action: AtomicPermission;
+  scope: Scope<ScopeNames>;
+  resource?: Resource;
+}
+
+/** Params for assert — extends CanParams with message */
+export interface AssertParams<ScopeNames extends string = string> extends CanParams<ScopeNames> {
+  message?: string;
+}
+
+/** Params for assign */
+export interface AssignParams<ScopeNames extends string = string> {
+  actor: Actor;
+  role: RoleDef;
+  scope: Scope<ScopeNames>;
+}
+
+/** Params for hasRole */
+export interface HasRoleParams<ScopeNames extends string = string> {
+  actor: Actor;
+  role: RoleDef;
+  scope: Scope<ScopeNames>;
+}
+
+/** Params for unassign */
+export interface UnassignParams<ScopeNames extends string = string> {
+  actor: Actor;
+  scope: Scope<ScopeNames>;
+}
+
+/** Params for canAll, canAny */
+export interface CanAllParams<ScopeNames extends string = string> {
+  actor: Actor;
+  actions: AtomicPermission[];
+  scope: Scope<ScopeNames>;
+  resource?: Resource;
+}
+
+/** Params for canMany */
+export interface CanManyParams<ScopeNames extends string = string> {
+  actors: Actor[];
+  action: AtomicPermission;
+  scope: Scope<ScopeNames>;
+  resource?: Resource;
+}
+
+/** Params for revokeScope */
+export interface RevokeScopeParams<ScopeNames extends string = string> {
+  scope: Scope<ScopeNames>;
+}
+
+/** Params for revokeAll */
+export interface RevokeAllParams {
+  actor: Actor;
+}
+
+/** Params for realm */
+export interface RealmParams<ScopeNames extends string = string> {
+  name: ScopeNames;
+}
+
 /** API returned by createPermission() — Actor, Scope, Resource must be explicit objects */
 export interface PermissionApi<ScopeNames extends string = string> {
-  can(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope<ScopeNames>,
-    resource?: Resource
-  ): Promise<boolean>;
-  assert(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope<ScopeNames>,
-    resource?: Resource,
-    opts?: { message?: string }
-  ): Promise<void>;
-  assign(actor: Actor, role: RoleDef, scope: Scope<ScopeNames>): Promise<void>;
-  hasRole(actor: Actor, role: RoleDef, scope: Scope<ScopeNames>): Promise<boolean>;
-  unassign(actor: Actor, scope: Scope<ScopeNames>): Promise<void>;
-  grant(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope<ScopeNames>,
-    resource?: Resource
-  ): Promise<void>;
-  deny(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope<ScopeNames>,
-    resource?: Resource
-  ): Promise<void>;
-  revokeGrant(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope<ScopeNames>,
-    resource?: Resource
-  ): Promise<void>;
-  revokeDeny(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope<ScopeNames>,
-    resource?: Resource
-  ): Promise<void>;
-  canAll(
-    actor: Actor,
-    actions: AtomicPermission[],
-    scope: Scope<ScopeNames>,
-    resource?: Resource
-  ): Promise<boolean>;
-  canAny(
-    actor: Actor,
-    actions: AtomicPermission[],
-    scope: Scope<ScopeNames>,
-    resource?: Resource
-  ): Promise<boolean>;
-  canMany(
-    actors: Actor[],
-    action: AtomicPermission,
-    scope: Scope<ScopeNames>,
-    resource?: Resource
-  ): Promise<Map<string, boolean>>;
+  can(params: CanParams<ScopeNames>): Promise<boolean>;
+  assert(params: AssertParams<ScopeNames>): Promise<void>;
+  assign(params: AssignParams<ScopeNames>): Promise<void>;
+  hasRole(params: HasRoleParams<ScopeNames>): Promise<boolean>;
+  unassign(params: UnassignParams<ScopeNames>): Promise<void>;
+  grant(params: CanParams<ScopeNames>): Promise<void>;
+  deny(params: CanParams<ScopeNames>): Promise<void>;
+  revokeGrant(params: CanParams<ScopeNames>): Promise<void>;
+  revokeDeny(params: CanParams<ScopeNames>): Promise<void>;
+  canAll(params: CanAllParams<ScopeNames>): Promise<boolean>;
+  canAny(params: CanAllParams<ScopeNames>): Promise<boolean>;
+  canMany(params: CanManyParams<ScopeNames>): Promise<Map<string, boolean>>;
   explain(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope<ScopeNames>,
-    resource?: Resource
+    params: CanParams<ScopeNames>
   ): Promise<{ result: boolean; reason?: string; role?: string }>;
-  revokeScope(scope: Scope<ScopeNames>): Promise<void>;
-  revokeAll(actor: Actor): Promise<void>;
-  realm(name: ScopeNames): RealmDef | undefined;
+  revokeScope(params: RevokeScopeParams<ScopeNames>): Promise<void>;
+  revokeAll(params: RevokeAllParams): Promise<void>;
+  realm(params: RealmParams<ScopeNames>): RealmDef | undefined;
 }
 
 export function createPermission<ScopeNames extends string = string>(
   options: CreatePermissionOptions<ScopeNames>
 ): PermissionApi<ScopeNames> {
   const { repos, realms } = options;
-  const realmByName = new Map<string, RealmDef>(Object.entries(realms));
 
   async function resolve(
     actor: Actor,
@@ -166,27 +179,29 @@ export function createPermission<ScopeNames extends string = string>(
     return { allowed: false, reason: "role", role: role.name };
   }
 
-  async function can(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope,
-    resource?: Resource
-  ): Promise<boolean> {
+  async function can(params: {
+    actor: Actor;
+    action: AtomicPermission;
+    scope: Scope;
+    resource?: Resource;
+  }): Promise<boolean> {
+    const { actor, action, scope, resource } = params;
     const result = await resolve(actor, action, scope, resource);
     return result.allowed;
   }
 
-  async function assert(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope,
-    resource?: Resource,
-    opts?: { message?: string }
-  ): Promise<void> {
-    const allowed = await can(actor, action, scope, resource);
+  async function assert(params: {
+    actor: Actor;
+    action: AtomicPermission;
+    scope: Scope;
+    resource?: Resource;
+    message?: string;
+  }): Promise<void> {
+    const { actor, action, scope, resource, message } = params;
+    const allowed = await can({ actor, action, scope, resource });
     if (!allowed) {
       throw new PermissionDeniedError(
-        opts?.message ?? `Permission denied: ${action.id}`,
+        message ?? `Permission denied: ${action.id}`,
         actor.id,
         action.id,
         scope.id ?? undefined
@@ -194,38 +209,26 @@ export function createPermission<ScopeNames extends string = string>(
     }
   }
 
-  async function assign(actor: Actor, role: RoleDef, scope: Scope): Promise<void> {
+  async function assign(params: { actor: Actor; role: RoleDef; scope: Scope }): Promise<void> {
+    const { actor, role, scope } = params;
     const realm = getRealmByScope(scope, realms);
     if (!realm) {
       throw new Error(`Unknown scope type: ${scope.type}`);
     }
 
-    const ceilingOk = await checkCeiling(role, actor, repos.assignments, realmByName);
-    if (!ceilingOk) {
-      throw new CeilingViolationError(
-        `Role ${role.name} requires ceiling role ${role.ceiling?.name} in parent realm`,
-        role.ceiling?.name,
-        undefined
-      );
-    }
-
     const existing = await repos.assignments.findOne({
       actorType: actor.type,
       actorId: actor.id,
-      actorOrgId: actor.orgId,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
-      scopeOrgId: scope.orgId,
     } as Parameters<AssignmentsRepo["findOne"]>[0]);
 
     const data = {
       actorType: actor.type,
       actorId: actor.id,
-      actorOrgId: actor.orgId,
       role: role.name,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
-      scopeOrgId: scope.orgId,
     };
 
     if (existing) {
@@ -235,50 +238,46 @@ export function createPermission<ScopeNames extends string = string>(
     }
   }
 
-  async function hasRole(actor: Actor, role: RoleDef, scope: Scope): Promise<boolean> {
+  async function hasRole(params: { actor: Actor; role: RoleDef; scope: Scope }): Promise<boolean> {
+    const { actor, role, scope } = params;
     const assignment = await repos.assignments.findOne({
       actorType: actor.type,
       actorId: actor.id,
-      actorOrgId: actor.orgId,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
-      scopeOrgId: scope.orgId,
     } as Parameters<AssignmentsRepo["findOne"]>[0]);
     return assignment?.role === role.name;
   }
 
-  async function unassign(actor: Actor, scope: Scope): Promise<void> {
+  async function unassign(params: { actor: Actor; scope: Scope }): Promise<void> {
+    const { actor, scope } = params;
     const assignment = await repos.assignments.findOne({
       actorType: actor.type,
       actorId: actor.id,
-      actorOrgId: actor.orgId,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
-      scopeOrgId: scope.orgId,
     } as Parameters<AssignmentsRepo["findOne"]>[0]);
     if (assignment) {
       await repos.assignments.delete(assignment.id);
     }
   }
 
-  async function grant(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope,
-    resource?: Resource
-  ): Promise<void> {
+  async function grant(params: {
+    actor: Actor;
+    action: AtomicPermission;
+    scope: Scope;
+    resource?: Resource;
+  }): Promise<void> {
+    const { actor, action, scope, resource } = params;
     const existing = await repos.overrides.findOne({
       type: "grant",
       actorType: actor.type,
       actorId: actor.id,
-      actorOrgId: actor.orgId,
       permission: action.id,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
-      scopeOrgId: scope.orgId,
       resourceType: resource?.type,
       resourceId: resource?.id,
-      resourceOrgId: resource?.orgId,
     } as Parameters<OverridesRepo["findOne"]>[0]);
 
     if (!existing) {
@@ -286,36 +285,31 @@ export function createPermission<ScopeNames extends string = string>(
         type: "grant",
         actorType: actor.type,
         actorId: actor.id,
-        actorOrgId: actor.orgId,
         permission: action.id,
         scopeType: scope.type,
         scopeId: scope.id ?? null,
-        scopeOrgId: scope.orgId,
         resourceType: resource?.type,
         resourceId: resource?.id,
-        resourceOrgId: resource?.orgId,
       } as CreateInput<Override>);
     }
   }
 
-  async function deny(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope,
-    resource?: Resource
-  ): Promise<void> {
+  async function deny(params: {
+    actor: Actor;
+    action: AtomicPermission;
+    scope: Scope;
+    resource?: Resource;
+  }): Promise<void> {
+    const { actor, action, scope, resource } = params;
     const existing = await repos.overrides.findOne({
       type: "deny",
       actorType: actor.type,
       actorId: actor.id,
-      actorOrgId: actor.orgId,
       permission: action.id,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
-      scopeOrgId: scope.orgId,
       resourceType: resource?.type,
       resourceId: resource?.id,
-      resourceOrgId: resource?.orgId,
     } as Parameters<OverridesRepo["findOne"]>[0]);
 
     if (!existing) {
@@ -323,110 +317,107 @@ export function createPermission<ScopeNames extends string = string>(
         type: "deny",
         actorType: actor.type,
         actorId: actor.id,
-        actorOrgId: actor.orgId,
         permission: action.id,
         scopeType: scope.type,
         scopeId: scope.id ?? null,
-        scopeOrgId: scope.orgId,
         resourceType: resource?.type,
         resourceId: resource?.id,
-        resourceOrgId: resource?.orgId,
       } as CreateInput<Override>);
     }
   }
 
-  async function revokeGrant(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope,
-    resource?: Resource
-  ): Promise<void> {
+  async function revokeGrant(params: {
+    actor: Actor;
+    action: AtomicPermission;
+    scope: Scope;
+    resource?: Resource;
+  }): Promise<void> {
+    const { actor, action, scope, resource } = params;
     const override = await repos.overrides.findOne({
       type: "grant",
       actorType: actor.type,
       actorId: actor.id,
-      actorOrgId: actor.orgId,
       permission: action.id,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
-      scopeOrgId: scope.orgId,
       resourceType: resource?.type,
       resourceId: resource?.id,
-      resourceOrgId: resource?.orgId,
     } as Parameters<OverridesRepo["findOne"]>[0]);
     if (override) {
       await repos.overrides.delete(override.id);
     }
   }
 
-  async function revokeDeny(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope,
-    resource?: Resource
-  ): Promise<void> {
+  async function revokeDeny(params: {
+    actor: Actor;
+    action: AtomicPermission;
+    scope: Scope;
+    resource?: Resource;
+  }): Promise<void> {
+    const { actor, action, scope, resource } = params;
     const override = await repos.overrides.findOne({
       type: "deny",
       actorType: actor.type,
       actorId: actor.id,
-      actorOrgId: actor.orgId,
       permission: action.id,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
-      scopeOrgId: scope.orgId,
       resourceType: resource?.type,
       resourceId: resource?.id,
-      resourceOrgId: resource?.orgId,
     } as Parameters<OverridesRepo["findOne"]>[0]);
     if (override) {
       await repos.overrides.delete(override.id);
     }
   }
 
-  async function canAll(
-    actor: Actor,
-    actions: AtomicPermission[],
-    scope: Scope,
-    resource?: Resource
-  ): Promise<boolean> {
+  async function canAll(params: {
+    actor: Actor;
+    actions: AtomicPermission[];
+    scope: Scope;
+    resource?: Resource;
+  }): Promise<boolean> {
+    const { actor, actions, scope, resource } = params;
     for (const action of actions) {
-      if (!(await can(actor, action, scope, resource))) return false;
+      if (!(await can({ actor, action, scope, resource }))) return false;
     }
     return true;
   }
 
-  async function canAny(
-    actor: Actor,
-    actions: AtomicPermission[],
-    scope: Scope,
-    resource?: Resource
-  ): Promise<boolean> {
+  async function canAny(params: {
+    actor: Actor;
+    actions: AtomicPermission[];
+    scope: Scope;
+    resource?: Resource;
+  }): Promise<boolean> {
+    const { actor, actions, scope, resource } = params;
     for (const action of actions) {
-      if (await can(actor, action, scope, resource)) return true;
+      if (await can({ actor, action, scope, resource })) return true;
     }
     return false;
   }
 
-  async function canMany(
-    actors: Actor[],
-    action: AtomicPermission,
-    scope: Scope,
-    resource?: Resource
-  ): Promise<Map<string, boolean>> {
+  async function canMany(params: {
+    actors: Actor[];
+    action: AtomicPermission;
+    scope: Scope;
+    resource?: Resource;
+  }): Promise<Map<string, boolean>> {
+    const { actors, action, scope, resource } = params;
     const result = new Map<string, boolean>();
     for (const a of actors) {
-      const allowed = await can(a, action, scope, resource);
+      const allowed = await can({ actor: a, action, scope, resource });
       result.set(a.id, allowed);
     }
     return result;
   }
 
-  async function explain(
-    actor: Actor,
-    action: AtomicPermission,
-    scope: Scope,
-    resource?: Resource
-  ): Promise<{ result: boolean; reason?: string; role?: string }> {
+  async function explain(params: {
+    actor: Actor;
+    action: AtomicPermission;
+    scope: Scope;
+    resource?: Resource;
+  }): Promise<{ result: boolean; reason?: string; role?: string }> {
+    const { actor, action, scope, resource } = params;
     const resolved = await resolve(actor, action, scope, resource);
     return {
       result: resolved.allowed,
@@ -435,11 +426,11 @@ export function createPermission<ScopeNames extends string = string>(
     };
   }
 
-  async function revokeScope(scope: Scope): Promise<void> {
+  async function revokeScope(params: { scope: Scope }): Promise<void> {
+    const { scope } = params;
     const assignments = await repos.assignments.findMany({
       scopeType: scope.type,
       scopeId: scope.id ?? null,
-      scopeOrgId: scope.orgId,
     } as Partial<Assignment>);
     for (const a of assignments) {
       await repos.assignments.delete(a.id);
@@ -447,18 +438,17 @@ export function createPermission<ScopeNames extends string = string>(
     const overrides = await repos.overrides.findMany({
       scopeType: scope.type,
       scopeId: scope.id ?? null,
-      scopeOrgId: scope.orgId,
     } as Partial<Override>);
     for (const o of overrides) {
       await repos.overrides.delete(o.id);
     }
   }
 
-  async function revokeAll(actor: Actor): Promise<void> {
+  async function revokeAll(params: { actor: Actor }): Promise<void> {
+    const { actor } = params;
     const assignments = await repos.assignments.findMany({
       actorType: actor.type,
       actorId: actor.id,
-      actorOrgId: actor.orgId,
     } as Partial<Assignment>);
     for (const asn of assignments) {
       await repos.assignments.delete(asn.id);
@@ -466,15 +456,14 @@ export function createPermission<ScopeNames extends string = string>(
     const overrides = await repos.overrides.findMany({
       actorType: actor.type,
       actorId: actor.id,
-      actorOrgId: actor.orgId,
     } as Partial<Override>);
     for (const o of overrides) {
       await repos.overrides.delete(o.id);
     }
   }
 
-  function realm(name: ScopeNames): RealmDef | undefined {
-    return realms[name];
+  function realm(params: { name: ScopeNames }): RealmDef | undefined {
+    return realms[params.name];
   }
 
   return {

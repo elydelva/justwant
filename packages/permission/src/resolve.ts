@@ -29,7 +29,6 @@ function actorToRepo(actor: Actor) {
   return {
     actorType: actor.type,
     actorId: actor.id,
-    actorOrgId: actor.orgId,
   };
 }
 
@@ -37,7 +36,6 @@ function scopeToRepo(scope: Scope) {
   return {
     scopeType: scope.type,
     scopeId: scope.id ?? null,
-    scopeOrgId: scope.orgId,
   };
 }
 
@@ -86,39 +84,4 @@ export async function findGrantOverride(ctx: ResolveContext): Promise<Override |
 
 export function getRolePermissions(role: RoleDef): Set<string> {
   return role.resolved;
-}
-
-export async function checkCeiling(
-  role: RoleDef,
-  actor: Actor,
-  assignments: AssignmentsRepo,
-  realmByName: Map<string, RealmDef>
-): Promise<boolean> {
-  const ceiling = role.ceiling;
-  if (!ceiling) return true;
-
-  const parentRealmName = ceiling.realm;
-  if (!parentRealmName) return true;
-
-  const parentRealm = realmByName.get(parentRealmName);
-  if (!parentRealm) return true;
-
-  const parentScope = parentRealm.scope;
-  const scopeId = parentScope.singular ? null : "";
-
-  const assignment = await assignments.findOne({
-    ...actorToRepo(actor),
-    scopeType: parentRealmName,
-    scopeId: parentScope.singular ? null : scopeId,
-  } as Partial<Assignment>);
-
-  if (!assignment) return false;
-
-  const userRole = parentRealm.roleByName.get(assignment.role);
-  if (!userRole) return false;
-
-  for (const permId of ceiling.resolved) {
-    if (!userRole.resolved.has(permId)) return false;
-  }
-  return true;
 }

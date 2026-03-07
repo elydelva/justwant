@@ -8,7 +8,7 @@ import { createRealm } from "./createRealm.js";
 
 describe("createRealm", () => {
   test("composes scope, actors, resources, permissions, roles", () => {
-    const appScope = createScope({ name: "app", singular: true });
+    const appScope = createScope({ name: "app" });
     const userActor = createActor({ name: "user" });
     const documentResource = createResource({ name: "document" });
     const documentRead = createAtomicPermission({
@@ -39,7 +39,7 @@ describe("createRealm", () => {
   });
 
   test("roleByName maps role names to role defs", () => {
-    const appScope = createScope({ name: "app", singular: true });
+    const appScope = createScope({ name: "app" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const member = createRole({ name: "member", permissions: [documentRead], realm: "app" });
@@ -58,7 +58,7 @@ describe("createRealm", () => {
   });
 
   test("permissionById maps permission ids to atomic permissions", () => {
-    const appScope = createScope({ name: "app", singular: true });
+    const appScope = createScope({ name: "app" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const documentWrite = createAtomicPermission({ domain: "document", action: "write" });
@@ -81,7 +81,7 @@ describe("createRealm", () => {
   });
 
   test("defaults resources to empty array when omitted", () => {
-    const appScope = createScope({ name: "app", singular: true });
+    const appScope = createScope({ name: "app" });
     const userActor = createActor({ name: "user" });
     const documentRead = createAtomicPermission({ domain: "document", action: "read" });
     const member = createRole({ name: "member", permissions: [documentRead], realm: "app" });

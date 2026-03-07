@@ -10,20 +10,17 @@ export type OverrideType = "grant" | "deny";
 export interface Actor<T extends string = string> {
   type: T;
   id: string;
-  orgId?: string;
 }
 
 /** Scope — type is user-defined via createScope({ name }) */
 export interface Scope<T extends string = string> {
   type: T;
   id?: string | null;
-  orgId?: string;
 }
 
 export interface Resource {
   type: string;
   id: string;
-  orgId?: string;
 }
 
 /** Persistence entity — actorType/scopeType are strings (user-defined) */
@@ -31,11 +28,9 @@ export interface Assignment {
   id: string;
   actorType: string;
   actorId: string;
-  actorOrgId?: string;
   role: string;
   scopeType: string;
   scopeId: string | null;
-  scopeOrgId?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -45,14 +40,11 @@ export interface Override {
   type: OverrideType;
   actorType: string;
   actorId: string;
-  actorOrgId?: string;
   permission: string;
   scopeType: string;
   scopeId: string | null;
-  scopeOrgId?: string;
   resourceType?: string;
   resourceId?: string;
-  resourceOrgId?: string;
   grantedBy?: string;
   deniedBy?: string;
   createdAt?: Date;

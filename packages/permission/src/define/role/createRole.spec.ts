@@ -28,15 +28,13 @@ describe("createRole", () => {
     expect(role.resolved.has("settings:dangerZone")).toBe(false);
   });
 
-  test("exposes realm, ceiling, name, permissions, except", () => {
+  test("exposes realm, name, permissions, except", () => {
     const docRead = createAtomicPermission({ domain: "document", action: "read" });
     const docWrite = createAtomicPermission({ domain: "document", action: "write" });
-    const appAdmin = createRole({ name: "admin", permissions: [docRead], realm: "app" });
     const orgOwner = createRole({
       name: "owner",
       permissions: [docRead, docWrite],
       except: [docWrite],
-      ceiling: appAdmin,
       realm: "org",
     });
 
@@ -44,7 +42,6 @@ describe("createRole", () => {
     expect(orgOwner.permissions).toEqual([docRead, docWrite]);
     expect(orgOwner.except).toEqual([docWrite]);
     expect(orgOwner.realm).toBe("org");
-    expect(orgOwner.ceiling).toBe(appAdmin);
     expect(orgOwner.resolved.has("document:read")).toBe(true);
     expect(orgOwner.resolved.has("document:write")).toBe(false);
   });

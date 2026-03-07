@@ -1,6 +1,6 @@
 {
   "name": "@justwant/permission",
-  "version": "0.2.0",
+  "version": "2.0.0",
   "description": "RBAC/ABAC with data-agnostic repos. Scopes, actors, roles, realms, grant/deny overrides.",
   "type": "module",
   "license": "MIT",
