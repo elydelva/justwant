@@ -1,0 +1,232 @@
+{
+  "name": "@justwant/db",
+  "version": "1.0.0",
+  "description": "Data Access Layer (DAL) for transactional databases. Contract-first, ORM-agnostic. Drizzle, Prisma, Waddler.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/db"
+  },
+  "keywords": [
+    "dal",
+    "data-access-layer",
+    "database",
+    "adapter",
+    "orm",
+    "contract",
+    "typescript",
+    "drizzle",
+    "prisma",
+    "waddler"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./base": {
+      "types": "./dist/base/index.d.ts",
+      "import": "./dist/base/index.js",
+      "default": "./dist/base/index.js"
+    },
+    "./table": {
+      "types": "./dist/base/table.d.ts",
+      "import": "./dist/base/table.js",
+      "default": "./dist/base/table.js"
+    },
+    "./adapter": {
+      "types": "./dist/base/adapter.d.ts",
+      "import": "./dist/base/adapter.js",
+      "default": "./dist/base/adapter.js"
+    },
+    "./errors": {
+      "types": "./dist/base/errors.d.ts",
+      "import": "./dist/base/errors.js",
+      "default": "./dist/base/errors.js"
+    },
+    "./conforms": {
+      "types": "./dist/base/conforms.d.ts",
+      "import": "./dist/base/conforms.js",
+      "default": "./dist/base/conforms.js"
+    },
+    "./drizzle": {
+      "types": "./dist/drizzle/index.d.ts",
+      "import": "./dist/drizzle/index.js",
+      "default": "./dist/drizzle/index.js"
+    },
+    "./drizzle/defineMappedTable": {
+      "types": "./dist/drizzle/defineMappedTable.d.ts",
+      "import": "./dist/drizzle/defineMappedTable.js",
+      "default": "./dist/drizzle/defineMappedTable.js"
+    },
+    "./drizzle/buildWhere": {
+      "types": "./dist/drizzle/buildWhere.d.ts",
+      "import": "./dist/drizzle/buildWhere.js",
+      "default": "./dist/drizzle/buildWhere.js"
+    },
+    "./drizzle/buildOrderBy": {
+      "types": "./dist/drizzle/buildOrderBy.d.ts",
+      "import": "./dist/drizzle/buildOrderBy.js",
+      "default": "./dist/drizzle/buildOrderBy.js"
+    },
+    "./drizzle/buildPagination": {
+      "types": "./dist/drizzle/buildPagination.d.ts",
+      "import": "./dist/drizzle/buildPagination.js",
+      "default": "./dist/drizzle/buildPagination.js"
+    },
+    "./drizzle/upsert": {
+      "types": "./dist/drizzle/upsert.d.ts",
+      "import": "./dist/drizzle/upsert.js",
+      "default": "./dist/drizzle/upsert.js"
+    },
+    "./drizzle/bulkInsert": {
+      "types": "./dist/drizzle/bulkInsert.d.ts",
+      "import": "./dist/drizzle/bulkInsert.js",
+      "default": "./dist/drizzle/bulkInsert.js"
+    },
+    "./drizzle/collectSchemas": {
+      "types": "./dist/drizzle/collectSchemas.d.ts",
+      "import": "./dist/drizzle/collectSchemas.js",
+      "default": "./dist/drizzle/collectSchemas.js"
+    },
+    "./drizzle/errors": {
+      "types": "./dist/drizzle/errors.d.ts",
+      "import": "./dist/drizzle/errors.js",
+      "default": "./dist/drizzle/errors.js"
+    },
+    "./prisma": {
+      "types": "./dist/prisma/index.d.ts",
+      "import": "./dist/prisma/index.js",
+      "default": "./dist/prisma/index.js"
+    },
+    "./waddler": {
+      "types": "./dist/waddler/index.d.ts",
+      "import": "./dist/waddler/index.js",
+      "default": "./dist/waddler/index.js"
+    },
+    "./bun-sqlite": {
+      "types": "./dist/waddler/bun-sqlite/index.d.ts",
+      "import": "./dist/waddler/bun-sqlite/index.js",
+      "default": "./dist/waddler/bun-sqlite/index.js"
+    },
+    "./pg": {
+      "types": "./dist/waddler/pg/index.d.ts",
+      "import": "./dist/waddler/pg/index.js",
+      "default": "./dist/waddler/pg/index.js"
+    },
+    "./neon": {
+      "types": "./dist/waddler/neon/index.d.ts",
+      "import": "./dist/waddler/neon/index.js",
+      "default": "./dist/waddler/neon/index.js"
+    },
+    "./vercel-postgres": {
+      "types": "./dist/waddler/vercel-postgres/index.d.ts",
+      "import": "./dist/waddler/vercel-postgres/index.js",
+      "default": "./dist/waddler/vercel-postgres/index.js"
+    },
+    "./xata": {
+      "types": "./dist/waddler/xata/index.d.ts",
+      "import": "./dist/waddler/xata/index.js",
+      "default": "./dist/waddler/xata/index.js"
+    },
+    "./pglite": {
+      "types": "./dist/waddler/pglite/index.d.ts",
+      "import": "./dist/waddler/pglite/index.js",
+      "default": "./dist/waddler/pglite/index.js"
+    },
+    "./bun-sql": {
+      "types": "./dist/waddler/bun-sql/index.d.ts",
+      "import": "./dist/waddler/bun-sql/index.js",
+      "default": "./dist/waddler/bun-sql/index.js"
+    },
+    "./postgres-js": {
+      "types": "./dist/waddler/postgres-js/index.d.ts",
+      "import": "./dist/waddler/postgres-js/index.js",
+      "default": "./dist/waddler/postgres-js/index.js"
+    },
+    "./mysql": {
+      "types": "./dist/waddler/mysql/index.d.ts",
+      "import": "./dist/waddler/mysql/index.js",
+      "default": "./dist/waddler/mysql/index.js"
+    },
+    "./planetscale": {
+      "types": "./dist/waddler/planetscale/index.d.ts",
+      "import": "./dist/waddler/planetscale/index.js",
+      "default": "./dist/waddler/planetscale/index.js"
+    },
+    "./tidb": {
+      "types": "./dist/waddler/tidb/index.d.ts",
+      "import": "./dist/waddler/tidb/index.js",
+      "default": "./dist/waddler/tidb/index.js"
+    },
+    "./turso": {
+      "types": "./dist/waddler/turso/index.d.ts",
+      "import": "./dist/waddler/turso/index.js",
+      "default": "./dist/waddler/turso/index.js"
+    },
+    "./d1": {
+      "types": "./dist/waddler/d1/index.d.ts",
+      "import": "./dist/waddler/d1/index.js",
+      "default": "./dist/waddler/d1/index.js"
+    },
+    "./durable-objects": {
+      "types": "./dist/waddler/durable-objects/index.d.ts",
+      "import": "./dist/waddler/durable-objects/index.js",
+      "default": "./dist/waddler/durable-objects/index.js"
+    },
+    "./better-sqlite3": {
+      "types": "./dist/waddler/better-sqlite3/index.d.ts",
+      "import": "./dist/waddler/better-sqlite3/index.js",
+      "default": "./dist/waddler/better-sqlite3/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "pretest": "prisma generate && DATABASE_URL=file:./test.db prisma db push --skip-generate",
+    "test": "bun test"
+  },
+  "files": ["dist", "README.md", "docs", "prisma"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@justwant/contract": "workspace:*"
+  },
+  "peerDependencies": {
+    "@standard-schema/spec": "^1.0.0",
+    "drizzle-orm": "^0.45.0 || ^1.0.0-beta",
+    "@prisma/client": "^5.0.0 || ^6.0.0",
+    "waddler": "*"
+  },
+  "peerDependenciesMeta": {
+    "@standard-schema/spec": {
+      "optional": true
+    },
+    "drizzle-orm": {
+      "optional": true
+    },
+    "@prisma/client": {
+      "optional": true
+    },
+    "waddler": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@standard-schema/spec": "^1.1.0",
+    "@justwant/tsconfig": "workspace:*",
+    "@prisma/client": "^6.0.0",
+    "better-sqlite3": "^11.0.0",
+    "drizzle-orm": "^0.45.0",
+    "prisma": "^6.0.0",
+    "typescript": "^5.7.0",
+    "waddler": "*"
+  }
+}

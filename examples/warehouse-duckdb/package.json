@@ -1,0 +1,11 @@
+{
+  "name": "warehouse-duckdb-example",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@justwant/contract": "workspace:*",
+    "@justwant/warehouse": "workspace:*",
+    "@duckdb/node-api": "*",
+    "waddler": "*"
+  }
+}

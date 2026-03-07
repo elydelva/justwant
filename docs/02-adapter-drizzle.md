@@ -1,8 +1,8 @@
-# 02 — @justwant/adapter/drizzle — Implémentation Drizzle
+# 02 — @justwant/db/drizzle — Implémentation Drizzle
 
 ## Objectif
 
-Package qui **étend** `@justwant/adapter` avec une implémentation concrète pour Drizzle ORM. Supporte pg, mysql, sqlite via le même contrat.
+Package qui **étend** `@justwant/db` avec une implémentation concrète pour Drizzle ORM. Supporte pg, mysql, sqlite via le même contrat.
 
 ## Ce qu'il expose
 
@@ -51,7 +51,7 @@ export interface DrizzleMappedTable<TTable extends Table, TContract extends AnyC
 
 ```ts
 // @justwant/auth/adapters/drizzle.ts
-import { createDrizzleAdapter } from '@justwant/adapter/drizzle'
+import { createDrizzleAdapter } from '@justwant/db/drizzle'
 import type { AuthAdapter } from '@justwant/auth'
 
 export function drizzleAuthAdapter(

@@ -1,0 +1,60 @@
+{
+  "name": "@justwant/contract",
+  "version": "0.2.0",
+  "description": "Contract definitions for defineContract, fields, conforms, validate. Schema-less, type-safe.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/contract"
+  },
+  "keywords": ["contract", "schema", "validation", "typescript", "standard-schema"],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./fields": {
+      "types": "./dist/fields.d.ts",
+      "import": "./dist/fields.js",
+      "default": "./dist/fields.js"
+    },
+    "./conforms": {
+      "types": "./dist/conforms.d.ts",
+      "import": "./dist/conforms.js",
+      "default": "./dist/conforms.js"
+    },
+    "./validate": {
+      "types": "./dist/validate.d.ts",
+      "import": "./dist/validate.js",
+      "default": "./dist/validate.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@standard-schema/spec": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@standard-schema/spec": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "@standard-schema/spec": "^1.1.0",
+    "typescript": "^5.7.0"
+  }
+}

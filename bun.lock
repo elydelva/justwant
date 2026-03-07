@@ -13,26 +13,6 @@
         "typescript": "^5.7.0",
       },
     },
-    "packages/adapter": {
-      "name": "@justwant/adapter",
-      "version": "0.1.0",
-      "devDependencies": {
-        "@justwant/tsconfig": "workspace:*",
-        "@prisma/client": "^6.0.0",
-        "better-sqlite3": "^11.0.0",
-        "drizzle-orm": "^0.45.0",
-        "prisma": "^6.0.0",
-        "typescript": "^5.7.0",
-      },
-      "peerDependencies": {
-        "@prisma/client": "*",
-        "drizzle-orm": "^0.45.0 || ^1.0.0-beta",
-      },
-      "optionalPeers": [
-        "@prisma/client",
-        "drizzle-orm",
-      ],
-    },
     "packages/analytics": {
       "name": "@justwant/analytics",
       "version": "0.0.0",
@@ -67,9 +47,9 @@
     },
     "packages/cache": {
       "name": "@justwant/cache",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
-        "@justwant/crypto": "workspace:*",
+        "@justwant/crypto": "^0.1.0",
         "@standard-schema/spec": "^1.1.0",
       },
       "devDependencies": {
@@ -77,14 +57,18 @@
         "typescript": "^5.7.0",
       },
       "peerDependencies": {
-        "@upstash/redis": "*",
-        "@vercel/kv": "*",
-        "ioredis": "*",
+        "@msgpack/msgpack": "^3.0.0",
+        "@upstash/redis": "^1.0.0",
+        "@vercel/kv": "^1.0.0",
+        "ioredis": "^5.0.0",
+        "superjson": "^2.0.0",
       },
       "optionalPeers": [
+        "@msgpack/msgpack",
         "@upstash/redis",
         "@vercel/kv",
         "ioredis",
+        "superjson",
       ],
     },
     "packages/config": {
@@ -114,9 +98,24 @@
         "typescript": "^5.7.0",
       },
     },
+    "packages/contract": {
+      "name": "@justwant/contract",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@justwant/tsconfig": "workspace:*",
+        "@standard-schema/spec": "^1.1.0",
+        "typescript": "^5.7.0",
+      },
+      "peerDependencies": {
+        "@standard-schema/spec": "^1.0.0",
+      },
+      "optionalPeers": [
+        "@standard-schema/spec",
+      ],
+    },
     "packages/cookie": {
       "name": "@justwant/cookie",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
@@ -132,7 +131,7 @@
     },
     "packages/crypto": {
       "name": "@justwant/crypto",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@noble/ciphers": "^2.1.0",
         "@noble/hashes": "^2.0.0",
@@ -145,9 +144,38 @@
         "typescript": "^5.7.0",
       },
     },
+    "packages/db": {
+      "name": "@justwant/db",
+      "version": "0.2.0",
+      "dependencies": {
+        "@justwant/contract": "workspace:*",
+      },
+      "devDependencies": {
+        "@justwant/tsconfig": "workspace:*",
+        "@prisma/client": "^6.0.0",
+        "@standard-schema/spec": "^1.1.0",
+        "better-sqlite3": "^11.0.0",
+        "drizzle-orm": "^0.45.0",
+        "prisma": "^6.0.0",
+        "typescript": "^5.7.0",
+        "waddler": "*",
+      },
+      "peerDependencies": {
+        "@prisma/client": "^5.0.0 || ^6.0.0",
+        "@standard-schema/spec": "^1.0.0",
+        "drizzle-orm": "^0.45.0 || ^1.0.0-beta",
+        "waddler": "*",
+      },
+      "optionalPeers": [
+        "@prisma/client",
+        "@standard-schema/spec",
+        "drizzle-orm",
+        "waddler",
+      ],
+    },
     "packages/env": {
       "name": "@justwant/env",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@standard-schema/spec": "^1.1.0",
       },
@@ -159,7 +187,7 @@
     },
     "packages/event": {
       "name": "@justwant/event",
-      "version": "0.0.0",
+      "version": "1.0.0",
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
@@ -183,7 +211,7 @@
     },
     "packages/id": {
       "name": "@justwant/id",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "nanoid": "^5.0.0",
         "ulid": "^3.0.0",
@@ -312,6 +340,29 @@
         "typescript": "^5.7.0",
       },
     },
+    "packages/warehouse": {
+      "name": "@justwant/warehouse",
+      "version": "0.1.0",
+      "dependencies": {
+        "@justwant/contract": "workspace:*",
+      },
+      "devDependencies": {
+        "@duckdb/node-api": "^1.4.0-r.1",
+        "@justwant/tsconfig": "workspace:*",
+        "typescript": "^5.7.0",
+        "waddler": "*",
+      },
+      "peerDependencies": {
+        "@clickhouse/client": "*",
+        "@duckdb/node-api": "*",
+        "waddler": "*",
+      },
+      "optionalPeers": [
+        "@clickhouse/client",
+        "@duckdb/node-api",
+        "waddler",
+      ],
+    },
     "packages/webhook": {
       "name": "@justwant/webhook",
       "version": "0.0.0",
@@ -376,13 +427,25 @@
 
     "@changesets/write": ["@changesets/write@0.4.0", "", { "dependencies": { "@changesets/types": "^6.1.0", "fs-extra": "^7.0.1", "human-id": "^4.1.1", "prettier": "^2.7.1" } }, "sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q=="],
 
+    "@duckdb/node-api": ["@duckdb/node-api@1.4.0-r.2", "", { "dependencies": { "@duckdb/node-bindings": "1.4.0-r.2" } }, "sha512-kt5598+3L1TiSUCyNZ5Zh12hHIQeAzUj51CXKXycQaobEf3KooXZJhjiM1RkELKoGW+GeRotgPw2QUoIyeaWVg=="],
+
+    "@duckdb/node-bindings": ["@duckdb/node-bindings@1.4.0-r.2", "", { "optionalDependencies": { "@duckdb/node-bindings-darwin-arm64": "1.4.0-r.2", "@duckdb/node-bindings-darwin-x64": "1.4.0-r.2", "@duckdb/node-bindings-linux-arm64": "1.4.0-r.2", "@duckdb/node-bindings-linux-x64": "1.4.0-r.2", "@duckdb/node-bindings-win32-x64": "1.4.0-r.2" } }, "sha512-FZEWyV16aQix8rD2BZtcnY3EFw4i+1xP8WRbo1UampJve7krrLV4t9jMSmh4r+Nc5BRJ006A4/jwD6OpNhbR2g=="],
+
+    "@duckdb/node-bindings-darwin-arm64": ["@duckdb/node-bindings-darwin-arm64@1.4.0-r.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-WaTZhpodKIKROqPC5b3l00rSa1xdnZUmPqngGEJlRSR/YeOGnh1J1ONx5o3q9vkbbzSbsk7POtFwTbmJCvrIDw=="],
+
+    "@duckdb/node-bindings-darwin-x64": ["@duckdb/node-bindings-darwin-x64@1.4.0-r.2", "", { "os": "darwin", "cpu": "x64" }, "sha512-dSCGn4ZV8R7vCdnlJpOfadNtf9YqvpdAGo4CC48O7uRbargDIGQ4lpRJUSAoKsvxC63p3aG3p19regFpRbJqMA=="],
+
+    "@duckdb/node-bindings-linux-arm64": ["@duckdb/node-bindings-linux-arm64@1.4.0-r.2", "", { "os": "linux", "cpu": "arm64" }, "sha512-xB3xI5QcUC7LiyKPFZOYam5nV31SkgGTHazC58sACBB7OSpjBTxD0+EKdTOOA3IymR+mZ7WCPCLfKhyemreqbQ=="],
+
+    "@duckdb/node-bindings-linux-x64": ["@duckdb/node-bindings-linux-x64@1.4.0-r.2", "", { "os": "linux", "cpu": "x64" }, "sha512-t1tuDc2FBdj1hRuP1rtoPoIhnDgMYSMFh1R/OmNbtbvI2K4RIMICp8ya6/RiP2NGyXk9A+NMDooi9kLuNQmlvQ=="],
+
+    "@duckdb/node-bindings-win32-x64": ["@duckdb/node-bindings-win32-x64@1.4.0-r.2", "", { "os": "win32", "cpu": "x64" }, "sha512-aoJHj+EumU2bLKMxk5OpJrD12KREt/o3FF3GaAkhFsQZc95AKWqdOkp3BWGaMqGq7A7cWoqSKBHxMHAlZI9z0A=="],
+
     "@epic-web/invariant": ["@epic-web/invariant@1.0.0", "", {}, "sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA=="],
 
     "@inquirer/external-editor": ["@inquirer/external-editor@1.0.3", "", { "dependencies": { "chardet": "^2.1.1", "iconv-lite": "^0.7.0" }, "peerDependencies": { "@types/node": ">=18" }, "optionalPeers": ["@types/node"] }, "sha512-RWbSrDiYmO4LbejWY7ttpxczuwQyZLBUyygsA9Nsv95hpzUWwnNTVQmAq3xuh7vNwCp07UTmE5i11XAEExx4RA=="],
 
     "@ioredis/commands": ["@ioredis/commands@1.5.1", "", {}, "sha512-JH8ZL/ywcJyR9MmJ5BNqZllXNZQqQbnVZOqpPQqE1vHiFgAw4NHbvE0FOduNU8IX9babitBT46571OnPTT0Zcw=="],
-
-    "@justwant/adapter": ["@justwant/adapter@workspace:packages/adapter"],
 
     "@justwant/analytics": ["@justwant/analytics@workspace:packages/analytics"],
 
@@ -400,11 +463,15 @@
 
     "@justwant/context": ["@justwant/context@workspace:packages/context"],
 
+    "@justwant/contract": ["@justwant/contract@workspace:packages/contract"],
+
     "@justwant/cookie": ["@justwant/cookie@workspace:packages/cookie"],
 
     "@justwant/cron": ["@justwant/cron@workspace:packages/cron"],
 
     "@justwant/crypto": ["@justwant/crypto@workspace:packages/crypto"],
+
+    "@justwant/db": ["@justwant/db@workspace:packages/db"],
 
     "@justwant/env": ["@justwant/env@workspace:packages/env"],
 
@@ -445,6 +512,8 @@
     "@justwant/tsconfig": ["@justwant/tsconfig@workspace:packages/tsconfig"],
 
     "@justwant/waitlist": ["@justwant/waitlist@workspace:packages/waitlist"],
+
+    "@justwant/warehouse": ["@justwant/warehouse@workspace:packages/warehouse"],
 
     "@justwant/webhook": ["@justwant/webhook@workspace:packages/webhook"],
 
@@ -949,6 +1018,8 @@
     "universalify": ["universalify@0.1.2", "", {}, "sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg=="],
 
     "util-deprecate": ["util-deprecate@1.0.2", "", {}, "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw=="],
+
+    "waddler": ["waddler@0.1.1", "", { "peerDependencies": { "@clickhouse/client": "^1.11.2", "@duckdb/node-api": "^1.1.2-alpha.4", "@electric-sql/pglite": "^0.2.17", "@libsql/client": "^0.15.4", "@libsql/client-wasm": "^0.15.4", "@neondatabase/serverless": "^1.0.0", "@planetscale/database": "^1.19.0", "@tidbcloud/serverless": "^0.2.0", "@vercel/postgres": "^0.10.0", "@xata.io/client": "^0.30.1", "better-sqlite3": "^11.9.1", "bun-types": "*", "duckdb": "^1.2.1", "gel": "^2.0.2", "mysql2": "^3.14.0", "pg": "^8.14.0", "pg-query-stream": "^4.8.0", "postgres": "^3.4.5" }, "optionalPeers": ["@clickhouse/client", "@duckdb/node-api", "@electric-sql/pglite", "@libsql/client", "@libsql/client-wasm", "@neondatabase/serverless", "@planetscale/database", "@tidbcloud/serverless", "@vercel/postgres", "@xata.io/client", "better-sqlite3", "bun-types", "duckdb", "gel", "mysql2", "pg", "pg-query-stream", "postgres"] }, "sha512-lBJXYFBLEpYe+scAeCJmLj6Iqweuq1whM6Am3I9WfopOCFxvKz8Nq5hXoy8/b3zwJqHIQMglFIvM4skRydSpZg=="],
 
     "web-streams-polyfill": ["web-streams-polyfill@3.3.3", "", {}, "sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw=="],
 

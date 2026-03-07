@@ -1,0 +1,59 @@
+{
+  "name": "@justwant/warehouse",
+  "version": "1.0.0",
+  "description": "DAL for data warehouses (OLAP). Batch insert, query, aggregate. ClickHouse, DuckDB.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/warehouse"
+  },
+  "keywords": ["warehouse", "olap", "clickhouse", "duckdb", "dal", "contract"],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./clickhouse": {
+      "types": "./dist/clickhouse/index.d.ts",
+      "import": "./dist/clickhouse/index.js",
+      "default": "./dist/clickhouse/index.js"
+    },
+    "./duckdb": {
+      "types": "./dist/duckdb/index.d.ts",
+      "import": "./dist/duckdb/index.js",
+      "default": "./dist/duckdb/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "files": ["dist", "README.md", "docs"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@justwant/contract": "workspace:*"
+  },
+  "peerDependencies": {
+    "waddler": "*"
+  },
+  "peerDependenciesMeta": {
+    "waddler": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@duckdb/node-api": "*",
+    "@justwant/tsconfig": "workspace:*",
+    "typescript": "^5.7.0",
+    "waddler": "*"
+  }
+}

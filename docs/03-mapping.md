@@ -27,7 +27,7 @@ type UserRecord = {
 
 ```ts
 // @justwant/auth/contract.ts
-import { defineContract, field } from '@justwant/adapter'
+import { defineContract, field } from '@justwant/db'
 
 export const UserContract = defineContract({
   id:             field<string>().required(),
@@ -41,7 +41,7 @@ export const UserContract = defineContract({
 ## defineMappedTable — usage
 
 ```ts
-import { defineMappedTable } from '@justwant/adapter/drizzle'
+import { defineMappedTable } from '@justwant/db/drizzle'
 import { UserContract } from '@justwant/auth'
 import { accounts } from './db/schema'
 

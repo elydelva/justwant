@@ -4,7 +4,7 @@
 
 ```
 Foundation
-  adapter · plugin · id · crypto · env · lock · retry · event · context · cookie · config
+  db · plugin · id · crypto · env · lock · retry · event · context · cookie · config
 
 Identity    ← nouveau tier entre Foundation et Building blocks
   user · org
@@ -22,8 +22,8 @@ Features
 
 | Ordre | Package | Description |
 |-------|---------|-------------|
-| 01 | `@justwant/adapter` | Contrats purs, zéro dépendance — base pour tous les adapters |
-| 02 | `@justwant/adapter/drizzle` | Implémentation Drizzle avec mapping |
+| 01 | `@justwant/db` | Contrats purs, zéro dépendance — base pour tous les adapters |
+| 02 | `@justwant/db/drizzle` | Implémentation Drizzle avec mapping |
 | 03 | Mapping | Système type-safe de mapping schema utilisateur ↔ contrats |
 | 04 | `@justwant/user` | Définition canonique d'un utilisateur — identité seule |
 | 05 | `@justwant/org` (org + member) | Organisations et membres |
@@ -44,7 +44,7 @@ Features
 
 3. **`@justwant/auth` devient optionnel** — on peut avoir des users sans auth. `@justwant/user` et `@justwant/auth` sont deux packages distincts qui collaborent.
 
-4. **Contrats purs dans `@justwant/adapter`** — les types Drizzle/Prisma ne franchissent jamais la frontière vers les packages de feature.
+4. **Contrats purs dans `@justwant/db`** — les types Drizzle/Prisma ne franchissent jamais la frontière vers les packages de feature.
 
 5. **Mapping non-invasif** — l'utilisateur mappe son schema existant vers ce qu'attend le package. `@justwant/*` s'adapte à lui, pas l'inverse.
 

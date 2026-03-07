@@ -1,0 +1,11 @@
+{
+  "name": "warehouse-clickhouse-example",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@justwant/contract": "workspace:*",
+    "@justwant/warehouse": "workspace:*",
+    "@clickhouse/client": "*",
+    "waddler": "*"
+  }
+}

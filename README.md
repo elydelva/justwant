@@ -7,7 +7,7 @@ That's a complete platform.
 
 ```ts
 import { createEverything }    from '@justwant/everything'
-import { createDrizzleAdapter } from '@justwant/adapter/drizzle'
+import { createDrizzleAdapter } from '@justwant/db/drizzle'
 import { emailPasswordPlugin } from '@justwant/auth/plugin-email-password'
 import { oauthPlugin }         from '@justwant/auth/plugin-oauth'
 import { twoFactorPlugin }     from '@justwant/auth/plugin-two-factor'
@@ -67,7 +67,7 @@ Small, focused packages with no inter-package dependencies. Everything else is b
 
 | Package | Role |
 |---|---|
-| [`@justwant/adapter`](./packages/adapter) | Adapter contracts, base, Drizzle & Prisma. `defineContract()`, `AdapterError`, `createDrizzleAdapter` |
+| [`@justwant/db`](./packages/db) | Data Access Layer. Contracts, Drizzle, Prisma, Waddler. `defineContract()`, `AdapterError`, `createDrizzleAdapter` |
 | [`@justwant/plugin`](./packages/plugin) | Plugin system. `createPlugin()`, dependency graph, declaration merging |
 | [`@justwant/id`](./packages/id) | ID generation. `ulid()`, `uuid()`, `prefixed('key')` → `key_01J8X` |
 | [`@justwant/crypto`](./packages/crypto) | HMAC, hash, sign, verify, encrypt, decrypt |
@@ -280,7 +280,7 @@ This is a [pnpm workspace](https://pnpm.io/workspaces) monorepo.
 pnpm install                # install all dependencies
 pnpm build                  # build all packages
 pnpm test                   # run all tests
-cd packages/adapter && pnpm dev  # work on a single package
+cd packages/db && pnpm dev  # work on a single package
 ```
 
 Each package has its own `CONTRIBUTING.md` with adapter and plugin authoring guidelines.

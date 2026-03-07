@@ -1,4 +1,4 @@
-# 01 — @justwant/adapter — Contrats purs
+# 01 — @justwant/db — Contrats purs
 
 ## Objectif
 
@@ -9,7 +9,7 @@ Package de base contenant **uniquement les contrats et types** que tous les adap
 ### Contrat de champ
 
 ```ts
-// @justwant/adapter/contract.ts
+// @justwant/db/contract.ts
 export type FieldDef<T, Req extends boolean> = {
   _type:     T
   _required: Req
@@ -37,7 +37,7 @@ export function defineContract<T extends AnyContract>(contract: T): T {
 ### Interface MappedTable
 
 ```ts
-// @justwant/adapter/table.ts
+// @justwant/db/table.ts
 export interface MappedTable<TContract extends AnyContract> {
   readonly infer: InferContract<TContract>
   readonly contract: TContract
@@ -65,7 +65,7 @@ export interface BoundQuery<TResult> {
 ### Interface BaseAdapter
 
 ```ts
-// @justwant/adapter/adapter.ts
+// @justwant/db/adapter.ts
 export interface BaseAdapter {
   readonly dialect: 'pg' | 'mysql' | 'sqlite'
 
@@ -86,15 +86,15 @@ export interface PackageAdapter<TContract extends AnyContract> {
 ## Hiérarchie
 
 ```
-@justwant/adapter
+@justwant/db
   defineContract, field, InferContract
   MappedTable, MappedTableInternal, BoundQuery
   BaseAdapter, PackageAdapter
   → zéro dépendance externe
         ↓ étendu par
-@justwant/adapter/drizzle
-@justwant/adapter/prisma
-@justwant/adapter-custom (communauté)
+@justwant/db/drizzle
+@justwant/db/prisma
+@justwant/db-custom (communauté)
         ↓ consommé par
 @justwant/auth, @justwant/audit, @justwant/keys...
   → voient uniquement MappedTable<TContract>
