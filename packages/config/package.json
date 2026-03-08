@@ -1,6 +1,6 @@
 {
   "name": "@justwant/config",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Config multi-source avec merge ordonné et typage fort",
   "type": "module",
   "license": "MIT",

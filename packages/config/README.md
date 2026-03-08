@@ -41,6 +41,24 @@ const apiKey = await config.get("apiKey", "default"); // typed fallback
 const hasKey = await config.has("apiKey");
 ```
 
+## Standard Schema validation
+
+Config supports [Standard Schema](https://github.com/standard-schema/standard-schema) for runtime validation. Pass a `schema` map (key → `StandardSchemaV1`) in `defineEnvironment`; values are validated on `get()`.
+
+```ts
+import { z } from "zod"; // or valibot, arktype, etc.
+
+const prod = defineEnvironment({
+  name: "production",
+  sources: { port: defineValue({ from: envSource, key: "PORT" }) },
+  schema: {
+    port: z.coerce.number().min(1).max(65535),
+  },
+});
+```
+
+Invalid values throw `ConfigValidationError`. Use `validation: { onError: "warn" }` to log instead of throw.
+
 ## Exports
 
 | Path | Description |
