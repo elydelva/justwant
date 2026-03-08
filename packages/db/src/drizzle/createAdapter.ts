@@ -140,6 +140,21 @@ export function createDrizzleAdapter(
         create: (data: CreateInput<typeof contract>) =>
           createBoundQuery(async () => {
             const values = toDbValues(data as Record<string, unknown>);
+            const idColName = (idCol as { name?: string })?.name ?? "id";
+            const idValue = values[idColName] as string | undefined;
+
+            if (dialect === "mysql") {
+              await insert(table).values(values);
+              if (idValue == null) throw new Error("MySQL create requires id in data");
+              const rows = (await select()
+                .from(table)
+                .where(eq(idCol as never, idValue))
+                .limit(1)) as Record<string, unknown>[];
+              const row = rows[0];
+              if (!row) throw new Error("Insert did not return row");
+              return fromDbRow(row);
+            }
+
             const result = (await insert(table).values(values).returning()) as Record<
               string,
               unknown
@@ -153,6 +168,20 @@ export function createDrizzleAdapter(
           createBoundQuery(async () => {
             const values = toDbValues(data as Record<string, unknown>);
             const idColumn = idCol ?? (table as Record<string, unknown>).id;
+
+            if (dialect === "mysql") {
+              await update(table)
+                .set(values)
+                .where(eq(idColumn as never, id));
+              const rows = (await select()
+                .from(table)
+                .where(eq(idColumn as never, id))
+                .limit(1)) as Record<string, unknown>[];
+              const row = rows[0];
+              if (!row) throw new Error("Update did not return row");
+              return fromDbRow(row);
+            }
+
             const result = (await update(table)
               .set(values)
               .where(eq(idColumn as never, id))
@@ -220,9 +249,9 @@ export function createDrizzleAdapter(
 function inferDialect(db: DrizzleClient): "pg" | "mysql" | "sqlite" {
   const d = db as unknown as Record<string, unknown>;
   const dialect = d?.dialect as { name?: string } | undefined;
-  const name = dialect?.name ?? "";
+  const name = String(dialect?.name ?? "").toLowerCase();
   if (name === "sqlite" || name === "bun-sqlite" || name.includes("sqlite")) return "sqlite";
-  if (name === "mysql") return "mysql";
+  if (name === "mysql" || name === "mysql2") return "mysql";
   // Fallback: bun-sqlite and better-sqlite3 use a client with .exec/.run
   const client = d?.client as { exec?: unknown; run?: unknown } | undefined;
   if (client && typeof client.exec === "function") return "sqlite";

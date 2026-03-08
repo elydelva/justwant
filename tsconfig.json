@@ -5,5 +5,12 @@
     "types": ["bun-types"]
   },
   "include": ["packages/*/src", "packages/*/*/src"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/e2e-helpers.ts",
+    "**/e2e-matrix.ts"
+  ]
 }

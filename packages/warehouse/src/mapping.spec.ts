@@ -36,6 +36,23 @@ describe("mapRowToContract", () => {
     expect(result.a).toBe("x");
     expect(result.b).toBeUndefined();
   });
+
+  test("maps row with custom mapping back to contract shape", () => {
+    const contract = defineContract(
+      "events",
+      { userId: string().required(), eventType: string().required() },
+      { mapping: { userId: { name: "user_id" }, eventType: { name: "event_type" } } }
+    );
+    const mapping = contract.mapping as Record<string, { name: string }>;
+    const row = { user_id: "u1", event_type: "purchase" };
+    const result = mapRowToContract<{ userId: string; eventType: string }>(
+      row,
+      mapping,
+      contract.fields
+    );
+    expect(result.userId).toBe("u1");
+    expect(result.eventType).toBe("purchase");
+  });
 });
 
 describe("mapContractToRow", () => {
@@ -64,5 +81,18 @@ describe("mapContractToRow", () => {
     const result = mapContractToRow(row, mapping);
     expect(result.a).toBe("x");
     expect("b" in result).toBe(false);
+  });
+
+  test("uses custom mapping for column names", () => {
+    const contract = defineContract(
+      "events",
+      { userId: string().required(), eventType: string().required() },
+      { mapping: { userId: { name: "user_id" }, eventType: { name: "event_type" } } }
+    );
+    const mapping = contract.mapping as Record<string, { name: string }>;
+    const row = { userId: "u1", eventType: "purchase" };
+    const result = mapContractToRow(row, mapping);
+    expect(result.user_id).toBe("u1");
+    expect(result.event_type).toBe("purchase");
   });
 });

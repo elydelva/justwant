@@ -37,4 +37,20 @@ describe("parseWarehouseError", () => {
     expect(err).toBeInstanceOf(WarehouseError);
     expect(err.message).toBe("string error");
   });
+
+  test("extracts message from nested cause", () => {
+    const nested = new Error("Connection refused");
+    (nested as { code?: string }).code = "ECONNREFUSED";
+    const err = parseWarehouseError({ message: "Wrapped", cause: nested });
+    expect(err).toBeInstanceOf(WarehouseConnectionError);
+    expect(err.code).toBe("CONNECTION");
+  });
+
+  test("maps ECONNREFUSED from cause when top-level has no code", () => {
+    const err = parseWarehouseError({
+      message: "Query failed",
+      cause: { message: "connect ECONNREFUSED", code: "ECONNREFUSED" },
+    });
+    expect(err).toBeInstanceOf(WarehouseConnectionError);
+  });
 });

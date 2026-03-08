@@ -1,0 +1,12 @@
+[test]
+coverage = true
+coverageReporter = ["text"]
+coverageDir = "coverage"
+coverageThreshold = 0.8
+coveragePathIgnorePatterns = [
+  "**/s3/**",
+  "**/r2/**",
+  "**/vercel-blob/**",
+  "**/supabase-storage/**",
+  "**/e2e.spec.ts"
+]

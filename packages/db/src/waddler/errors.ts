@@ -19,13 +19,19 @@ import {
  */
 export function parseWaddlerError(raw: unknown): AdapterError {
   const err = raw as Record<string, unknown>;
+  const cause = err?.cause as Record<string, unknown> | undefined;
   const message = typeof err?.message === "string" ? err.message : String(raw ?? "Unknown error");
-  const causeMsg =
-    typeof (err?.cause as { message?: string })?.message === "string"
-      ? (err.cause as { message: string }).message
-      : "";
+  const causeMsg = typeof cause?.message === "string" ? (cause.message as string) : "";
   const msgToCheck = causeMsg || message;
-  const code = err?.code as string | undefined;
+  const code = (err?.code ?? cause?.code) as string | undefined;
+  const errno = (err?.errno ?? cause?.errno) as number | undefined;
+
+  if (errno === 1062 || code === "ER_DUP_ENTRY") {
+    return new AdapterUniqueViolationError(message, {
+      table: String(err?.table ?? cause?.table ?? ""),
+      column: String(err?.column ?? cause?.column ?? ""),
+    });
+  }
 
   if (typeof code === "string") {
     switch (code) {
@@ -73,6 +79,13 @@ export function parseWaddlerError(raw: unknown): AdapterError {
   }
   if (msg.includes("CHECK constraint failed")) {
     return new AdapterCheckViolationError(msg);
+  }
+  if (
+    msg.includes("duplicate key") ||
+    msg.includes("Duplicate entry") ||
+    msg.includes("UNIQUE constraint")
+  ) {
+    return new AdapterUniqueViolationError(msg);
   }
 
   return new AdapterError(String(message), "UNKNOWN", { original: raw });

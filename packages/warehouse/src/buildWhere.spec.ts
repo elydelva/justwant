@@ -56,6 +56,22 @@ describe("appendWhere", () => {
     expect(parts.length).toBeGreaterThan(0);
   });
 
+  test("appends WHERE and AND for multiple conditions", () => {
+    const { sql, parts } = createMockSql();
+    const query = sql`SELECT * FROM t` as WaddlerQuery;
+    (query as { append?: (p: unknown) => WaddlerQuery }).append = (p) => {
+      parts.push(p);
+      return query;
+    };
+    appendWhere(
+      sql,
+      query,
+      { event_type: { name: "event_type" }, amount: { name: "amount" } },
+      { event_type: "purchase", amount: 99 }
+    );
+    expect(parts.length).toBeGreaterThan(1);
+  });
+
   test("skips undefined values", () => {
     const { sql, parts } = createMockSql();
     const query = sql`SELECT * FROM t` as WaddlerQuery;

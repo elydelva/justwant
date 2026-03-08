@@ -37,9 +37,9 @@ export function getCreateTableSQL(
     const field = fields[key as keyof typeof fields];
     if (!field) continue;
     const colName = col.name;
-    const type = columnTypeForClickHouse(field);
-    const nullable = !field._required ? " Nullable" : "";
-    parts.push(`${escapeIdentifier(colName)} ${type}${nullable}`);
+    const baseType = columnTypeForClickHouse(field);
+    const type = !field._required ? `Nullable(${baseType})` : baseType;
+    parts.push(`${escapeIdentifier(colName)} ${type}`);
   }
 
   const tableId = escapeIdentifier(tableName);

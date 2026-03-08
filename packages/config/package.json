@@ -1,9 +1,15 @@
 {
   "name": "@justwant/config",
-  "private": true,
-  "version": "0.0.0",
-  "description": "Config multi-source avec waterfall",
+  "version": "0.1.0",
+  "description": "Config multi-source avec merge ordonné et typage fort",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/config"
+  },
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -11,18 +17,35 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "default": "./dist/types/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js",
+      "default": "./dist/errors/index.js"
+    },
+    "./sources": {
+      "types": "./dist/sources/index.d.ts",
+      "import": "./dist/sources/index.js",
+      "default": "./dist/sources/index.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "files": ["dist"],
-  "peerDependencies": {
-    "zod": "*"
+  "dependencies": {
+    "@standard-schema/spec": "^1.1.0"
   },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "zod": "^4.3.6"
   }
 }

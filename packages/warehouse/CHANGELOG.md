@@ -1,5 +1,15 @@
 # @justwant/warehouse
 
+## 0.2.0
+
+### Minor Changes
+
+- E2E tests with real ClickHouse (Docker)
+- ClickHouse DDL: `Nullable(Type)` syntax fix
+- ClickHouse: `.command()` for DDL/mutations, typed `INSERT` for optional columns
+- `parseWarehouseError`: extract `code` from nested `cause`
+- Extended edge case coverage: limit 0, offset, aggregate empty table, exist/drop on non-existent table, amount 0, createTable idempotent
+
 ## 1.1.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "files": { "ignore": ["node_modules", "dist", ".git", "bun.lockb"] },
+  "files": { "ignore": ["node_modules", "dist", ".git", "bun.lockb", "**/generated/**"] },
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
   "javascript": { "formatter": { "quoteStyle": "double", "trailingCommas": "es5" } },
   "organizeImports": { "enabled": true },

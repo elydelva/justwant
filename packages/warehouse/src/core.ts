@@ -26,11 +26,13 @@ function toRows(result: unknown): Record<string, unknown>[] {
   return (r?.rows ?? []) as Record<string, unknown>[];
 }
 
-/** Normalize BigInt to number in aggregate results (DuckDB, ClickHouse return BigInt for count/sum). */
+/** Normalize BigInt/string to number in aggregate results (DuckDB, ClickHouse return BigInt or string for count/sum). */
 function normalizeAggregateRow(row: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(row)) {
-    out[k] = typeof v === "bigint" ? Number(v) : v;
+    if (typeof v === "bigint") out[k] = Number(v);
+    else if (typeof v === "string" && /^\d+$/.test(v)) out[k] = Number(v);
+    else out[k] = v;
   }
   return out;
 }
@@ -41,6 +43,16 @@ function parseExistResult(rows: Record<string, unknown>[]): boolean {
   if (!row) return false;
   const val = Object.values(row)[0];
   return val === 1 || val === true || (typeof val === "number" && val !== 0);
+}
+
+/** Execute DDL/mutation (CREATE, DROP, INSERT). ClickHouse requires .command() to avoid JSON parse on empty response. */
+async function executeMutation(q: WaddlerQuery, dialect: WarehouseDialect): Promise<void> {
+  const cmd = (q as { command?: () => Promise<unknown> }).command;
+  if (dialect === "clickhouse" && typeof cmd === "function") {
+    await cmd.call(q);
+  } else {
+    await q;
+  }
 }
 
 export interface CreateWarehouseFromSqlOptions {
@@ -77,7 +89,7 @@ export function createWarehouseFromSql(
     async createTable(contract) {
       try {
         const ddl = getCreateTableSQL(contract, dialect);
-        await sql`${sql.raw(ddl)}`;
+        await executeMutation(sql`${sql.raw(ddl)}`, dialect);
       } catch (err) {
         throw parseWarehouseError(err);
       }
@@ -96,7 +108,7 @@ export function createWarehouseFromSql(
         async createTable() {
           try {
             const ddl = getCreateTableSQL(contract, dialect, { ifNotExists: true });
-            await sql`${sql.raw(ddl)}`;
+            await executeMutation(sql`${sql.raw(ddl)}`, dialect);
           } catch (err) {
             throw parseWarehouseError(err);
           }
@@ -113,7 +125,7 @@ export function createWarehouseFromSql(
         async drop() {
           try {
             const dropSql = getDropTableSQL(tableName, dialect);
-            await sql`${sql.raw(dropSql)}`;
+            await executeMutation(sql`${sql.raw(dropSql)}`, dialect);
           } catch (err) {
             throw parseWarehouseError(err);
           }
@@ -127,11 +139,43 @@ export function createWarehouseFromSql(
               const dbRow = mapContractToRow(row as Record<string, unknown>, mapping);
               return colOrder.map((col) => {
                 const val = dbRow[col];
-                return val === undefined && sqlDefault !== undefined ? sqlDefault : val;
+                if (val === undefined) {
+                  return dialect === "clickhouse" ? null : (sqlDefault ?? null);
+                }
+                return val;
               });
             });
             const colList = colOrder.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(", ");
-            await sql`INSERT INTO ${tableId} (${sql.raw(colList)}) VALUES ${sql.values(tuples)}`;
+            const types =
+              dialect === "clickhouse"
+                ? colOrder.map((col) => {
+                    const key = Object.entries(mapping).find(([, c]) => c.name === col)?.[0];
+                    const field = key
+                      ? contract.fields[key as keyof typeof contract.fields]
+                      : undefined;
+                    if (!field) return "String";
+                    const base =
+                      (field as { _columnType?: string })._columnType === "REAL"
+                        ? "Float64"
+                        : (field as { _columnType?: string })._columnType === "INTEGER"
+                          ? "Int64"
+                          : "String";
+                    return !(field as { _required?: boolean })._required
+                      ? `Nullable(${base})`
+                      : base;
+                  })
+                : undefined;
+            const valuesArg =
+              types !== undefined
+                ? (sql as { values: (v: unknown[][], t?: string[]) => unknown }).values(
+                    tuples,
+                    types
+                  )
+                : sql.values(tuples);
+            await executeMutation(
+              sql`INSERT INTO ${tableId} (${sql.raw(colList)}) VALUES ${valuesArg}`,
+              dialect
+            );
           } catch (err) {
             throw parseWarehouseError(err);
           }

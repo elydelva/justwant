@@ -13,7 +13,7 @@ describe("getCreateTableSQL (ClickHouse)", () => {
     expect(sql).toContain('CREATE TABLE "events"');
     expect(sql).toContain('"id" String');
     expect(sql).toContain('"name" String');
-    expect(sql).toContain('"count" Int64 Nullable');
+    expect(sql).toContain('"count" Nullable(Int64)');
     expect(sql).toContain("ENGINE = MergeTree()");
     expect(sql).toContain('ORDER BY ("id")');
   });
@@ -27,7 +27,7 @@ describe("getCreateTableSQL (ClickHouse)", () => {
     const sql = getCreateTableSQL(contract);
     expect(sql).toContain('"a" String');
     expect(sql).toContain('"b" Int64');
-    expect(sql).toContain('"c" Float64 Nullable');
+    expect(sql).toContain('"c" Nullable(Float64)');
   });
 
   test("uses first column for ORDER BY", () => {

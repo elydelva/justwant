@@ -1,5 +1,17 @@
 # @justwant/db
 
+## 0.3.0
+
+### Minor Changes
+
+- E2E matrix fixes, load tests, and documentation
+
+  - Fix PostgreSQL/MySQL findMany (build query without append for waddler compatibility)
+  - Fix unique violation test (try/catch, unique email per run)
+  - Add load tests: batch, concurrency, Drizzle PG/MySQL, timeouts
+  - Close MySQL/PostgreSQL connections in E2E matrix and dialect-specific tests
+  - Document limitations: better-sqlite3 run() vs execute(), Waddler transactions
+
 ## 2.0.0
 
 ### Major Changes

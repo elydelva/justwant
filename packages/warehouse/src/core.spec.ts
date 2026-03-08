@@ -90,6 +90,40 @@ describe("createWarehouseFromSql", () => {
 
     const offset = await events.query({ limit: 2, offset: 1 });
     expect(offset).toHaveLength(2);
+    expect(offset.map((r) => r.event_type)).toEqual(["b", "c"]);
+  });
+
+  test("query with limit 0 returns empty array", async () => {
+    const { waddler } = await import("waddler/duckdb-neo");
+    const sql = waddler({ url: ":memory:" });
+    const adapter = createWarehouseFromSql(sql, { dialect: "duckdb" });
+    await adapter.createTable(EventContract);
+
+    const events = adapter.table(EventContract);
+    const ts = new Date();
+    await events.insert([{ timestamp: ts, user_id: crypto.randomUUID(), event_type: "a" }]);
+
+    const empty = await events.query({ limit: 0 });
+    expect(empty).toHaveLength(0);
+  });
+
+  test("query with offset only returns rows after offset", async () => {
+    const { waddler } = await import("waddler/duckdb-neo");
+    const sql = waddler({ url: ":memory:" });
+    const adapter = createWarehouseFromSql(sql, { dialect: "duckdb" });
+    await adapter.createTable(EventContract);
+
+    const events = adapter.table(EventContract);
+    const ts = new Date();
+    await events.insert([
+      { timestamp: ts, user_id: crypto.randomUUID(), event_type: "a" },
+      { timestamp: ts, user_id: crypto.randomUUID(), event_type: "b" },
+      { timestamp: ts, user_id: crypto.randomUUID(), event_type: "c" },
+    ]);
+
+    const afterOffset = await events.query({ offset: 2 });
+    expect(afterOffset).toHaveLength(1);
+    expect(afterOffset[0]?.event_type).toBe("c");
   });
 
   test("query with limit and orderBy", async () => {
@@ -151,6 +185,38 @@ describe("createWarehouseFromSql", () => {
     expect(all).toHaveLength(0);
   });
 
+  test("aggregate on empty table returns expected shape", async () => {
+    const { waddler } = await import("waddler/duckdb-neo");
+    const sql = waddler({ url: ":memory:" });
+    const adapter = createWarehouseFromSql(sql, { dialect: "duckdb" });
+    await adapter.createTable(EventContract);
+
+    const events = adapter.table(EventContract);
+    const agg = await events.aggregate<{ total: number; count: number }>({
+      select: { total: "sum(amount)", count: "count()" },
+    });
+    expect(agg).toHaveLength(1);
+    expect(agg[0]?.total).toBeNull();
+    expect(Number(agg[0]?.count)).toBe(0);
+  });
+
+  test("insert with amount 0 preserves zero", async () => {
+    const { waddler } = await import("waddler/duckdb-neo");
+    const sql = waddler({ url: ":memory:" });
+    const adapter = createWarehouseFromSql(sql, { dialect: "duckdb" });
+    await adapter.createTable(EventContract);
+
+    const events = adapter.table(EventContract);
+    const ts = new Date();
+    await events.insert([
+      { timestamp: ts, user_id: crypto.randomUUID(), event_type: "free", amount: 0 },
+    ]);
+
+    const rows = await events.query();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.amount).toBe(0);
+  });
+
   test("aggregate without groupBy returns single row", async () => {
     const { waddler } = await import("waddler/duckdb-neo");
     const sql = waddler({ url: ":memory:" });
@@ -197,6 +263,33 @@ describe("createWarehouseFromSql", () => {
 
     await events.drop();
     expect(await events.exist()).toBe(false);
+  });
+
+  test("exist() returns false for non-existent table", async () => {
+    const { waddler } = await import("waddler/duckdb-neo");
+    const sql = waddler({ url: ":memory:" });
+    const adapter = createWarehouseFromSql(sql, { dialect: "duckdb" });
+    const events = adapter.table(EventContract);
+    expect(await events.exist()).toBe(false);
+  });
+
+  test("drop() on non-existent table does not throw (IF NOT EXISTS)", async () => {
+    const { waddler } = await import("waddler/duckdb-neo");
+    const sql = waddler({ url: ":memory:" });
+    const adapter = createWarehouseFromSql(sql, { dialect: "duckdb" });
+    const events = adapter.table(EventContract);
+    await expect(events.drop()).resolves.toBeUndefined();
+  });
+
+  test("createTable with ifNotExists idempotent when table exists", async () => {
+    const { waddler } = await import("waddler/duckdb-neo");
+    const sql = waddler({ url: ":memory:" });
+    const adapter = createWarehouseFromSql(sql, { dialect: "duckdb" });
+    const events = adapter.table(EventContract);
+    await events.createTable();
+    await events.createTable();
+    const rows = await events.query();
+    expect(rows).toEqual([]);
   });
 
   test("adapter.createTable(contract) still works for backwards compatibility", async () => {

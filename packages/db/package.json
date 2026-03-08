@@ -1,6 +1,6 @@
 {
   "name": "@justwant/db",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Data Access Layer (DAL) for transactional databases. Contract-first, ORM-agnostic. Drizzle, Prisma, Waddler.",
   "type": "module",
   "license": "MIT",
@@ -190,7 +190,10 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "pretest": "prisma generate && DATABASE_URL=file:./test.db prisma db push --skip-generate",
-    "test": "bun test"
+    "test": "bun test",
+    "test:e2e:full": "bunx prisma generate && bunx prisma generate --schema=prisma/schema.postgres.prisma && bunx prisma generate --schema=prisma/schema.mysql.prisma && docker compose up -d && sleep 5 && DATABASE_URL=postgres://test:test@localhost:5432/justwant_test bunx prisma db push --schema=prisma/schema.postgres.prisma --skip-generate && DATABASE_URL=mysql://test:test@localhost:3306/justwant_test bunx prisma db push --schema=prisma/schema.mysql.prisma --skip-generate --accept-data-loss && bun test",
+    "test:e2e:down": "docker compose down",
+    "test:better-sqlite3": "bun run build && node scripts/better-sqlite3-e2e.mjs"
   },
   "files": [
     "dist",
@@ -225,11 +228,15 @@
     }
   },
   "devDependencies": {
-    "@standard-schema/spec": "^1.1.0",
+    "@electric-sql/pglite": "^0.2.0",
     "@justwant/tsconfig": "workspace:*",
     "@prisma/client": "^6.0.0",
+    "@standard-schema/spec": "^1.1.0",
+    "@types/pg": "^8.18.0",
     "better-sqlite3": "^11.0.0",
     "drizzle-orm": "^0.45.0",
+    "mysql2": "^3.11.0",
+    "pg": "^8.13.0",
     "prisma": "^6.0.0",
     "typescript": "^5.7.0",
     "waddler": "*"

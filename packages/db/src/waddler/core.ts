@@ -7,7 +7,6 @@ import type { TableContract } from "@justwant/contract";
 import { ContractValidationError, validateContractData } from "@justwant/contract/validate";
 import type { BoundQuery, CreateInput } from "@justwant/db";
 import { getCreateTableSQL, getDropTableSQL, getExistTableSQL } from "../ddl/index.js";
-import { appendWhere } from "./buildWhere.js";
 import { parseWaddlerError } from "./errors.js";
 import { mapRowToContract } from "./mapping.js";
 import type {
@@ -65,7 +64,11 @@ function toRows(result: unknown): Record<string, unknown>[] {
 }
 
 /**
- * Build SELECT query with optional WHERE. Uses append if available.
+ * Build SELECT query with optional WHERE.
+ * Uses a single template (no append) to avoid waddler node-postgres bug:
+ * NodePgSQLTemplate caches query text at construction; append updates params
+ * but not the cached text, causing "bind message supplies N parameters,
+ * but prepared statement requires 0".
  */
 function buildSelectQuery(
   sql: WaddlerSql,
@@ -75,38 +78,42 @@ function buildSelectQuery(
   softDeleteColName: string | null,
   limit?: number
 ): WaddlerQuery {
-  const hasWhere = softDeleteColName || Object.entries(where).some(([, v]) => v !== undefined);
+  const whereEntries = Object.entries(where).filter(([, v]) => v !== undefined);
+  const hasWhere = !!softDeleteColName || whereEntries.length > 0;
 
-  const query = sql`SELECT * FROM ${tableId}`;
-  const append = query.append;
-
-  if (append && hasWhere) {
-    if (softDeleteColName) {
-      append.call(query, sql` WHERE `);
-      append.call(query, sql`${sql.identifier(softDeleteColName)} IS NULL`);
-      const whereFiltered = Object.fromEntries(
-        Object.entries(where).filter(([, v]) => v !== undefined)
-      );
-      if (Object.keys(whereFiltered).length > 0) {
-        appendWhere(sql, query, mapping, whereFiltered, {
-          firstConnector: " AND ",
-        });
-      }
-    } else {
-      appendWhere(sql, query, mapping, where);
+  if (!hasWhere) {
+    if (limit !== undefined) {
+      return sql`SELECT * FROM ${tableId} LIMIT ${limit}`;
     }
-  } else if (
-    append &&
-    !hasWhere &&
-    Object.keys(where).some((k) => (where as Record<string, unknown>)[k] !== undefined)
-  ) {
-    appendWhere(sql, query, mapping, where);
+    return sql`SELECT * FROM ${tableId}`;
   }
 
-  if (append && limit !== undefined) {
-    append.call(query, sql` LIMIT ${limit}`);
+  // Build WHERE as single template (no append) for pg/mysql compatibility
+  const conditions: WaddlerQuery[] = [];
+  if (softDeleteColName) {
+    conditions.push(sql`${sql.identifier(softDeleteColName)} IS NULL` as WaddlerQuery);
+  }
+  for (const [key, val] of whereEntries) {
+    const colName = mapping[key]?.name;
+    if (colName) {
+      conditions.push(sql`${sql.identifier(colName)} = ${val}` as WaddlerQuery);
+    }
   }
 
+  if (conditions.length === 0) {
+    if (limit !== undefined) {
+      return sql`SELECT * FROM ${tableId} LIMIT ${limit}`;
+    }
+    return sql`SELECT * FROM ${tableId}`;
+  }
+
+  let query: WaddlerQuery = sql`SELECT * FROM ${tableId} WHERE ${conditions[0]}`;
+  for (let i = 1; i < conditions.length; i++) {
+    query = sql`${query} AND ${conditions[i]}` as WaddlerQuery;
+  }
+  if (limit !== undefined) {
+    query = sql`${query} LIMIT ${limit}` as WaddlerQuery;
+  }
   return query;
 }
 
@@ -248,7 +255,10 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
             }
             const cols = Object.keys(values);
             const vals = Object.values(values);
-            const colList = cols.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(", ");
+            const colList =
+              dialect === "mysql"
+                ? cols.map((c) => `\`${String(c).replace(/`/g, "``")}\``).join(", ")
+                : cols.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(", ");
             const returning = supportsReturning ? " RETURNING *" : "";
 
             const insertQuery = sql`INSERT INTO ${tableId} (${sql.raw(colList)}) VALUES ${sql.values([vals])}${sql.raw(returning)}`;
@@ -258,7 +268,9 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
               return fromDbRow(rows[0]);
             }
             if (!supportsReturning && dialect === "mysql") {
-              const selectQuery = sql`SELECT * FROM ${tableId} ORDER BY ${sql.identifier(idColName)} DESC LIMIT 1`;
+              const insertedId = values[idColName];
+              if (insertedId == null) throw new Error("MySQL create requires id in data");
+              const selectQuery = sql`SELECT * FROM ${tableId} WHERE ${sql.identifier(idColName)} = ${insertedId}`;
               const lastRows = toRows(await selectQuery);
               const row = lastRows[0];
               if (!row) throw new Error("Insert did not return row");

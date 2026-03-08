@@ -56,6 +56,22 @@ describe("appendOrderBy", () => {
     expect(parts.length).toBeGreaterThan(0);
   });
 
+  test("appends ORDER BY for multiple columns", () => {
+    const { sql, parts } = createMockSql();
+    const query = sql`SELECT * FROM t` as WaddlerQuery;
+    (query as { append?: (p: unknown) => WaddlerQuery }).append = (p) => {
+      parts.push(p);
+      return query;
+    };
+    appendOrderBy(
+      sql,
+      query,
+      { event_type: { name: "event_type" }, amount: { name: "amount" } },
+      { event_type: "desc", amount: "asc" }
+    );
+    expect(parts.length).toBeGreaterThan(0);
+  });
+
   test("does nothing when orderBy is empty", () => {
     const { sql, parts } = createMockSql();
     const query = sql`SELECT * FROM t` as WaddlerQuery;

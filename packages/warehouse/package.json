@@ -1,6 +1,6 @@
 {
   "name": "@justwant/warehouse",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "DAL for data warehouses (OLAP). Batch insert, query, aggregate. ClickHouse, DuckDB.",
   "type": "module",
   "license": "MIT",
@@ -33,7 +33,9 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "test:e2e:full": "docker compose up -d && sleep 5 && bun test",
+    "test:e2e:down": "docker compose down"
   },
   "files": ["dist", "README.md", "docs"],
   "publishConfig": {
@@ -51,6 +53,7 @@
     }
   },
   "devDependencies": {
+    "@clickhouse/client": "*",
     "@duckdb/node-api": "*",
     "@justwant/tsconfig": "workspace:*",
     "typescript": "^5.7.0",

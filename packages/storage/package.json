@@ -1,8 +1,7 @@
 {
   "name": "@justwant/storage",
-  "private": true,
-  "version": "0.0.0",
-  "description": "Upload/download fichiers",
+  "version": "0.2.0",
+  "description": "Unified file storage abstraction. Upload, download, delete, getUrl, getSignedUrl.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,15 +10,87 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./local": {
+      "types": "./dist/local/index.d.ts",
+      "import": "./dist/local/index.js",
+      "default": "./dist/local/index.js"
+    },
+    "./s3": {
+      "types": "./dist/s3/index.d.ts",
+      "import": "./dist/s3/index.js",
+      "default": "./dist/s3/index.js"
+    },
+    "./r2": {
+      "types": "./dist/r2/index.d.ts",
+      "import": "./dist/r2/index.js",
+      "default": "./dist/r2/index.js"
+    },
+    "./vercel-blob": {
+      "types": "./dist/vercel-blob/index.d.ts",
+      "import": "./dist/vercel-blob/index.js",
+      "default": "./dist/vercel-blob/index.js"
+    },
+    "./supabase-storage": {
+      "types": "./dist/supabase-storage/index.d.ts",
+      "import": "./dist/supabase-storage/index.js",
+      "default": "./dist/supabase-storage/index.js"
+    },
+    "./plugins/signedUrl": {
+      "types": "./dist/plugins/signedUrl.d.ts",
+      "import": "./dist/plugins/signedUrl.js",
+      "default": "./dist/plugins/signedUrl.js"
+    },
+    "./plugins/rename": {
+      "types": "./dist/plugins/rename.d.ts",
+      "import": "./dist/plugins/rename.js",
+      "default": "./dist/plugins/rename.js"
+    },
+    "./plugins/multiBucket": {
+      "types": "./dist/plugins/multiBucket.d.ts",
+      "import": "./dist/plugins/multiBucket.js",
+      "default": "./dist/plugins/multiBucket.js"
+    },
+    "./plugins/watermark": {
+      "types": "./dist/plugins/watermark.d.ts",
+      "import": "./dist/plugins/watermark.js",
+      "default": "./dist/plugins/watermark.js"
+    },
+    "./plugins/encryption": {
+      "types": "./dist/plugins/encryption.d.ts",
+      "import": "./dist/plugins/encryption.js",
+      "default": "./dist/plugins/encryption.js"
+    },
+    "./plugins/imageTransform": {
+      "types": "./dist/plugins/imageTransform.d.ts",
+      "import": "./dist/plugins/imageTransform.js",
+      "default": "./dist/plugins/imageTransform.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:e2e": "bash -c 'eval \"$(./scripts/ensure-supabase.sh 2>/dev/null)\" 2>/dev/null || true; bun test --config=bunfig.e2e.toml src/e2e.spec.ts'",
+    "docker:build-vercel-blob": "bash scripts/build-vercel-blob-server.sh"
   },
   "files": ["dist"],
+  "peerDependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.0.0",
+    "sharp": "^0.33.0"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-s3": { "optional": true },
+    "@aws-sdk/s3-request-presigner": { "optional": true },
+    "sharp": { "optional": true }
+  },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.0.0",
     "@justwant/tsconfig": "workspace:*",
+    "@supabase/supabase-js": "^2.0.0",
+    "@vercel/blob": "^0.23.0",
     "typescript": "^5.7.0"
   }
 }

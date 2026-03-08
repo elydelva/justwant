@@ -101,6 +101,43 @@ await users.drop();
 ## Docs
 
 - [Drivers](docs/DRIVERS.md) — config per driver, mapping
+- [Limitations](docs/LIMITATIONS.md) — better-sqlite3 `run()` vs `execute()`, Waddler transactions
+
+## E2E Tests
+
+Tests run against real database instances.
+
+| Backend | Drizzle | Waddler | Prisma |
+|---------|---------|---------|--------|
+| SQLite (Bun) | Yes | Yes | Yes |
+| PGLite | — | Yes | — |
+| PostgreSQL | Yes | Yes | Yes |
+| MySQL | Yes | Yes | Yes |
+
+Without Docker: SQLite, PGLite, and Prisma SQLite run. For full coverage including PostgreSQL and MySQL:
+
+```bash
+cd packages/db && docker compose up -d
+bun run test:e2e:full
+```
+
+Or step by step:
+
+```bash
+bunx prisma generate --schema=prisma/schema.postgres.prisma
+bunx prisma generate --schema=prisma/schema.mysql.prisma
+docker compose up -d
+# wait ~5s for DBs to be ready
+DATABASE_URL=postgres://test:test@localhost:5432/justwant_test bunx prisma db push --schema=prisma/schema.postgres.prisma --skip-generate
+DATABASE_URL=mysql://test:test@localhost:3306/justwant_test bunx prisma db push --schema=prisma/schema.mysql.prisma --skip-generate --accept-data-loss
+bun test
+```
+
+Stop containers when done:
+
+```bash
+bun run test:e2e:down
+```
 
 ## Invariants
 
