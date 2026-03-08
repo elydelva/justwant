@@ -1,6 +1,6 @@
 {
   "name": "@justwant/config",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Config multi-source avec merge ordonné et typage fort",
   "type": "module",
   "license": "MIT",
@@ -39,7 +39,9 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@standard-schema/spec": "^1.1.0"
   },
