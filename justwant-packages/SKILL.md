@@ -13,7 +13,7 @@ Complete reference for the @justwant monorepo. When working with a package, read
 
 ## When to Use This Skill
 
-- User mentions @justwant, cache, storage, job, flag, permission, waitlist, referral
+- User mentions @justwant, cache, storage, embedding, job, flag, permission, waitlist, referral
 - Editing files in `packages/*`
 - Implementing features using @justwant packages
 - Configuring plugins or adapters
@@ -47,6 +47,7 @@ Complete reference for the @justwant monorepo. When working with a package, read
 | preference | [references/preference.md](references/preference.md) | createPreferenceService |
 | referral | [references/referral.md](references/referral.md) | createReferralService |
 | storage | [references/storage.md](references/storage.md) | createStorageService, plugins |
+| embedding | [references/embedding.md](references/embedding.md) | createEmbeddingService, defineUniverse, engines, storages, migrate |
 | user | [references/user.md](references/user.md) | createUserService |
 | waitlist | [references/waitlist.md](references/waitlist.md) | createWaitlistService |
 | warehouse | [references/warehouse.md](references/warehouse.md) | createWarehouse |

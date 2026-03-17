@@ -1,0 +1,119 @@
+{
+  "name": "@justwant/embedding",
+  "version": "0.2.0",
+  "description": "Engine + storage abstraction for embeddings and similarity search.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/embedding"
+  },
+  "keywords": [
+    "embedding",
+    "vector",
+    "similarity",
+    "cloudflare",
+    "openai",
+    "pgvector",
+    "sqlite",
+    "vectorize"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./engines/memory": {
+      "types": "./dist/engines/memory.d.ts",
+      "import": "./dist/engines/memory.js",
+      "default": "./dist/engines/memory.js"
+    },
+    "./engines/cloudflare-ai": {
+      "types": "./dist/engines/cloudflare-ai.d.ts",
+      "import": "./dist/engines/cloudflare-ai.js",
+      "default": "./dist/engines/cloudflare-ai.js"
+    },
+    "./engines/openai": {
+      "types": "./dist/engines/openai.d.ts",
+      "import": "./dist/engines/openai.js",
+      "default": "./dist/engines/openai.js"
+    },
+    "./storages/memory": {
+      "types": "./dist/storages/memory.d.ts",
+      "import": "./dist/storages/memory.js",
+      "default": "./dist/storages/memory.js"
+    },
+    "./storages/vectorize": {
+      "types": "./dist/storages/vectorize.d.ts",
+      "import": "./dist/storages/vectorize.js",
+      "default": "./dist/storages/vectorize.js"
+    },
+    "./storages/pgvector": {
+      "types": "./dist/storages/pgvector.d.ts",
+      "import": "./dist/storages/pgvector.js",
+      "default": "./dist/storages/pgvector.js"
+    },
+    "./storages/sqlite-vec": {
+      "types": "./dist/storages/sqlite-vec.d.ts",
+      "import": "./dist/storages/sqlite-vec.js",
+      "default": "./dist/storages/sqlite-vec.js"
+    },
+    "./migrate": {
+      "types": "./dist/migrate/index.d.ts",
+      "import": "./dist/migrate/index.js",
+      "default": "./dist/migrate/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "sandbox": "tsx sandbox/run.ts",
+    "sandbox:validate": "tsx sandbox/run-validate.ts",
+    "prepublishOnly": "bun run typecheck && bun run build && bun test"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "TESTING.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "openai": "^4.0.0",
+    "pgvector": "^0.2.0",
+    "sqlite-vec": "^0.1.0",
+    "better-sqlite3": "^9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "openai": {
+      "optional": true
+    },
+    "pgvector": {
+      "optional": true
+    },
+    "sqlite-vec": {
+      "optional": true
+    },
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "@xenova/transformers": "^2.17.0",
+    "better-sqlite3": "^9.0.0",
+    "openai": "^4.0.0",
+    "pg": "^8.13.0",
+    "pgvector": "^0.2.0",
+    "sqlite-vec": "^0.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

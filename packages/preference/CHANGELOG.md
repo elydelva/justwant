@@ -1,5 +1,11 @@
 # @justwant/preference
 
+## 0.2.0
+
+### Minor Changes
+
+- 9dcaacb: Initial release. definePreference, createPreferenceService, list/get/set/setMany/reset. API par définition (PreferenceDef). Adapters memory et db. Validation Standard Schema. Actor avec within (org).
+
 ## 0.1.0
 
 ### Minor Changes
