@@ -86,3 +86,9 @@ plugins: [
 | Plugin | Fichier | Description |
 |--------|---------|-------------|
 | audit | [referral-audit.md](./referral-audit.md) | Log des referrals |
+
+### Notify (@justwant/notify)
+
+| Plugin | Fichier | Description |
+|--------|---------|-------------|
+| audit | (inline) | onSend avant/après envoi (templateId, canalId, args, message, phase, result?) |

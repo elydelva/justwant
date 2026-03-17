@@ -3,7 +3,7 @@ name: justwant-packages
 description: >-
   Provides complete documentation for the @justwant TypeScript library ecosystem.
   Use when working with cache, storage, job, flag, permission, waitlist, referral,
-  preference, db, crypto, or any @justwant package. Contains usage, plugins,
+  preference, notify, db, crypto, or any @justwant package. Contains usage, plugins,
   adapters, and API reference for each package.
 ---
 
@@ -40,6 +40,7 @@ Complete reference for the @justwant monorepo. When working with a package, read
 | id | [references/id.md](references/id.md) | createId |
 | job | [references/job.md](references/job.md) | createJob, engines, plugins |
 | lock | [references/lock.md](references/lock.md) | createLock, createSemaphore |
+| notify | [references/notify.md](references/notify.md) | createNotify, createTemplate, createCanal, channels, plugins |
 | membership | [references/membership.md](references/membership.md) | createMembershipService |
 | organisation | [references/organisation.md](references/organisation.md) | createOrganisationService |
 | permission | [references/permission.md](references/permission.md) | createPermissionService |

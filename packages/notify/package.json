@@ -1,9 +1,26 @@
 {
   "name": "@justwant/notify",
-  "private": true,
-  "version": "0.0.0",
-  "description": "Envoi de notifications",
+  "version": "0.1.0",
+  "description": "Notifications via templates and channels (email, SMS, console). Resend & Twilio SDK support.",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/notify"
+  },
+  "keywords": [
+    "notify",
+    "notification",
+    "email",
+    "sms",
+    "resend",
+    "twilio",
+    "templates",
+    "channels",
+    "typescript"
+  ],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -11,15 +28,59 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./channels/console": {
+      "types": "./dist/channels/console.d.ts",
+      "import": "./dist/channels/console.js",
+      "default": "./dist/channels/console.js"
+    },
+    "./channels/email/resend": {
+      "types": "./dist/channels/email/resend.d.ts",
+      "import": "./dist/channels/email/resend.js",
+      "default": "./dist/channels/email/resend.js"
+    },
+    "./channels/sms/twilio": {
+      "types": "./dist/channels/sms/twilio.d.ts",
+      "import": "./dist/channels/sms/twilio.js",
+      "default": "./dist/channels/sms/twilio.js"
+    },
+    "./repo/memory": {
+      "types": "./dist/repo/memory.d.ts",
+      "import": "./dist/repo/memory.js",
+      "default": "./dist/repo/memory.js"
+    },
+    "./plugins/audit": {
+      "types": "./dist/plugins/audit.d.ts",
+      "import": "./dist/plugins/audit.js",
+      "default": "./dist/plugins/audit.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "check": "bun run typecheck && bun test"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md", "TESTING.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "resend": "*",
+    "twilio": "*"
+  },
+  "peerDependenciesMeta": {
+    "resend": {
+      "optional": true
+    },
+    "twilio": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
+    "resend": "^6.9.4",
+    "twilio": "^5.13.0",
     "typescript": "^5.7.0"
   }
 }
