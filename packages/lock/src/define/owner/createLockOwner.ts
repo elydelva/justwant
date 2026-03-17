@@ -1,9 +1,10 @@
 /**
  * @justwant/lock — createLockOwner
  * Defines who can hold a lock (system, user, etc.).
- * Infers literal type N from name for build-time type safety.
+ * Produces Actor with optional within (e.g. org, team).
  */
 
+import type { Actor } from "@justwant/actor";
 import type { LockOwner } from "../../types/index.js";
 
 export interface CreateLockOwnerOptions<N extends string = string> {
@@ -15,7 +16,7 @@ export interface LockOwnerDef<N extends string = string> {
   readonly name: N;
   readonly within?: string;
   (id: string): LockOwner<N>;
-  (orgId: string, id: string): LockOwner<N>;
+  (withinId: string, id: string): LockOwner<N>;
 }
 
 export function createLockOwner<N extends string>(
@@ -23,19 +24,19 @@ export function createLockOwner<N extends string>(
 ): LockOwnerDef<N> {
   const { name, within } = options;
 
-  const ownerDef = ((idOrOrgId?: string, id?: string): LockOwner<N> => {
-    if (within && idOrOrgId !== undefined && id !== undefined) {
+  const ownerDef = ((withinIdOrId?: string, id?: string): LockOwner<N> => {
+    if (within && withinIdOrId !== undefined && id !== undefined) {
       return {
         type: name,
         id,
-        orgId: idOrOrgId,
-      };
+        within: { type: within, id: withinIdOrId },
+      } as LockOwner<N>;
     }
-    if (idOrOrgId !== undefined) {
+    if (withinIdOrId !== undefined) {
       return {
         type: name,
-        id: idOrOrgId,
-      };
+        id: withinIdOrId,
+      } as LockOwner<N>;
     }
     throw new Error(`createLockOwner: owner "${name}" requires an id`);
   }) as LockOwnerDef<N>;

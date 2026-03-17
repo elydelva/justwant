@@ -1,0 +1,57 @@
+{
+  "name": "@justwant/bezier",
+  "version": "0.1.0",
+  "description": "Cubic Bézier curves for easing. Core minimal, presets in subpaths (classic, feature, animation).",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/bezier"
+  },
+  "keywords": ["bezier", "easing", "curve", "animation", "typescript"],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./classic": {
+      "types": "./dist/classic.d.ts",
+      "import": "./dist/classic.js",
+      "default": "./dist/classic.js"
+    },
+    "./feature": {
+      "types": "./dist/feature.d.ts",
+      "import": "./dist/feature.js",
+      "default": "./dist/feature.js"
+    },
+    "./animation": {
+      "types": "./dist/animation.d.ts",
+      "import": "./dist/animation.js",
+      "default": "./dist/animation.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "import": "./dist/errors.js",
+      "default": "./dist/errors.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run typecheck && bun run build && bun test"
+  },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}

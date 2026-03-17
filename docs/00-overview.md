@@ -10,7 +10,7 @@ Identity    ← nouveau tier entre Foundation et Building blocks
   user · org
 
 Building blocks
-  cron · queue · storage · protect · flag · preference
+  job · queue · storage · protect · flag · preference
   consent · permission · audit · webhook · notify
   (permission : architecture inversée — atomes d'abord, rôles composent)
 

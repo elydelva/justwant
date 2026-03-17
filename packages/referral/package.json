@@ -1,0 +1,54 @@
+{
+  "name": "@justwant/referral",
+  "version": "0.2.2",
+  "description": "Referral and affiliation system. Parrainage, codes parrain, stats. Standalone package with defineReferralOffer + createReferralService.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elydelva/justwant.git",
+    "directory": "packages/referral"
+  },
+  "keywords": ["referral", "affiliation", "parrainage", "invite", "typescript"],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./plugins/audit": {
+      "types": "./dist/plugins/audit.d.ts",
+      "import": "./dist/plugins/audit.js",
+      "default": "./dist/plugins/audit.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:e2e": "bun test --config=bunfig.e2e.toml src/e2e.spec.ts",
+    "prepublishOnly": "bun run typecheck && bun run build && bun test"
+  },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@justwant/actor": "workspace:*"
+  },
+  "peerDependencies": {
+    "@justwant/contract": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@justwant/contract": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}

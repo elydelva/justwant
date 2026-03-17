@@ -9,6 +9,7 @@ export { defineActor } from "./define/actor/defineActor.js";
 export type {
   DefineActorOptions,
   DefineActorOptionsWithName,
+  DefineActorOptionsWithWithin,
   DefineActorOptionsWithFrom,
   ActorDef,
 } from "./define/actor/defineActor.js";

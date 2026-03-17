@@ -1,9 +1,16 @@
 {
   "name": "@justwant/flag",
-  "private": true,
-  "version": "0.0.0",
-  "description": "Feature flags",
+  "version": "0.1.0",
+  "description": "Feature flags with typed rules, config overrides, rollout helpers",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/flag"
+  },
+  "keywords": ["feature-flags", "rollout", "typescript"],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -11,15 +18,41 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "import": "./dist/errors.js",
+      "default": "./dist/errors.js"
+    },
+    "./helpers": {
+      "types": "./dist/helpers.d.ts",
+      "import": "./dist/helpers.js",
+      "default": "./dist/helpers.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
+  "dependencies": {
+    "@justwant/bezier": "workspace:*",
+    "@justwant/crypto": "workspace:*"
+  },
+  "peerDependencies": {
+    "@standard-schema/spec": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@standard-schema/spec": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
-    "typescript": "^5.7.0"
+    "@standard-schema/spec": "^1.1.0",
+    "typescript": "^5.7.0",
+    "valibot": "^0.42.0"
   }
 }

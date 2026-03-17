@@ -85,7 +85,7 @@ Packages that combine foundation primitives into reusable cross-cutting concerns
 
 | Package | Role |
 |---|---|
-| [`@justwant/cron`](./packages/cron) | Scheduled jobs. Pluggable runners (Node, Cloudflare, Vercel, QStash) |
+| [`@justwant/job`](./packages/job) | Scheduled jobs. Pluggable runners (Node, Cloudflare, Vercel, QStash) |
 | [`@justwant/queue`](./packages/queue) | Event-triggered jobs. Steps, durability, fan-out, sleep |
 | [`@justwant/storage`](./packages/storage) | File upload/download. Multipart, lifecycle, signed URLs, scan, transform |
 | [`@justwant/protect`](./packages/protect) | HTTP security. Rate limiting, IP intelligence, bot detection, WAF |
@@ -238,7 +238,7 @@ npx justwant migrate generate --adapter drizzle  # outputs table definitions
 │   ├── cookie/
 │   ├── config/
 │   │
-│   ├── cron/          # Building blocks
+│   ├── job/           # Building blocks
 │   ├── queue/
 │   ├── storage/
 │   ├── protect/

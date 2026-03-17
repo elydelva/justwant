@@ -3,6 +3,7 @@
  * Counting semaphore: N holders at a time.
  */
 
+import { toRepo } from "@justwant/actor";
 import { LockNotHeldError } from "../errors/index.js";
 import type { LockHookContext, LockHooks } from "../hooks/types.js";
 import type { CreateInput, Lock, LockOwner, LockRepository, Lockable } from "../types/index.js";
@@ -24,10 +25,11 @@ function isExpired(lock: Lock): boolean {
 }
 
 function ownerMatches(lock: Lock, owner: LockOwner): boolean {
+  const o = toRepo(owner);
   return (
-    lock.ownerType === owner.type &&
-    lock.ownerId === owner.id &&
-    (lock.ownerOrgId ?? undefined) === (owner.orgId ?? undefined)
+    lock.ownerType === o.actorType &&
+    lock.ownerId === o.actorId &&
+    (lock.ownerOrgId ?? undefined) === (o.actorOrgId ?? undefined)
   );
 }
 
@@ -56,11 +58,12 @@ export function createSemaphore(options: CreateSemaphoreOptions): SemaphoreApi {
       return false;
     }
 
+    const o = toRepo(owner);
     const existing = await repo.findOne({
       lockableKey: lockable.key,
-      ownerType: owner.type,
-      ownerId: owner.id,
-      ownerOrgId: owner.orgId ?? undefined,
+      ownerType: o.actorType,
+      ownerId: o.actorId,
+      ownerOrgId: o.actorOrgId ?? undefined,
     });
 
     if (existing && !isExpired(existing)) {
@@ -71,9 +74,9 @@ export function createSemaphore(options: CreateSemaphoreOptions): SemaphoreApi {
       }
       const lockData: CreateInput<Lock> = {
         lockableKey: lockable.key,
-        ownerType: owner.type,
-        ownerId: owner.id,
-        ownerOrgId: owner.orgId,
+        ownerType: o.actorType,
+        ownerId: o.actorId,
+        ownerOrgId: o.actorOrgId,
         count,
       };
       await repo.create(lockData);
@@ -92,19 +95,20 @@ export function createSemaphore(options: CreateSemaphoreOptions): SemaphoreApi {
     };
     await hooks.beforeRelease?.(ctx);
 
+    const o = toRepo(owner);
     const existing = await repo.findOne({
       lockableKey: lockable.key,
-      ownerType: owner.type,
-      ownerId: owner.id,
-      ownerOrgId: owner.orgId ?? undefined,
+      ownerType: o.actorType,
+      ownerId: o.actorId,
+      ownerOrgId: o.actorOrgId ?? undefined,
     });
 
     if (!existing || !ownerMatches(existing, owner)) {
       throw new LockNotHeldError(
         "Semaphore units not held by owner",
         lockable.key,
-        owner.type,
-        owner.id
+        o.actorType,
+        o.actorId
       );
     }
 
@@ -112,8 +116,8 @@ export function createSemaphore(options: CreateSemaphoreOptions): SemaphoreApi {
       throw new LockNotHeldError(
         `Cannot release ${count} units, owner holds ${existing.count}`,
         lockable.key,
-        owner.type,
-        owner.id
+        o.actorType,
+        o.actorId
       );
     }
 

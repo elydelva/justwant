@@ -1,0 +1,24 @@
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: justwant_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d justwant_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 5

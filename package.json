@@ -8,11 +8,7 @@
     "type": "git",
     "url": "git+https://github.com/elydelva/justwant.git"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*",
-    "examples/*"
-  ],
+  "workspaces": ["apps/*", "packages/*", "examples/*"],
   "scripts": {
     "build": "bun run --filter './packages/*' --filter './apps/*' build",
     "test": "bun test",

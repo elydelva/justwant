@@ -1,0 +1,10 @@
+[test]
+coverage = true
+coverageReporter = ["text"]
+coverageDir = "coverage"
+coverageThreshold = 0.8
+coveragePathIgnorePatterns = [
+  "**/e2e.spec.ts",
+  "**/node_modules/**",
+  "../**"
+]

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import assert from "node:assert";
 /**
  * E2E tests for better-sqlite3. Run with Node (not Bun) since better-sqlite3
  * uses native bindings unsupported in Bun.
@@ -7,10 +8,9 @@
  * Or: bun run test:better-sqlite3
  */
 import { describe, it } from "node:test";
-import assert from "node:assert";
-import { createDb } from "@justwant/db/waddler";
-import { createBetterSqlite3Adapter } from "@justwant/db/better-sqlite3";
 import { defineContract, field } from "@justwant/contract";
+import { createBetterSqlite3Adapter } from "@justwant/db/better-sqlite3";
+import { createDb } from "@justwant/db/waddler";
 
 const UserContract = defineContract({
   id: field().required(),

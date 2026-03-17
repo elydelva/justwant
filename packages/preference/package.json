@@ -1,9 +1,16 @@
 {
   "name": "@justwant/preference",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Préférences utilisateur",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/preference"
+  },
+  "keywords": ["preference", "settings", "typescript"],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -11,15 +18,45 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "import": "./dist/errors.js",
+      "default": "./dist/errors.js"
+    },
+    "./adapters/db": {
+      "types": "./dist/adapters/db.d.ts",
+      "import": "./dist/adapters/db.js",
+      "default": "./dist/adapters/db.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:e2e": "bun test --config=bunfig.e2e.toml src/e2e.spec.ts",
+    "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md", "CHANGELOG.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@justwant/actor": "workspace:*"
+  },
+  "peerDependencies": {
+    "@standard-schema/spec": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@standard-schema/spec": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@justwant/contract": "workspace:*",
     "@justwant/tsconfig": "workspace:*",
-    "typescript": "^5.7.0"
+    "@standard-schema/spec": "^1.1.0",
+    "typescript": "^5.7.0",
+    "valibot": "^0.42.0"
   }
 }

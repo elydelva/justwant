@@ -3,6 +3,7 @@
  * Mutex: one holder at a time.
  */
 
+import { toRepo } from "@justwant/actor";
 import { LockNotHeldError } from "../errors/index.js";
 import type { LockHookContext, LockHooks } from "../hooks/types.js";
 import type { CreateInput, Lock, LockOwner, LockRepository, Lockable } from "../types/index.js";
@@ -25,10 +26,11 @@ function isExpired(lock: Lock): boolean {
 }
 
 function ownerMatches(lock: Lock, owner: LockOwner): boolean {
+  const o = toRepo(owner);
   return (
-    lock.ownerType === owner.type &&
-    lock.ownerId === owner.id &&
-    (lock.ownerOrgId ?? undefined) === (owner.orgId ?? undefined)
+    lock.ownerType === o.actorType &&
+    lock.ownerId === o.actorId &&
+    (lock.ownerOrgId ?? undefined) === (o.actorOrgId ?? undefined)
   );
 }
 
@@ -64,11 +66,12 @@ export function createLock(options: CreateLockOptions): LockApi {
     }
 
     const ttlMs = opts?.ttlMs;
+    const o = toRepo(owner);
     const lockData: CreateInput<Lock> = {
       lockableKey: lockable.key,
-      ownerType: owner.type,
-      ownerId: owner.id,
-      ownerOrgId: owner.orgId,
+      ownerType: o.actorType,
+      ownerId: o.actorId,
+      ownerOrgId: o.actorOrgId,
       count: 1,
       expiresAt: ttlMs ? new Date(Date.now() + ttlMs) : undefined,
     };
@@ -82,15 +85,16 @@ export function createLock(options: CreateLockOptions): LockApi {
     const ctx: LockHookContext = { owner, lockable, operation: "release" };
     await hooks.beforeRelease?.(ctx);
 
+    const o = toRepo(owner);
     const existing = await repo.findOne({
       lockableKey: lockable.key,
-      ownerType: owner.type,
-      ownerId: owner.id,
-      ownerOrgId: owner.orgId ?? undefined,
+      ownerType: o.actorType,
+      ownerId: o.actorId,
+      ownerOrgId: o.actorOrgId ?? undefined,
     });
 
     if (!existing || !ownerMatches(existing, owner)) {
-      throw new LockNotHeldError("Lock not held by owner", lockable.key, owner.type, owner.id);
+      throw new LockNotHeldError("Lock not held by owner", lockable.key, o.actorType, o.actorId);
     }
 
     await repo.delete(existing.id);
@@ -129,19 +133,20 @@ export function createLock(options: CreateLockOptions): LockApi {
     };
     await hooks.beforeExtend?.(ctx);
 
+    const o = toRepo(owner);
     const existing = await repo.findOne({
       lockableKey: lockable.key,
-      ownerType: owner.type,
-      ownerId: owner.id,
-      ownerOrgId: owner.orgId ?? undefined,
+      ownerType: o.actorType,
+      ownerId: o.actorId,
+      ownerOrgId: o.actorOrgId ?? undefined,
     });
 
     if (!existing || !ownerMatches(existing, owner)) {
       throw new LockNotHeldError(
         "Lock not held by owner, cannot extend",
         lockable.key,
-        owner.type,
-        owner.id
+        o.actorType,
+        o.actorId
       );
     }
 

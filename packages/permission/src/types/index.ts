@@ -5,11 +5,7 @@
  * IdentityLike, ReferenceLike, ScopeLike: structural interfaces for cross-package composition.
  */
 
-/** Structural interface for identity-like definitions (who) — UserDef, ActorDef, MemberDef */
-export interface IdentityLike {
-  readonly name: string;
-  (id: string): { type: string; id: string };
-}
+export type { IdentityLike, Actor } from "@justwant/actor";
 
 /** Structural interface for reference-like definitions (what) — ResourceDef */
 export interface ReferenceLike {
@@ -24,12 +20,6 @@ export interface ScopeLike {
 }
 
 export type OverrideType = "grant" | "deny";
-
-/** Actor — type is user-defined via defineActor({ name }) or defineActor({ from }) */
-export interface Actor<T extends string = string> {
-  type: T;
-  id: string;
-}
 
 /** Scope — type is user-defined via defineScope({ name }) */
 export interface Scope<T extends string = string> {

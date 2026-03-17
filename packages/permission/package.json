@@ -9,15 +9,7 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/permission"
   },
-  "keywords": [
-    "rbac",
-    "abac",
-    "permission",
-    "authorization",
-    "roles",
-    "scopes",
-    "typescript"
-  ],
+  "keywords": ["rbac", "abac", "permission", "authorization", "roles", "scopes", "typescript"],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -44,12 +36,12 @@
     "test": "bun test",
     "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "@justwant/actor": "workspace:*"
   },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",

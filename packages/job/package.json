@@ -1,0 +1,161 @@
+{
+  "name": "@justwant/job",
+  "version": "0.1.2",
+  "description": "Unified job service. Engine composition (BullMQ, QStash, pg, node-cron). defineJob, plugins, framework middlewares.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/job"
+  },
+  "keywords": ["job", "cron", "scheduler", "bullmq", "qstash", "typescript"],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./defineJob": {
+      "types": "./dist/defineJob.d.ts",
+      "import": "./dist/defineJob.js",
+      "default": "./dist/defineJob.js"
+    },
+    "./defineCron": {
+      "types": "./dist/defineCron.d.ts",
+      "import": "./dist/defineCron.js",
+      "default": "./dist/defineCron.js"
+    },
+    "./defineQueue": {
+      "types": "./dist/defineQueue.d.ts",
+      "import": "./dist/defineQueue.js",
+      "default": "./dist/defineQueue.js"
+    },
+    "./repo/memory": {
+      "types": "./dist/repo/memory.d.ts",
+      "import": "./dist/repo/memory.js",
+      "default": "./dist/repo/memory.js"
+    },
+    "./engines/bullmq": {
+      "types": "./dist/engines/bullmq/index.d.ts",
+      "import": "./dist/engines/bullmq/index.js",
+      "default": "./dist/engines/bullmq/index.js"
+    },
+    "./engines/qstash": {
+      "types": "./dist/engines/qstash/index.d.ts",
+      "import": "./dist/engines/qstash/index.js",
+      "default": "./dist/engines/qstash/index.js"
+    },
+    "./engines/qstash/next": {
+      "types": "./dist/engines/qstash/next.d.ts",
+      "import": "./dist/engines/qstash/next.js",
+      "default": "./dist/engines/qstash/next.js"
+    },
+    "./engines/qstash/next-pages": {
+      "types": "./dist/engines/qstash/next-pages.d.ts",
+      "import": "./dist/engines/qstash/next-pages.js",
+      "default": "./dist/engines/qstash/next-pages.js"
+    },
+    "./engines/qstash/express": {
+      "types": "./dist/engines/qstash/express.d.ts",
+      "import": "./dist/engines/qstash/express.js",
+      "default": "./dist/engines/qstash/express.js"
+    },
+    "./engines/qstash/hono": {
+      "types": "./dist/engines/qstash/hono.d.ts",
+      "import": "./dist/engines/qstash/hono.js",
+      "default": "./dist/engines/qstash/hono.js"
+    },
+    "./engines/qstash/cloudflare": {
+      "types": "./dist/engines/qstash/cloudflare.d.ts",
+      "import": "./dist/engines/qstash/cloudflare.js",
+      "default": "./dist/engines/qstash/cloudflare.js"
+    },
+    "./engines/pg": {
+      "types": "./dist/engines/pg/index.d.ts",
+      "import": "./dist/engines/pg/index.js",
+      "default": "./dist/engines/pg/index.js"
+    },
+    "./engines/node": {
+      "types": "./dist/engines/node/index.d.ts",
+      "import": "./dist/engines/node/index.js",
+      "default": "./dist/engines/node/index.js"
+    },
+    "./plugins/lock": {
+      "types": "./dist/plugins/lock.d.ts",
+      "import": "./dist/plugins/lock.js",
+      "default": "./dist/plugins/lock.js"
+    },
+    "./plugins/audit": {
+      "types": "./dist/plugins/audit.d.ts",
+      "import": "./dist/plugins/audit.js",
+      "default": "./dist/plugins/audit.js"
+    },
+    "./plugins/alert": {
+      "types": "./dist/plugins/alert.d.ts",
+      "import": "./dist/plugins/alert.js",
+      "default": "./dist/plugins/alert.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:e2e:full": "docker compose up -d && sleep 5 && bun test",
+    "test:e2e:down": "docker compose down"
+  },
+  "files": ["dist", "README.md"],
+  "dependencies": {
+    "@justwant/contract": "workspace:*",
+    "@justwant/lock": "workspace:*"
+  },
+  "peerDependencies": {
+    "@standard-schema/spec": "^1.0.0",
+    "bullmq": "^5.0.0",
+    "@upstash/qstash": "^2.0.0",
+    "node-cron": "^3.0.0",
+    "cron-parser": "^5.0.0",
+    "express": "^4.0.0",
+    "hono": "^4.0.0",
+    "next": "^14.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@standard-schema/spec": {
+      "optional": true
+    },
+    "bullmq": {
+      "optional": true
+    },
+    "@upstash/qstash": {
+      "optional": true
+    },
+    "node-cron": {
+      "optional": true
+    },
+    "cron-parser": {
+      "optional": true
+    },
+    "express": {
+      "optional": true
+    },
+    "hono": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "@standard-schema/spec": "^1.1.0",
+    "@types/pg": "^8.11.0",
+    "ioredis": "^5.4.0",
+    "node-cron": "^3.0.0",
+    "pg": "^8.13.0",
+    "typescript": "^5.7.0",
+    "valibot": "^0.42.0"
+  }
+}

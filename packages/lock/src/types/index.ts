@@ -4,12 +4,10 @@
  * Use createLockOwner/createLockable generics for literal inference.
  */
 
-/** LockOwner — type is user-defined via createLockOwner({ name }) */
-export interface LockOwner<T extends string = string> {
-  type: T;
-  id: string;
-  orgId?: string;
-}
+import type { Actor } from "@justwant/actor";
+
+/** LockOwner — Actor from @justwant/actor. Alias for backward compat. */
+export type LockOwner<T extends string = string> = Actor<T>;
 
 /** Lockable — what can be locked. key is the deterministic lock key. */
 export interface Lockable<N extends string = string> {

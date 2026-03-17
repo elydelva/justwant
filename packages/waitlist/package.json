@@ -1,9 +1,16 @@
 {
   "name": "@justwant/waitlist",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.2.1",
   "description": "Inscription, referral, position, invitations",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/waitlist"
+  },
+  "keywords": ["waitlist", "queue", "fifo", "referral", "typescript"],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -11,15 +18,67 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./defineList": {
+      "types": "./dist/defineList.d.ts",
+      "import": "./dist/defineList.js",
+      "default": "./dist/defineList.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "import": "./dist/errors.js",
+      "default": "./dist/errors.js"
+    },
+    "./plugins/audit": {
+      "types": "./dist/plugins/audit.d.ts",
+      "import": "./dist/plugins/audit.js",
+      "default": "./dist/plugins/audit.js"
+    },
+    "./plugins/expiration": {
+      "types": "./dist/plugins/expiration.d.ts",
+      "import": "./dist/plugins/expiration.js",
+      "default": "./dist/plugins/expiration.js"
+    },
+    "./plugins/referral": {
+      "types": "./dist/plugins/referral.d.ts",
+      "import": "./dist/plugins/referral.js",
+      "default": "./dist/plugins/referral.js"
+    },
+    "./adapters/db": {
+      "types": "./dist/adapters/db.d.ts",
+      "import": "./dist/adapters/db.js",
+      "default": "./dist/adapters/db.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:e2e": "bun test --config=bunfig.e2e.toml src/e2e.spec.ts",
+    "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@standard-schema/spec": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@standard-schema/spec": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@justwant/actor": "workspace:*"
+  },
   "devDependencies": {
+    "@justwant/contract": "workspace:*",
+    "@justwant/db": "workspace:*",
     "@justwant/tsconfig": "workspace:*",
-    "typescript": "^5.7.0"
+    "@standard-schema/spec": "^1.1.0",
+    "typescript": "^5.7.0",
+    "valibot": "^0.42.0",
+    "waddler": "*"
   }
 }
