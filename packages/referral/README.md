@@ -1,6 +1,18 @@
 # @justwant/referral
 
-Referral and affiliation system. Parrainage, codes parrain, stats. Standalone package with `defineReferralOffer` + `createReferralService`.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Referral and affiliation system. Referral codes, stats, integration with waitlist.
+
+## Installation
+
+```bash
+bun add @justwant/referral
+# or
+npm install @justwant/referral
+# or
+pnpm add @justwant/referral
+```
 
 ## Terminology
 
@@ -38,24 +50,62 @@ listOffer({ listId: "beta" }); // → "waitlist:listId:beta"
 
 ```ts
 import { createReferralService } from "@justwant/referral";
+import { auditPlugin } from "@justwant/referral/plugins/audit";
 
 const service = createReferralService({
   repo: myReferralRepository,
-  plugins: [auditPlugin({ audit: myAudit })],
+  plugins: [
+    auditPlugin({
+      audit: {
+        log: (entry) => console.log(entry),
+        // entry: { offerKey, referrerType, referrerId, recipientType, recipientId, referralId, referralCode?, createdAt }
+      },
+    }),
+  ],
 });
 ```
 
-### API
+### auditPlugin
 
-- `refer(offer, referrer, recipient, metadata?)` — Register a referral
-- `getReferrer(offer, recipient)` — Get referrer of a recipient
-- `getRecipients(offer, referrer, opts?)` — List recipients of a referrer
-- `getReferral(offer, referrer, recipient)` — Get referral if exists
-- `countByReferrer(offer, referrer)` — Count referrals by referrer
-- `countByOffer(offer)` — Total referrals for offer
-- `getReferralCode(offer, referrer)` — Generate or retrieve referral code
-- `resolveCode(offer, code)` — Resolve code → referrer
+Logs each referral for audit trail.
+
+```ts
+import { auditPlugin } from "@justwant/referral/plugins/audit";
+
+createReferralService({
+  repo: referralRepo,
+  plugins: [
+    auditPlugin({
+      audit: { log: (entry) => myAudit.log(entry) },
+    }),
+  ],
+});
+```
+
+## API
+
+| Method | Description |
+|--------|-------------|
+| `refer(offer, referrer, recipient, metadata?)` | Register a referral |
+| `getReferrer(offer, recipient)` | Get referrer of a recipient |
+| `getRecipients(offer, referrer, opts?)` | List recipients of a referrer |
+| `getReferral(offer, referrer, recipient)` | Get referral if exists |
+| `countByReferrer(offer, referrer)` | Count referrals by referrer |
+| `countByOffer(offer)` | Total referrals for offer |
+| `getReferralCode(offer, referrer)` | Generate or retrieve referral code |
+| `resolveCode(offer, code)` | Resolve code → referrer |
+
+## Subpaths
+
+| Path | Description |
+|------|-------------|
+| `@justwant/referral` | defineReferralOffer, createReferralService |
+| `@justwant/referral/plugins/audit` | auditPlugin |
 
 ## Integration with waitlist
 
 Use `createWaitlistReferralPlugin(referralService)` from `@justwant/waitlist/plugins/referral` to wire referral into waitlist subscriptions.
+
+## License
+
+MIT

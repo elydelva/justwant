@@ -1,11 +1,17 @@
 # @justwant/bezier
 
-Cubic Bézier curves for easing. Core minimal (no presets), presets in subpaths by usage domain.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Cubic Bézier curves for easing and rollout curves. Core minimal (no presets), presets in subpaths by usage domain.
 
 ## Installation
 
 ```bash
 bun add @justwant/bezier
+# or
+npm install @justwant/bezier
+# or
+pnpm add @justwant/bezier
 ```
 
 ## Usage
@@ -69,6 +75,10 @@ import { easeIn, easeOut, easeInOut } from "@justwant/bezier/animation";
 | `@justwant/bezier/feature` | slowRollout, fastRollout, gradual |
 | `@justwant/bezier/animation` | easeIn, easeOut, easeInOut |
 | `@justwant/bezier/errors` | BezierError, InvalidBezierParamsError |
+
+## Integration
+
+- **@justwant/flag** — uses `diffusionBezier` with `gradual`, `slowRollout`, `fastRollout` from `@justwant/bezier/feature` for time-based rollout curves
 
 ## License
 

@@ -1,11 +1,17 @@
 # @justwant/waitlist
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Waitlist management: subscription, position, FIFO, invitations, referral.
 
-## Install
+## Installation
 
 ```bash
 bun add @justwant/waitlist
+# or
+npm install @justwant/waitlist
+# or
+pnpm add @justwant/waitlist
 ```
 
 ## Usage
@@ -68,9 +74,53 @@ await service.invite(list, inviter, invitee, { campaign: "beta" });
 
 ### Plugins
 
-- **auditPlugin** — log subscribe/unsubscribe/pop
-- **cleanupExpired** — remove expired entries (call via cron)
-- **invite** — standalone helper when not using createWaitlistService
+#### auditPlugin
+
+Logs subscribe/unsubscribe/pop for audit trail.
+
+```ts
+import { auditPlugin } from "@justwant/waitlist/plugins/audit";
+
+const service = createWaitlistService({
+  repo: waitlistRepo,
+  plugins: [
+    auditPlugin({
+      audit: {
+        log: (entry) => console.log(entry),
+        // entry: { action, listKey, actor, ... }
+      },
+    }),
+  ],
+});
+```
+
+#### referralPlugin (integration)
+
+Wire referral into waitlist via `referralService` option. When provided, `invite()` registers the referral and subscribes the invitee.
+
+```ts
+import { createWaitlistService } from "@justwant/waitlist";
+import { createReferralService } from "@justwant/referral";
+
+const referralService = createReferralService({ repo: referralRepo });
+const service = createWaitlistService({
+  repo: waitlistRepo,
+  referralService,
+  offerKeyForList: (listKey) => `waitlist:${listKey}`,  // optional
+});
+
+await service.invite(list, inviter, invitee, { campaign: "beta" });
+```
+
+#### expirationPlugin (cleanupExpired)
+
+Remove expired entries. Call via cron:
+
+```ts
+import { cleanupExpired } from "@justwant/waitlist/plugins/expiration";
+
+await cleanupExpired(service, list);
+```
 
 ## API
 
@@ -89,3 +139,18 @@ await service.invite(list, inviter, invitee, { campaign: "beta" });
 | `pop(list)` | Remove and return first (FIFO) |
 | `invite(list, inviter, invitee, metadata?)` | Subscribe with referral |
 | `subscribeMany` / `unsubscribeMany` | Bulk operations |
+
+## Subpaths
+
+| Path | Description |
+|------|-------------|
+| `@justwant/waitlist` | Main API |
+| `@justwant/waitlist/adapters/db` | DB adapter |
+| `@justwant/waitlist/adapters/memory` | Memory adapter |
+| `@justwant/waitlist/plugins/audit` | Audit plugin |
+| `@justwant/waitlist/plugins/expiration` | Expiration cleanup |
+| `@justwant/waitlist/plugins/referral` | Referral integration |
+
+## License
+
+MIT

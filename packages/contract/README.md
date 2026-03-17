@@ -1,12 +1,20 @@
 # @justwant/contract
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Contract definitions for `defineContract`, fields, conforms, and validate. Schema-less, type-safe.
 
 ## Installation
 
 ```bash
 bun add @justwant/contract
+# or
+npm install @justwant/contract
+# or
+pnpm add @justwant/contract
 ```
+
+Optional: `bun add @standard-schema/spec` for schema validation.
 
 ## Usage
 
@@ -57,3 +65,16 @@ defineContract("events", { userId: string().required() }, {
 ## Peer dependency
 
 - `@standard-schema/spec` (optional) — for schema validation
+
+## Exports
+
+| Path | Content |
+|------|---------|
+| `@justwant/contract` | defineContract, field, Infer, types |
+| `@justwant/contract/fields` | uuid, string, email, number, date, etc. |
+| `@justwant/contract/conforms` | conformsTo, assertTableConforms, tableConforms |
+| `@justwant/contract/validate` | validateContractData, ContractValidationError |
+
+## License
+
+MIT

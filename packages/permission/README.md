@@ -1,11 +1,17 @@
 # @justwant/permission
 
-RBAC/ABAC avec repos data-agnostic. Scopes, actors, roles, realms, grant/deny overrides.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+RBAC/ABAC with data-agnostic repos. Scopes, actors, roles, realms, grant/deny overrides.
 
 ## Installation
 
 ```bash
 bun add @justwant/permission
+# or
+npm install @justwant/permission
+# or
+pnpm add @justwant/permission
 ```
 
 ## Usage
@@ -103,7 +109,11 @@ Toutes les méthodes utilisent des paramètres objet avec des noms explicites :
 
 ## Features
 
-- **Data-agnostic** : fournissez vos propres repos (assignments, overrides)
-- **Modèle plat** : Actor, Scope, Resource sans hiérarchie parent-enfant
-- **Grant/deny overrides** : permissions au niveau scope ou resource
-- **Shorthands** : `userId` au lieu de `{ type: "user", id }` quand un user actor existe
+- **Data-agnostic** — provide your own repos (assignments, overrides)
+- **Flat model** — Actor, Scope, Resource without parent-child hierarchy
+- **Grant/deny overrides** — permissions at scope or resource level
+- **Shorthands** — `userId` instead of `{ type: "user", id }` when a user actor exists
+
+## License
+
+MIT

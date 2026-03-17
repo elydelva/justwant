@@ -1,11 +1,17 @@
 # @justwant/actor
 
-Canonical Actor type and utilities. No storage, agnostic. defineActor, actorKey, toRepo, parseActorKey.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Canonical Actor type and utilities for identity across packages. No storage, domain-agnostic. Use `defineActor`, `actorKey`, `toRepo`, and `parseActorKey` to represent and serialize actors (users, bots, systems) with optional scoped context (`within`).
 
 ## Installation
 
 ```bash
 bun add @justwant/actor
+# or
+npm install @justwant/actor
+# or
+pnpm add @justwant/actor
 ```
 
 ## Usage
@@ -68,9 +74,20 @@ The `within` field is agnostic of domain. Use any type that fits your context:
 
 When `within.type === "org"`, `toRepo` also sets `actorOrgId` for legacy compat with waitlist/lock.
 
-## Exports
+## Subpaths
 
 | Path | Contents |
 |------|----------|
 | `@justwant/actor` | defineActor, actorKey, toRepo, parseActorKey, types |
-| `@justwant/actor/types` | Actor, ActorWithin, IdentityLike |
+| `@justwant/actor/types` | Actor, ActorWithin, IdentityLike, RepoShape |
+
+## Integration
+
+- **@justwant/user** — `defineActor({ from: defineUser() })` for user actors
+- **@justwant/waitlist** — uses Actor for subscribe/invite
+- **@justwant/preference** — uses Actor for preference isolation
+- **@justwant/lock** — uses Actor for lock ownership
+
+## License
+
+MIT

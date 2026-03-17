@@ -1,11 +1,17 @@
 # @justwant/job
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Unified job service. Engine composition (BullMQ, QStash, pg, node-cron). defineJob (work) + defineCron (scheduled only) + defineQueue (enqueue + pause), plugins, framework middlewares.
 
 ## Installation
 
 ```bash
 bun add @justwant/job
+# or
+npm install @justwant/job
+# or
+pnpm add @justwant/job
 ```
 
 For engines: `bun add node-cron` (node) | `bun add bullmq ioredis` (BullMQ) | `bun add @upstash/qstash` (QStash) | `bun add cron-parser` (pg)
@@ -128,21 +134,88 @@ export const POST = qstashMiddleware(jobService);
 
 ### Plugins
 
+#### lockPlugin
+
+Prevents double execution across instances using distributed lock.
+
 ```ts
 import { lockPlugin } from "@justwant/job/plugins/lock";
-import { auditPlugin } from "@justwant/job/plugins/audit";
-import { alertPlugin } from "@justwant/job/plugins/alert";
 import { createLock } from "@justwant/lock";
 
 const jobService = createJob({
   engine: nodeEngine(),
   plugins: [
-    lockPlugin({ lock: createLock({ repo }) }),
-    auditPlugin({ audit: { log: (e) => console.log(e) } }),
-    alertPlugin({ notify: (p) => sendAlert(p) }),
+    lockPlugin({
+      lock: createLock({ repo: myLockRepo }),
+      owner: { type: "job", id: "worker-1" },  // optional
+      ttlMs: 60_000,  // lock TTL, default 60s
+    }),
   ],
 });
 ```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `lock` | LockApi | required | @justwant/lock instance |
+| `owner` | LockOwner | `{ type: "job", id: "default" }` | Lock owner |
+| `ttlMs` | number | 60000 | Lock TTL in ms |
+
+#### auditPlugin
+
+Logs each job execution for audit trail.
+
+```ts
+import { auditPlugin } from "@justwant/job/plugins/audit";
+
+const jobService = createJob({
+  engine: nodeEngine(),
+  plugins: [
+    auditPlugin({
+      audit: {
+        log: (entry) => console.log(entry),
+        // entry: { jobId, startedAt, durationMs, status, payloadHash }
+      },
+    }),
+  ],
+});
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `audit.log` | (entry: AuditEntry) => void | Called after each execution |
+
+#### alertPlugin
+
+Notifies on job failure.
+
+```ts
+import { alertPlugin } from "@justwant/job/plugins/alert";
+
+const jobService = createJob({
+  engine: nodeEngine(),
+  plugins: [
+    alertPlugin({
+      notify: (payload) => sendSlackAlert(payload),
+      // payload: { jobId, error, runCount? }
+    }),
+  ],
+});
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `notify` | (payload: AlertPayload) => void | Called on job failure |
+
+### Engines (detailed)
+
+| Engine | Import | Use case | Runtime |
+|--------|--------|----------|---------|
+| `nodeEngine` | `@justwant/job/engines/node` | Dev local, no Redis | Node persistent |
+| `bullmqEngine` | `@justwant/job/engines/bullmq` | Prod, Redis | Node persistent |
+| `qstashEngine` | `@justwant/job/engines/qstash` | Vercel, Cloudflare, Lambda | Edge/Serverless |
+| `pgEngine` | `@justwant/job/engines/pg` | Postgres only | Node persistent |
+
+**QStash middlewares:** `@justwant/job/engines/qstash/next` (Next.js), `@justwant/job/engines/qstash/express`, `@justwant/job/engines/qstash/hono`, `@justwant/job/engines/qstash/cloudflare`
 
 ## Subpaths
 
@@ -163,6 +236,24 @@ const jobService = createJob({
 | `@justwant/job/plugins/lock` | Lock plugin |
 | `@justwant/job/plugins/audit` | Audit plugin |
 | `@justwant/job/plugins/alert` | Alert plugin |
+
+## API
+
+| Export | Description |
+|--------|-------------|
+| `createJob(options)` | Create job service |
+| `defineJob(options)` | Define job with schema, defaults |
+| `defineCron(options)` | Define cron schedule |
+| `defineQueue(options)` | Define queue |
+| `job.handle(fn)` | Attach handler to job |
+
+| Service method | Description |
+|----------------|-------------|
+| `start()` | Start crons and queues |
+| `enqueue(jobOrQueue, data)` | Enqueue job |
+| `pauseQueue(queue)` / `resumeQueue(queue)` | Pause/resume queue |
+| `skipNext(cron)` / `skipUntil(cron, date)` | Skip next cron run |
+| `disableCron(cron)` / `enableCron(cron)` | Disable/enable cron |
 
 ## License
 

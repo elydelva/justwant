@@ -1,11 +1,17 @@
 # @justwant/preference
 
-Préférences utilisateur avec schéma typé. Définition déclarative, acteur agnostique, stockage via repository.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+User preferences with typed schema. Declarative definition, actor-agnostic, storage via repository.
 
 ## Installation
 
 ```bash
 bun add @justwant/preference
+# or
+npm install @justwant/preference
+# or
+pnpm add @justwant/preference
 ```
 
 ## Usage
@@ -38,15 +44,38 @@ await service.reset(user, themePref);
 
 ## API
 
-- **definePreference** — Définition déclarative d'une préférence (id, key?, schema?, default?)
-- **createPreferenceService** — Service avec list, get, set, setMany, reset (on passe la définition `PreferenceDef`, pas la clé)
-- **createMemoryPreferenceAdapter** — Stockage en mémoire (tests/dev)
-- **createPreferenceDbAdapter** — Stockage DB via table compatible MappedTable (voir `@justwant/preference/adapters/db`)
+| Export | Description |
+|--------|-------------|
+| `definePreference(options)` | Declarative preference (id, key?, schema?, default?) |
+| `createPreferenceService(options)` | Service with list, get, set, setMany, reset |
+| `createMemoryPreferenceAdapter()` | In-memory storage (tests/dev) |
+| `createPreferenceDbAdapter(options)` | DB storage via MappedTable |
+
+| Service method | Description |
+|----------------|-------------|
+| `list(actor)` | Get all preferences for actor |
+| `get(actor, prefDef)` | Get single preference |
+| `set(actor, prefDef, value)` | Set preference |
+| `setMany(actor, entries)` | Set multiple |
+| `reset(actor, prefDef)` | Reset to default |
 
 ## Actor
 
-L'identité utilise `Actor` de `@justwant/actor` : `{ type, id, within? }`. Les préférences sont isolées par acteur ; un acteur avec `within: { type: "org", id: "org-1" }` a des préférences distinctes de l'acteur sans `within`.
+Identity uses `Actor` from `@justwant/actor`: `{ type, id, within? }`. Preferences are isolated per actor; an actor with `within: { type: "org", id: "org-1" }` has distinct preferences from the same actor without `within`.
+
+## Subpaths
+
+| Path | Description |
+|------|-------------|
+| `@justwant/preference` | Main API |
+| `@justwant/preference/adapters/db` | DB adapter |
+| `@justwant/preference/adapters/memory` | Memory adapter |
+| `@justwant/preference/errors` | PreferenceError |
 
 ## Validation
 
-Les schémas doivent implémenter `StandardSchemaV1` (valibot, zod, etc.). La validation est optionnelle ; sans schéma, toute valeur est acceptée.
+Schemas must implement `StandardSchemaV1` (valibot, zod, etc.). Validation is optional; without schema, any value is accepted.
+
+## License
+
+MIT

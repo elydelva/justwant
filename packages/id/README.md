@@ -1,13 +1,17 @@
 # @justwant/id
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ID generation: **sortable** (by time) and **short** (URL-safe). Simple function names, evocative export paths, tool-agnostic. Subpath imports only.
 
-## Install
+## Installation
 
 ```bash
 bun add @justwant/id
 # or
-npm i @justwant/id
+npm install @justwant/id
+# or
+pnpm add @justwant/id
 ```
 
 ## Usage
@@ -53,6 +57,14 @@ import { ulid, nanoid, decodeTime, monotonicFactory, customAlphabet } from "@jus
 | `@justwant/id/sortable` | `createId()`, `getTimestamp(id)` — time-sortable |
 | `@justwant/id/short`    | `createId(size?)` — short URL-safe |
 | `@justwant/id/primitives` | `ulid`, `nanoid`, `decodeTime`, `isValid`, `monotonicFactory`, `customAlphabet` |
+
+## API
+
+| Export | Description |
+|--------|-------------|
+| `createId()` (sortable) | Time-sortable ID (ULID-based) |
+| `getTimestamp(id)` | Extract creation time from sortable ID |
+| `createId(size?)` (short) | Short URL-safe ID (nanoid-based) |
 
 ## License
 

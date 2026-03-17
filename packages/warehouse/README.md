@@ -1,11 +1,17 @@
 # @justwant/warehouse
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 DAL for data warehouses (OLAP). Contract-first, append-only. Batch insert, query, aggregate.
 
-## Install
+## Installation
 
 ```bash
 bun add @justwant/warehouse @justwant/contract waddler
+# or
+npm install @justwant/warehouse @justwant/contract waddler
+# or
+pnpm add @justwant/warehouse @justwant/contract waddler
 ```
 
 For ClickHouse: `bun add @clickhouse/client`  
@@ -54,7 +60,29 @@ Pass the driver config to `createWarehouse` for tree-shaking (import only the dr
 
 ## API
 
-- `createWarehouse(config)` — builds a `Warehouse` from driver config (createDuckDbAdapter, etc.)
-- `createWarehouseFromSql(sql, { dialect })` — low-level: build from Waddler SQL client directly
-- `table(contract)` — returns `WarehouseMappedTable` with `createTable`, `exist`, `drop`, `insert`, `query`, `aggregate`
-- `adapter.createTable(contract)` — legacy DDL (prefer `table(contract).createTable()`)
+| Export | Description |
+|--------|-------------|
+| `createWarehouse(config)` | Build Warehouse from driver config |
+| `createWarehouseFromSql(sql, { dialect })` | Low-level: build from Waddler SQL client |
+| `warehouse.table(contract)` | Returns WarehouseMappedTable |
+
+| Table methods | Description |
+|---------------|-------------|
+| `createTable()` | Create table |
+| `exist()` | Check if table exists |
+| `drop()` | Drop table |
+| `insert(rows)` | Batch insert |
+| `query({ where, limit })` | Query rows |
+| `aggregate({ groupBy, select })` | Aggregate |
+
+## Subpaths
+
+| Path | Description |
+|------|-------------|
+| `@justwant/warehouse` | Main API |
+| `@justwant/warehouse/clickhouse` | ClickHouse adapter |
+| `@justwant/warehouse/duckdb` | DuckDB adapter |
+
+## License
+
+MIT

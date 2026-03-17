@@ -1,6 +1,18 @@
 # @justwant/membership
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Member–group liaison via `defineMember`, `defineGroup`, and `createMembershipService`. No roles, no within. The member type is declared in the group.
+
+## Installation
+
+```bash
+bun add @justwant/membership
+# or
+npm install @justwant/membership
+# or
+pnpm add @justwant/membership
+```
 
 ## Features
 
@@ -74,6 +86,14 @@ import {
   InvalidMemberTypeError,
 } from "@justwant/membership/errors";
 ```
+
+## Subpaths
+
+| Path | Description |
+|------|-------------|
+| `@justwant/membership` | defineMember, defineGroup, createMembershipService |
+| `@justwant/membership/types` | Member, Group, Membership, MembershipsRepo |
+| `@justwant/membership/errors` | MembershipError, AlreadyMemberError, NotMemberError, InvalidMemberTypeError |
 
 ## License
 

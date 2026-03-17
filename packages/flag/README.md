@@ -1,11 +1,17 @@
 # @justwant/flag
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Feature flags with typed rules, config overrides, and rollout helpers. Uses `@justwant/bezier` for time-based diffusion curves.
 
 ## Installation
 
 ```bash
 bun add @justwant/flag
+# or
+npm install @justwant/flag
+# or
+pnpm add @justwant/flag
 ```
 
 For schema validation: `bun add @standard-schema/spec` (optional, use valibot, zod, etc.)
@@ -85,10 +91,36 @@ await flagService.rollbackLastConfig(betaRule);
 
 Import rollout utilities independently: `import { rollout, hashContext, diffusionBezier, diffusionStepped } from "@justwant/flag/helpers"`
 
-- **hashContext(context)** — Hash string or object to [0,1] (uses @justwant/crypto). Use with rollout.
-- **rollout(input, threshold)** — `input` ∈ [0,1], `threshold` ∈ [0,1]. Returns `input < threshold`.
-- **diffusionBezier({ curve, start, end, at? })** — Time-based percentage using Bézier curve.
-- **diffusionStepped({ steps, start, end, at? })** — Discrete steps with interpolation.
+| Helper | Description |
+|--------|-------------|
+| `hashContext(context)` | Hash string or object to [0,1] (uses @justwant/crypto). Use with rollout. |
+| `rollout(input, threshold)` | `input` ∈ [0,1], `threshold` ∈ [0,1]. Returns `input < threshold`. |
+| `diffusionBezier({ curve, start, end, at? })` | Time-based percentage using Bézier curve. |
+| `diffusionStepped({ steps, start, end, at? })` | Discrete steps with interpolation. |
+
+**Example: percentage rollout**
+
+```ts
+import { hashContext, rollout } from "@justwant/flag/helpers";
+
+// 30% of users (deterministic by userId)
+const enabled = rollout(hashContext({ userId: "u1" }), 0.3);
+```
+
+**Example: time-based diffusion**
+
+```ts
+import { diffusionBezier } from "@justwant/flag/helpers";
+import { gradual } from "@justwant/bezier/feature";
+
+const pct = diffusionBezier({
+  curve: gradual,
+  start: new Date("2025-01-01"),
+  end: new Date("2025-03-01"),
+  at: new Date(),  // optional, defaults to now
+});
+// pct ∈ [0,1] — percentage of rollout at current time
+```
 
 ### Config overrides
 
@@ -100,6 +132,23 @@ Import rollout utilities independently: `import { rollout, hashContext, diffusio
 ### Repo
 
 Provide your own `FlagConfigRepo` (create, findOne, findMany, count, update). Use `createMemoryFlagConfigRepo()` for tests.
+
+## API
+
+| Export | Description |
+|--------|-------------|
+| `defineRule(options)` | Define rule with config schema, context, logic |
+| `defineFlag(options)` | Define flag with default, rules, strategy |
+| `createFlagService(options)` | Create service with flags and repo |
+| `createMemoryFlagConfigRepo()` | In-memory repo for tests |
+
+| Service method | Description |
+|----------------|-------------|
+| `evaluate(flag, context, overrides?)` | Evaluate flag for context |
+| `setConfigOverride(rule, config)` | Set remote config override |
+| `getLatest(rule)` | Get last active override |
+| `listConfigHistory(rule)` | Full config history |
+| `rollbackLastConfig(rule)` | Rollback last override |
 
 ## License
 

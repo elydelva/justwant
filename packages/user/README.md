@@ -1,6 +1,18 @@
 # @justwant/user
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 User entity and identity via `defineUser` and `createUserService`.
+
+## Installation
+
+```bash
+bun add @justwant/user
+# or
+npm install @justwant/user
+# or
+pnpm add @justwant/user
+```
 
 ## Features
 
@@ -8,12 +20,6 @@ User entity and identity via `defineUser` and `createUserService`.
 - **createUserService** — CRUD operations via UsersRepo (findById, findByEmail, create, update, delete)
 - **Type safety** — UserRef compatible with permission (defineActor from) and membership (MemberLike)
 - **Repo aligned** — UsersRepo follows @justwant/db pattern (findById, findOne, findMany, create, update, delete)
-
-## Installation
-
-```bash
-bun add @justwant/user
-```
 
 ## Usage
 
@@ -40,13 +46,23 @@ await userService.delete("usr_1");
 - **membership** : `createMembershipService({ groups: [defineGroup({ name: "org", member: defineUser() })] })`
 - **context** : `defineSlot({ key: "user", resolve: async (ctx) => userService.findById(ctx.initial.userId) })`
 
-## Subpath exports
+## API
 
-```ts
-import { defineUser, createUserService } from "@justwant/user";
-import type { User, UserRef, UsersRepo, CreateInput } from "@justwant/user/types";
-import { UserError, UserNotFoundError, DuplicateEmailError } from "@justwant/user/errors";
-```
+| Method | Description |
+|--------|-------------|
+| `findById(id)` | Get user by id |
+| `findByEmail(email)` | Get user by email |
+| `create(data)` | Create user |
+| `update(id, data)` | Update user |
+| `delete(id)` | Delete user |
+
+## Subpaths
+
+| Path | Description |
+|------|-------------|
+| `@justwant/user` | defineUser, createUserService |
+| `@justwant/user/types` | User, UserRef, UsersRepo, CreateInput |
+| `@justwant/user/errors` | UserError, UserNotFoundError, DuplicateEmailError |
 
 ## License
 

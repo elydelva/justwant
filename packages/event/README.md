@@ -86,6 +86,18 @@ bus.unlisten("user.created", handler);
 
 Handlers can return `Promise`. `emit` returns `Promise<void>` when any handler is async (waits for all).
 
+## createEventBus options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `events` | TypedEvent[] | required | Event definitions |
+| `wildcard` | boolean | true | Enable `user.*` and `*` patterns |
+
+## When to use typed vs primitive
+
+- **Typed** (`createEventBus`): Event names and payloads are known at compile time. Use for app events.
+- **Primitive** (`createPrimitiveEventBus`): Dynamic event names at runtime. Use for plugins, generic handlers.
+
 ## Exports
 
 | Entry | Content |

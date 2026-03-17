@@ -1,5 +1,7 @@
 # @justwant/context
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Modular context with **explicit propagation**. No AsyncLocalStorage — context is instantiated and passed to children. Compatible Node, Edge, Bun, Deno.
 
 ## Features
@@ -13,6 +15,10 @@ Modular context with **explicit propagation**. No AsyncLocalStorage — context 
 
 ```bash
 bun add @justwant/context
+# or
+npm install @justwant/context
+# or
+pnpm add @justwant/context
 ```
 
 ## Usage
@@ -68,13 +74,21 @@ async function getDocuments(requestCtx) {
 }
 ```
 
+## defineSlot options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `key` | string | Slot identifier |
+| `scope` | "eager" \| "request" \| "on-demand" | When to resolve (see below) |
+| `resolve` | (ctx) => Promise<T> | Async resolver. Use `ctx.get(otherSlot)` for dependencies. |
+
 ## Slot scopes
 
-| Scope       | When resolved      | Use case                          |
-| ----------- | ------------------ | --------------------------------- |
-| **eager**   | At `forRequest()`   | Values already known               |
-| **request** | At `forRequest()`   | Depends on `initial` (requestId…) |
-| **on-demand** | At first `get()`  | Expensive (DB, JWT, etc.)         |
+| Scope | When resolved | Use case |
+|-------|---------------|----------|
+| **eager** | At `forRequest()` | Values already known (e.g. from middleware) |
+| **request** | At `forRequest()` | Depends on `initial` (requestId, etc.) |
+| **on-demand** | At first `get()` | Expensive (DB, JWT, external API) — lazy load |
 
 ## Integration with user, org, group
 
@@ -87,6 +101,15 @@ import { createContextService, defineSlot } from "@justwant/context";
 import type { SlotDef, RequestContext } from "@justwant/context/types";
 import { SlotNotFoundError, ResolutionError } from "@justwant/context/errors";
 ```
+
+## API
+
+| Export | Description |
+|--------|-------------|
+| `createContextService(options)` | Create context with slots |
+| `defineSlot(options)` | Define slot with key, scope, resolve |
+| `requestCtx.get(slot)` | Resolve slot (cached) |
+| `requestCtx.forRequest(initial)` | Create per-request context |
 
 ## License
 

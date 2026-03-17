@@ -1,11 +1,17 @@
 # @justwant/config
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Multi-source config with ordered merge and strong typing. Define environments, sources, and values; resolve at runtime via waterfall lookup.
 
 ## Installation
 
 ```bash
 bun add @justwant/config
+# or
+npm install @justwant/config
+# or
+pnpm add @justwant/config
 ```
 
 ## Usage
@@ -41,6 +47,17 @@ const apiKey = await config.get("apiKey", "default"); // typed fallback
 const hasKey = await config.has("apiKey");
 ```
 
+## Sources
+
+Config supports multiple sources. Use `defineEnvSource` from `@justwant/config/sources` for env vars, or implement custom `ConfigSource`.
+
+```ts
+import { defineEnvSource } from "@justwant/config/sources";
+
+const envSource = defineEnvSource();
+// Reads from process.env
+```
+
 ## Standard Schema validation
 
 Config supports [Standard Schema](https://github.com/standard-schema/standard-schema) for runtime validation. Pass a `schema` map (key → `StandardSchemaV1`) in `defineEnvironment`; values are validated on `get()`.
@@ -67,6 +84,16 @@ Invalid values throw `ConfigValidationError`. Use `validation: { onError: "warn"
 | `@justwant/config/types` | ConfigSource, SourceLookup, ValueDef, EnvironmentDef, SourcesMap |
 | `@justwant/config/errors` | ConfigError, ConfigValidationError |
 | `@justwant/config/sources` | Source implementations |
+
+## API
+
+| Method | Description |
+|--------|-------------|
+| `createConfigService(options)` | Create config service with environments |
+| `config.get(key, fallback?)` | Get value (typed) |
+| `config.has(key)` | Check if key exists |
+| `defineEnvironment(options)` | Define environment with sources |
+| `defineValue(options)` | Define value with source and key |
 
 ## License
 

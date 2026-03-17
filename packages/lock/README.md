@@ -1,5 +1,7 @@
 # @justwant/lock
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Distributed locks and semaphores. Mutex, ownership, counting semaphore. Declarative `createLockable`, `createLockOwner`, hooks.
 
 ## Installation
@@ -8,6 +10,8 @@ Distributed locks and semaphores. Mutex, ownership, counting semaphore. Declarat
 bun add @justwant/lock
 # or
 npm install @justwant/lock
+# or
+pnpm add @justwant/lock
 ```
 
 ## Usage
@@ -68,18 +72,29 @@ if (acquired) {
 const available = await sem.available(lockable);
 ```
 
-### Hooks
+### Hooks (auditLockHooks)
+
+Log or observe lock acquire/release.
 
 ```ts
 import { createLock, auditLockHooks } from "@justwant/lock";
 
 const hooks = auditLockHooks({
-  onAcquire: (ctx, result) => log("lock.acquire", ctx.lockable.key, result.acquired),
-  onRelease: (ctx, result) => log("lock.release", ctx.lockable.key, result.released),
+  onAcquire: (ctx, result) => {
+    console.log("lock.acquire", ctx.lockable.key, result.acquired);
+  },
+  onRelease: (ctx, result) => {
+    console.log("lock.release", ctx.lockable.key, result.released);
+  },
 });
 
 const lock = createLock({ repo, hooks });
 ```
+
+| Hook | Signature | Description |
+|------|-----------|-------------|
+| `onAcquire` | (ctx, result) => void | Called after acquire attempt. `result.acquired` is boolean. |
+| `onRelease` | (ctx, result) => void | Called after release. `result.released` is boolean. |
 
 ## Exports
 
@@ -92,6 +107,16 @@ const lock = createLock({ repo, hooks });
 | `@justwant/lock/lock` | createLock (mutex) |
 | `@justwant/lock/semaphore` | createSemaphore |
 | `@justwant/lock/define` | createLockable, createLockOwner |
+
+## API
+
+| Export | Description |
+|--------|-------------|
+| `createLockable(options)` | Define lockable resource (name, singular?, prefix?) |
+| `createLockOwner(options)` | Define lock owner (name, within?) |
+| `createLock(options)` | Mutex: acquire, release |
+| `createSemaphore(options)` | Counting semaphore: acquire(n), release(n), available |
+| `auditLockHooks(options)` | Hooks for acquire/release logging |
 
 ## License
 

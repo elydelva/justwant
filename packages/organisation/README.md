@@ -1,6 +1,18 @@
 # @justwant/organisation
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Organisation entity and facade with multi-type support. Integrates membership and permission via deps.
+
+## Installation
+
+```bash
+bun add @justwant/organisation @justwant/membership @justwant/permission
+# or
+npm install @justwant/organisation @justwant/membership @justwant/permission
+# or
+pnpm add @justwant/organisation @justwant/membership @justwant/permission
+```
 
 ## Features
 
@@ -10,12 +22,6 @@ Organisation entity and facade with multi-type support. Integrates membership an
 - **createOrganisationService** — CRUD + membership + permission orchestration
 - **OrganisationPermissions, OrganisationRealm, OrganisationGroup** — defaults for `name: "organisation"`
 - **API params** — `organisation` and `member` (not org/actor)
-
-## Installation
-
-```bash
-bun add @justwant/organisation @justwant/membership @justwant/permission
-```
 
 ## Usage
 
@@ -102,6 +108,16 @@ await org.create({ name: "Dev Team", slug: "dev", type: "workspace" });
 | `@justwant/organisation/membership` | OrganisationMember, OrganisationGroup |
 | `@justwant/organisation/types` | Organisation, OrgRef, OrganisationsRepo |
 | `@justwant/organisation/errors` | OrganisationError, OrganisationNotFoundError, DuplicateSlugError |
+
+## API
+
+| Method | Description |
+|--------|-------------|
+| `create(organisation)` | Create organisation |
+| `addMember(organisation, member, role)` | Add member with role |
+| `removeMember(organisation, member)` | Remove member |
+| `can(organisation, member, permission)` | Check permission |
+| `findById(id)` | Get organisation by id |
 
 ## License
 

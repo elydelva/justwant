@@ -1,13 +1,17 @@
 # @justwant/crypto
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Simple, opinionated crypto for apps: passwords (Argon2id), tokens, JWT, encrypt/decrypt, and signing. Built on audited libraries (**argon2**, **jose**, **@noble/hashes**, **@noble/ciphers**). No default export — use subpath imports only.
 
-## Install
+## Installation
 
 ```bash
 bun add @justwant/crypto
 # or
-npm i @justwant/crypto
+npm install @justwant/crypto
+# or
+pnpm add @justwant/crypto
 ```
 
 ## Requirements
