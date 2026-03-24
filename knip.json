@@ -1,5 +1,9 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "ignore": [
+    "examples/**",
+    "**/*.type-test.ts"
+  ],
   "workspaces": {
     ".": {
       "entry": [],
@@ -8,11 +12,10 @@
     "packages/*": {
       "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"],
-      "ignore": ["src/**/*.test.ts", "src/**/*.spec.ts"]
+      "ignore": ["src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.type-test.ts"]
     }
   },
   "ignoreDependencies": ["bun-types", "typescript"],
   "ignoreExportsUsedInFile": true,
-  "ignoreBinaries": ["sleep"],
-  "ignoreWorkspaces": []
+  "ignoreBinaries": ["sleep"]
 }
