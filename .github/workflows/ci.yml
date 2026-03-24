@@ -77,6 +77,9 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Cache Turborepo
         uses: rharkor/caching-for-turbo@0abc2381e688c4d2832f0665a68a01c6e82f0d6c # v2.3.11
+      # Restore dist/ from turbo remote cache populated by the build job (all cache hits)
+      - name: Restore package builds (turbo)
+        run: bunx turbo build
       # prisma generate is normally run via packages/db pretest script, but bun test
       # at the root does not invoke per-package pretest hooks
       - name: Generate Prisma client
