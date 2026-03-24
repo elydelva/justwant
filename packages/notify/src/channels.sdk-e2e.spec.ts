@@ -13,6 +13,13 @@ const hasResend = Boolean(process.env.RESEND_API_KEY);
 const hasTwilio =
   Boolean(process.env.TWILIO_TEST_ACCOUNT_SID) && Boolean(process.env.TWILIO_TEST_AUTH_TOKEN);
 
+describe("channels SDK e2e (module)", () => {
+  test("createNotify is importable", async () => {
+    const { createNotify } = await import("./createNotify.js");
+    expect(typeof createNotify).toBe("function");
+  });
+});
+
 describe("channels SDK e2e (real Resend)", () => {
   test.skipIf(!hasResend)(
     "send email via real Resend SDK to test address delivered@resend.dev",

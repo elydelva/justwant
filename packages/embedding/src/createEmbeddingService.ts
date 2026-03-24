@@ -6,10 +6,8 @@ import { InvalidStorageError, UniverseNotFoundError } from "./errors.js";
 import { EMBEDDING_CAPABILITY } from "./types.js";
 import type {
   CreateEmbeddingServiceOptions,
-  EmbeddingEngine,
   SimilarOptions,
   Universe,
-  VectorStorage,
 } from "./types.js";
 
 export interface EmbeddingService {
@@ -36,7 +34,7 @@ function extractId<T>(item: T, idField: string): string {
   const rec = item as Record<string, unknown>;
   const val = rec[idField];
   if (typeof val !== "string") {
-    throw new Error(`Expected string id at "${idField}", got ${typeof val}`);
+    throw new TypeError(`Expected string id at "${idField}", got ${typeof val}`);
   }
   return val;
 }
@@ -70,8 +68,6 @@ export function createEmbeddingService(options: CreateEmbeddingServiceOptions): 
     throw new InvalidStorageError("storage must implement query()");
   }
 
-  const universeMap = new Map(universes.map((u) => [u.id, u]));
-
   return {
     async embed(text: string, opts?: { model?: string }) {
       return engine.embed(text, opts);
@@ -91,10 +87,10 @@ export function createEmbeddingService(options: CreateEmbeddingServiceOptions): 
       getUniverse(universes, universeId);
 
       let vector: number[];
-      if (opts.text !== undefined) {
-        vector = await engine.embed(opts.text);
-      } else if (opts.vector !== undefined) {
+      if (opts.vector !== undefined) {
         vector = opts.vector;
+      } else if (opts.text !== undefined) {
+        vector = await engine.embed(opts.text);
       } else {
         throw new Error("similar() requires either text or vector");
       }

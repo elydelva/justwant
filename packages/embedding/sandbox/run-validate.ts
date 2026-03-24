@@ -16,7 +16,9 @@ async function main() {
   console.log(`OK (storage: ${result.storageBackend})`);
 }
 
-main().catch((err) => {
-  console.error(err.message);
+try {
+  await main();
+} catch (err) {
+  console.error((err as Error).message);
   process.exit(1);
-});
+}

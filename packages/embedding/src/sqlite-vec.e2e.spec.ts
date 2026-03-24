@@ -12,6 +12,13 @@ import { sqliteVectorStorageAdapter } from "./storages/sqlite-vec.js";
 // better-sqlite3 is not supported in Bun
 const hasSqliteVec = typeof process !== "undefined" && process.versions?.bun === undefined;
 
+describe("sqlite-vec E2E (module)", () => {
+  test("sqliteVectorStorageAdapter is importable", async () => {
+    const { sqliteVectorStorageAdapter } = await import("./storages/sqlite-vec.js");
+    expect(typeof sqliteVectorStorageAdapter).toBe("function");
+  });
+});
+
 describe("sqlite-vec E2E (test engine + sqlite-vec storage)", () => {
   test.skipIf(!hasSqliteVec)(
     "full flow: upsertFrom then similar returns matching results",

@@ -11,6 +11,13 @@ import { pgvectorStorageAdapter } from "./storages/pgvector.js";
 const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
 const hasPostgres = Boolean(process.env.POSTGRES_URL);
 
+describe("SDK E2E (module)", () => {
+  test("createEmbeddingService is importable", async () => {
+    const { createEmbeddingService } = await import("./index.js");
+    expect(typeof createEmbeddingService).toBe("function");
+  });
+});
+
 describe("SDK E2E (OpenAI engine)", () => {
   test.skipIf(!hasOpenAI)("embed returns vector from real OpenAI API", async () => {
     const { default: OpenAI } = await import("openai");

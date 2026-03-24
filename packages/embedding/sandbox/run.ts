@@ -41,7 +41,9 @@ async function main() {
   console.log("\n✓ Sandbox terminé — toutes les assertions passent.");
 }
 
-main().catch((err) => {
-  console.error("\n✗ Erreur:", err.message);
+try {
+  await main();
+} catch (err) {
+  console.error("\n✗ Erreur:", (err as Error).message);
   process.exit(1);
-});
+}

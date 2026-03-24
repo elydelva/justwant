@@ -2,7 +2,7 @@
  * E2E matrix: shared scenarios run across Waddler dialects.
  * Uses runE2EMatrix() for CRUD, transaction, unique violation.
  */
-import { describe, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { defineContract, field } from "@justwant/contract";
 import { MYSQL_URL, POSTGRES_URL, hasMysql, hasPostgres } from "./e2e-helpers.js";
 import {
@@ -118,6 +118,12 @@ const setups = [
     },
   },
 ];
+
+describe("e2e-matrix module", () => {
+  test("runE2EMatrix is defined", () => {
+    expect(typeof runE2EMatrix).toBe("function");
+  });
+});
 
 runE2EMatrix(
   setups,
