@@ -13,12 +13,6 @@ import type {
   DrizzleMappedTableInternal,
 } from "./types.js";
 
-const defaultOptions: Required<Omit<DefineMappedTableOptions, "softDeleteColumn">> & {
-  softDeleteColumn: string | null;
-} = {
-  softDeleteColumn: "deletedAt",
-};
-
 /**
  * Defines a mapped table from a Drizzle table and a contract.
  * The returned table must be used with createDrizzleAdapter to inject the client.
@@ -34,7 +28,6 @@ export function defineMappedTable<TTable extends Table, TContract extends AnyCon
   mapping: MappingFor<TTable, TContract>,
   options?: DefineMappedTableOptions
 ): DrizzleMappedTable<TTable, TContract> {
-  const opts = { ...defaultOptions, ...options };
   const tableName = getTableName(table);
 
   const internal: DrizzleMappedTableInternal<TTable, TContract> = {
