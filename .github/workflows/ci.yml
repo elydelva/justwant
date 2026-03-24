@@ -73,6 +73,9 @@ jobs:
           restore-keys: bun-
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      # Workspace packages must be built so cross-package imports resolve at test time
+      - name: Build all packages
+        run: bun run build
       # Coverage reporters (text + lcov) and threshold are set in bunfig.toml.
       # Threshold is commented out there — enforced by SonarCloud Quality Gate instead.
       - name: Run tests with coverage
