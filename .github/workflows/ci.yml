@@ -79,7 +79,14 @@ jobs:
       # prisma generate is normally run via packages/db pretest script, but bun test
       # at the root does not invoke per-package pretest hooks
       - name: Generate Prisma client
-        run: bun run --cwd packages/db prisma generate
+        run: |
+          bun run --cwd packages/db prisma generate
+          # Bun deduplicates packages in node_modules/.bun — sync the generated
+          # client there so imports from test files resolve the real implementation
+          for dir in node_modules/.bun/@prisma+client*/node_modules/.prisma; do
+            mkdir -p "$dir/client"
+            cp -r packages/db/node_modules/.prisma/client/. "$dir/client/"
+          done
       # Coverage reporters (text + lcov) and threshold are set in bunfig.toml.
       # Threshold is commented out there — enforced by SonarCloud Quality Gate instead.
       - name: Run tests with coverage
