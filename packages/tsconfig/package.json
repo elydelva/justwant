@@ -9,5 +9,10 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/tsconfig"
   },
-  "files": ["base.json", "node.json", "package.json"]
+  "files": [
+    "base.json",
+    "node.json",
+    "package.json"
+  ],
+  "publishConfig": {}
 }

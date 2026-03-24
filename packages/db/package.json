@@ -195,7 +195,12 @@
     "test:e2e:down": "docker compose down",
     "test:better-sqlite3": "bun run build && node scripts/better-sqlite3-e2e.mjs"
   },
-  "files": ["dist", "README.md", "docs", "prisma/schema.prisma"],
+  "files": [
+    "dist",
+    "README.md",
+    "docs",
+    "prisma/schema.prisma"
+  ],
   "publishConfig": {
     "access": "public"
   },

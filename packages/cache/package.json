@@ -134,7 +134,10 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -150,11 +153,21 @@
     "@msgpack/msgpack": "^3.0.0"
   },
   "peerDependenciesMeta": {
-    "ioredis": { "optional": true },
-    "@upstash/redis": { "optional": true },
-    "@vercel/kv": { "optional": true },
-    "superjson": { "optional": true },
-    "@msgpack/msgpack": { "optional": true }
+    "ioredis": {
+      "optional": true
+    },
+    "@upstash/redis": {
+      "optional": true
+    },
+    "@vercel/kv": {
+      "optional": true
+    },
+    "superjson": {
+      "optional": true
+    },
+    "@msgpack/msgpack": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",

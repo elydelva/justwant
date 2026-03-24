@@ -60,7 +60,10 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },

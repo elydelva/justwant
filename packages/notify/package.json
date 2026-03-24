@@ -61,7 +61,11 @@
     "test": "bun test",
     "check": "bun run typecheck && bun test"
   },
-  "files": ["dist", "README.md", "TESTING.md"],
+  "files": [
+    "dist",
+    "README.md",
+    "TESTING.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
