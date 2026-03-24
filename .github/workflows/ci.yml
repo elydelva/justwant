@@ -98,6 +98,8 @@ jobs:
       # Threshold is commented out there — enforced by SonarCloud Quality Gate instead.
       - name: Run tests with coverage
         run: bun test --coverage
+        env:
+          DATABASE_URL: file:./packages/db/test.db
       - name: Upload coverage report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
