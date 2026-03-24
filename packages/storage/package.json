@@ -96,7 +96,8 @@
     "@aws-sdk/s3-request-presigner": "^3.0.0",
     "@justwant/tsconfig": "workspace:*",
     "@supabase/supabase-js": "^2.0.0",
-    "@vercel/blob": "^0.23.0",
+    "@vercel/blob": "^2.3.1",
     "typescript": "^5.7.0"
-  }
+  },
+  "publishConfig": {}
 }

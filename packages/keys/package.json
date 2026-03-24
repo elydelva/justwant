@@ -21,5 +21,6 @@
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
     "typescript": "^5.7.0"
-  }
+  },
+  "publishConfig": {}
 }

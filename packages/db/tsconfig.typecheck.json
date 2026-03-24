@@ -1,4 +1,10 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/*.type-test.ts"]
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.type-test.ts",
+    "src/e2e-helpers.ts",
+    "src/e2e-matrix.ts"
+  ]
 }

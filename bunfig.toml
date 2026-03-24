@@ -1,5 +1,6 @@
 [test]
 coverage = true
-coverageReporter = ["text"]
+coverageReporter = ["text", "lcov"]
 coverageDir = "coverage"
-coverageThreshold = 0.8
+# Threshold enforced by SonarCloud Quality Gate, not here
+# coverageThreshold = 0.8

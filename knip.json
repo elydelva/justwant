@@ -1,0 +1,45 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "ignore": [
+    "examples/**",
+    "**/*.type-test.ts",
+    "packages/cache/src/adapters/index.ts",
+    "packages/cache/src/plugins/index.ts",
+    "packages/cache/src/serializers/index.ts",
+    "packages/cache/src/serializers/json.ts",
+    "packages/db/src/drizzle/drizzle-types.ts",
+    "packages/db/src/e2e-helpers.ts",
+    "packages/embedding/src/engines/index.ts",
+    "packages/embedding/src/storages/index.ts",
+    "packages/job/src/repo/types.ts",
+    "packages/notify/src/repo/types.ts"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": [],
+      "project": ["packages/*/src/**/*.ts"]
+    },
+    "packages/*": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.type-test.ts"]
+    }
+  },
+  "ignoreDependencies": [
+    "bun-types",
+    "typescript",
+    "@justwant/tsconfig",
+    "@justwant/contract",
+    "zod",
+    "valibot",
+    "@xenova/transformers",
+    "bullmq",
+    "@upstash/qstash",
+    "cron-parser",
+    "sharp",
+    "superjson",
+    "@msgpack/msgpack"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "ignoreBinaries": ["sleep"]
+}
