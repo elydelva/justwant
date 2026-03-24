@@ -103,10 +103,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Audit with osv-scanner
-        uses: google/osv-scanner-action@764c91816374ff2d8fc2095dab36eecd42d61638 # v1.9.2
-        with:
-          scan-args: |-
-            --lockfile=bun.lock
+        run: bunx osv-scanner scan --lockfile=bun.lock
 
   # ── Dead code detection (Knip) ───────────────────────────────────────────────
   dead-code:
