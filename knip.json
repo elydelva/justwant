@@ -12,5 +12,7 @@
     }
   },
   "ignoreDependencies": ["bun-types", "typescript"],
-  "ignoreExportsUsedInFile": true
+  "ignoreExportsUsedInFile": true,
+  "ignoreBinaries": ["sleep"],
+  "ignoreWorkspaces": []
 }
