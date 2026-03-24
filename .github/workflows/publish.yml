@@ -17,12 +17,12 @@ jobs:
       pull-requests: write  # Open/update the changeset PR
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: latest
 
@@ -36,7 +36,7 @@ jobs:
       #   - Open / update a "Version Packages" PR (when new changesets exist)
       #   - Publish to npm and create GitHub releases (when the PR is merged)
       - name: Create release PR or publish
-        uses: changesets/action@v1
+        uses: changesets/action@c8bada60c408975afd1a20b3db81d6eee6789308 # v1.4.9
         with:
           publish: bun run publish:packages
           version: bun run version
