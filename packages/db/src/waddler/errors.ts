@@ -20,7 +20,7 @@ import {
 export function parseWaddlerError(raw: unknown): AdapterError {
   const err = raw as Record<string, unknown>;
   const cause = err?.cause as Record<string, unknown> | undefined;
-  const message = typeof err?.message === "string" ? err.message : "Unknown error";
+  const message = typeof raw === "string" ? raw : typeof err?.message === "string" ? err.message : "Unknown error";
   const str = (v: unknown) => (typeof v === "string" ? v : "");
   const causeMsg = typeof cause?.message === "string" ? (cause.message as string) : "";
   const msgToCheck = causeMsg || message;
