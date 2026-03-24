@@ -50,11 +50,12 @@ jobs:
           restore-keys: bun-
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      # Workspace packages must be built before tsc can resolve cross-package imports
-      - name: Build all packages
-        run: bun run build
-      - name: TypeScript
-        run: bun run typecheck
+      - name: Cache Turborepo
+        uses: rharkor/caching-for-turbo@0abc2381e688c4d2832f0665a68a01c6e82f0d6c # v2.3.11
+      # turbo typecheck: builds deps first (^build), then typechecks each package.
+      # Cache hits skip unchanged packages entirely.
+      - name: Typecheck (turbo)
+        run: bunx turbo typecheck
 
   # ── Tests ────────────────────────────────────────────────────────────────────
   test:
@@ -73,9 +74,11 @@ jobs:
           restore-keys: bun-
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      # Workspace packages must be built so cross-package imports resolve at test time
-      - name: Build all packages
-        run: bun run build
+      - name: Cache Turborepo
+        uses: rharkor/caching-for-turbo@0abc2381e688c4d2832f0665a68a01c6e82f0d6c # v2.3.11
+      # Build all packages via turbo — cache hits skip unchanged packages
+      - name: Build all packages (turbo)
+        run: bunx turbo build
       # prisma generate is normally run via packages/db pretest script, but bun test
       # at the root does not invoke per-package pretest hooks
       - name: Generate Prisma client
@@ -88,7 +91,7 @@ jobs:
             cp -r packages/db/node_modules/.prisma/client/. "$dir/client/"
           done
       - name: Push Prisma schema to SQLite test db
-        run: DATABASE_URL=file:./test.db bun run --cwd packages/db prisma db push --skip-generate
+        run: bun run --cwd packages/db prisma db push --skip-generate
         env:
           DATABASE_URL: file:./test.db
       # Coverage reporters (text + lcov) and threshold are set in bunfig.toml.
@@ -203,5 +206,7 @@ jobs:
           restore-keys: bun-
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Build all packages
-        run: bun run build
+      - name: Cache Turborepo
+        uses: rharkor/caching-for-turbo@0abc2381e688c4d2832f0665a68a01c6e82f0d6c # v2.3.11
+      - name: Build all packages (turbo)
+        run: bunx turbo build
