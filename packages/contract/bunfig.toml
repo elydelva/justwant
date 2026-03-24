@@ -1,5 +1,5 @@
 [test]
 coverage = true
-coverageReporter = ["text"]
+coverageReporter = ["text", "lcov"]
 coverageDir = "coverage"
 # coverageThreshold = 0.9  # Known bun bug: exits 1 even when threshold met
