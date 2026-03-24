@@ -5,54 +5,49 @@ import { join } from "node:path";
  * Parse .env file format: KEY=VALUE
  * Supports: comments (#), quoted values (single/double), multiline (backslash continuation)
  */
+function readLogicalLine(lines: string[], start: number): { line: string; end: number } {
+  let i = start;
+  let line = lines[i] ?? "";
+  while (line.endsWith("\\") && i + 1 < lines.length) {
+    const next = lines[++i];
+    line = `${line.slice(0, -1).trimEnd()}\n${next ?? ""}`;
+  }
+  return { line: line.trim(), end: i };
+}
+
+function parseLine(line: string, result: Record<string, string>): void {
+  if (!line || line.startsWith("#")) return;
+
+  let l = line;
+  if (l.startsWith("export ")) l = l.slice(7).trim();
+
+  const eqIndex = l.indexOf("=");
+  if (eqIndex <= 0) return;
+
+  const key = l.slice(0, eqIndex).trim();
+  let value = l.slice(eqIndex + 1).trim();
+
+  if (value.startsWith('"')) {
+    value = parseDoubleQuoted(value);
+  } else if (value.startsWith("'")) {
+    value = parseSingleQuoted(value);
+  } else {
+    const hashIdx = value.indexOf("#");
+    if (hashIdx >= 0) value = value.slice(0, hashIdx).trim();
+  }
+
+  result[key] = value;
+}
+
 export function parseEnvFile(content: string): Record<string, string> {
   const result: Record<string, string> = {};
   const lines = content.split(/\r?\n/);
   let i = 0;
 
   while (i < lines.length) {
-    let line = lines[i] ?? "";
-
-    // Line continuation: lines ending with \
-    while (line.endsWith("\\") && i + 1 < lines.length) {
-      const next = lines[++i];
-      line = `${line.slice(0, -1).trimEnd()}\n${next ?? ""}`;
-    }
-
-    line = line.trim();
-    if (!line || line.startsWith("#")) {
-      i++;
-      continue;
-    }
-
-    // export KEY=value (bash compatibility)
-    if (line.startsWith("export ")) {
-      line = line.slice(7).trim();
-    }
-
-    const eqIndex = line.indexOf("=");
-    if (eqIndex <= 0) {
-      i++;
-      continue;
-    }
-
-    const key = line.slice(0, eqIndex).trim();
-    let value = line.slice(eqIndex + 1).trim();
-
-    if (value.startsWith('"')) {
-      value = parseDoubleQuoted(value);
-    } else if (value.startsWith("'")) {
-      value = parseSingleQuoted(value);
-    }
-
-    // Remove inline comment (unquoted values only)
-    const hashIdx = value.indexOf("#");
-    if (hashIdx >= 0 && !value.startsWith('"') && !value.startsWith("'")) {
-      value = value.slice(0, hashIdx).trim();
-    }
-
-    result[key] = value;
-    i++;
+    const { line, end } = readLogicalLine(lines, i);
+    i = end + 1;
+    parseLine(line, result);
   }
 
   return result;

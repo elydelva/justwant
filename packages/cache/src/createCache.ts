@@ -7,6 +7,32 @@ import type {
   SetOptions,
 } from "./types.js";
 
+async function storeFetchedItems<T>(
+  cache: CacheInstance,
+  result: Map<string, T>,
+  fetched: T[],
+  missing: string[],
+  opts?: SetOptions & { keyFn?: (item: T) => string }
+): Promise<void> {
+  const keyFn = opts?.keyFn;
+  if (keyFn) {
+    for (const item of fetched) {
+      const k = keyFn(item);
+      result.set(k, item);
+      await cache.set(k, item, opts);
+    }
+  } else {
+    for (let i = 0; i < missing.length; i++) {
+      const k = missing[i];
+      const item = fetched[i];
+      if (k !== undefined && item !== undefined) {
+        result.set(k, item);
+        await cache.set(k, item, opts);
+      }
+    }
+  }
+}
+
 function buildNamespacedGetMany(
   getMany: NonNullable<CacheAdapter["getMany"]>,
   prefixedKey: (k: string) => string
@@ -315,12 +341,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       opts?: SetOptions & { keyFn?: (item: T) => string }
     ): Promise<Map<string, T>> {
       const existing = await cache.getMany<T>(keys);
-      const missing: string[] = [];
-      for (const k of keys) {
-        if (!existing.has(k) || existing.get(k) === null) {
-          missing.push(k);
-        }
-      }
+      const missing = keys.filter((k) => !existing.has(k) || existing.get(k) === null);
       const result = new Map<string, T>();
       for (const k of keys) {
         const v = existing.get(k);
@@ -328,23 +349,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       }
       if (missing.length > 0) {
         const fetched = await fetchMissing(missing);
-        const keyFn = opts?.keyFn;
-        if (keyFn) {
-          for (const item of fetched) {
-            const k = keyFn(item);
-            result.set(k, item);
-            await cache.set(k, item, opts);
-          }
-        } else {
-          for (let i = 0; i < missing.length; i++) {
-            const k = missing[i];
-            const item = fetched[i];
-            if (k !== undefined && item !== undefined) {
-              result.set(k, item);
-              await cache.set(k, item, opts);
-            }
-          }
-        }
+        await storeFetchedItems(cache, result, fetched, missing, opts);
       }
       return result;
     },
