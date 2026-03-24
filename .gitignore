@@ -9,3 +9,6 @@ coverage/
 **/prisma/test.db
 **/generated/
 var
+.turbo
+.scannerwork
+.claude/settings.local.json
