@@ -19,6 +19,7 @@
     "changeset": "changeset",
     "version": "changeset version",
     "publish:packages": "changeset publish",
+    "publish:trust": "bun scripts/add-trusted-publisher.ts",
     "prepare": "husky"
   },
   "devDependencies": {
