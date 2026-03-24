@@ -1,6 +1,13 @@
 import { parseTtl } from "../ttl.js";
 import type { CacheAdapter, SetOptions } from "../types.js";
 
+function parseTtlSeconds(ttl: SetOptions["ttl"]): number | undefined {
+  const parsed = parseTtl(ttl);
+  if (parsed === undefined) return undefined;
+  const ms = typeof parsed === "number" ? parsed : parsed.getTime() - Date.now();
+  return Math.ceil(ms / 1000);
+}
+
 export interface RedisClient {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, ...args: unknown[]): Promise<unknown>;
@@ -40,14 +47,7 @@ export function redisAdapter(options: RedisAdapterOptions): CacheAdapter {
 
     async set(key: string, value: string, opts?: SetOptions): Promise<void> {
       const k = prefix(key, keyPrefix);
-      const parsed = parseTtl(opts?.ttl);
-      const ttlSec =
-        parsed === undefined
-          ? undefined
-          : typeof parsed === "number"
-            ? Math.ceil(parsed / 1000)
-            : Math.ceil((parsed.getTime() - Date.now()) / 1000);
-
+      const ttlSec = opts?.ttl !== undefined ? parseTtlSeconds(opts.ttl) : undefined;
       if (ttlSec !== undefined && ttlSec > 0) {
         await redis.set(k, value, "EX", ttlSec);
       } else {
@@ -90,28 +90,16 @@ export function redisAdapter(options: RedisAdapterOptions): CacheAdapter {
       entries: Array<{ key: string; value: string; opts?: SetOptions }>
     ): Promise<void> {
       const args: string[] = [];
-      for (const e of entries) {
-        args.push(prefix(e.key, keyPrefix), e.value);
-      }
+      for (const e of entries) args.push(prefix(e.key, keyPrefix), e.value);
       await redis.mset(...args);
       for (const e of entries) {
+        const k = prefix(e.key, keyPrefix);
         if (e.opts?.ttl) {
-          const parsed = parseTtl(e.opts.ttl);
-          if (parsed !== undefined) {
-            const ttlSec =
-              typeof parsed === "number"
-                ? Math.ceil(parsed / 1000)
-                : Math.ceil((parsed.getTime() - Date.now()) / 1000);
-            if (ttlSec > 0) {
-              await redis.expire(prefix(e.key, keyPrefix), ttlSec);
-            }
-          }
+          const ttlSec = parseTtlSeconds(e.opts.ttl);
+          if (ttlSec !== undefined && ttlSec > 0) await redis.expire(k, ttlSec);
         }
         if (e.opts?.tags?.length && redis.sadd) {
-          const k = prefix(e.key, keyPrefix);
-          for (const tag of e.opts.tags) {
-            await redis.sadd(tagSetKey(tag), k);
-          }
+          for (const tag of e.opts.tags) await redis.sadd(tagSetKey(tag), k);
         }
       }
     },
@@ -131,15 +119,8 @@ export function redisAdapter(options: RedisAdapterOptions): CacheAdapter {
     },
 
     async expire(key: string, ttl: import("../types.js").TTL): Promise<void> {
-      const parsed = parseTtl(ttl);
-      if (parsed === undefined) return;
-      const ttlSec =
-        typeof parsed === "number"
-          ? Math.ceil(parsed / 1000)
-          : Math.ceil((parsed.getTime() - Date.now()) / 1000);
-      if (ttlSec > 0) {
-        await redis.expire(prefix(key, keyPrefix), ttlSec);
-      }
+      const ttlSec = parseTtlSeconds(ttl);
+      if (ttlSec !== undefined && ttlSec > 0) await redis.expire(prefix(key, keyPrefix), ttlSec);
     },
 
     async invalidateTag(tag: string): Promise<void> {

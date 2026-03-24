@@ -5,15 +5,11 @@
 import type { AnyContract, InferContract } from "@justwant/contract";
 import type { BoundQuery, CreateInput } from "@justwant/db";
 import { and, eq, isNull } from "drizzle-orm";
-import type { Table } from "drizzle-orm";
-import { getTableName } from "drizzle-orm";
 import { buildWhere } from "./buildWhere.js";
 import { defineMappedTable } from "./defineMappedTable.js";
 import { parseDbError } from "./errors.js";
 import { mapRowToContract } from "./mapping.js";
-import type { MappingFor } from "./mapping.js";
 import type {
-  DefineMappedTableOptions,
   DrizzleAdapter,
   DrizzleClient,
   DrizzleMappedTable,
@@ -34,7 +30,6 @@ export function createDrizzleAdapter(
   options?: CreateDrizzleAdapterOptions
 ): DrizzleAdapter {
   const dialect = options?.dialect ?? inferDialect(db);
-  const onQuery = options?.onQuery;
 
   const adapter: DrizzleAdapter = {
     dialect,
@@ -45,7 +40,6 @@ export function createDrizzleAdapter(
         defineOptions && "softDeleteColumn" in defineOptions
           ? defineOptions.softDeleteColumn
           : "deletedAt";
-      const tableName = getTableName(table);
 
       const mapped = defineMappedTable(table, contract, mapping, defineOptions);
 
@@ -99,11 +93,10 @@ export function createDrizzleAdapter(
       const sql = {
         findById: (id: string) =>
           createBoundQuery(async () => {
-            const conditions = idCol
-              ? baseWhere
-                ? and(eq(idCol as never, id), baseWhere)
-                : eq(idCol as never, id)
+            const idCondition = idCol
+              ? eq(idCol as never, id)
               : eq((table as Record<string, unknown>).id as never, id);
+            const conditions = baseWhere ? and(idCondition, baseWhere) : idCondition;
             const rows = (await select().from(table).where(conditions).limit(1)) as Record<
               string,
               unknown

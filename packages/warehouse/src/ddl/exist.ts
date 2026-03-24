@@ -5,11 +5,11 @@
 import type { WarehouseDialect } from "../types.js";
 
 function escapeIdentifier(name: string): string {
-  return `"${String(name).replace(/"/g, '""')}"`;
+  return `"${String(name).replaceAll('"', '""')}"`;
 }
 
 function escapeStringLiteral(value: string): string {
-  return `'${String(value).replace(/'/g, "''")}'`;
+  return `'${String(value).replaceAll("'", "''")}'`;
 }
 
 export function getExistTableSQL(tableName: string, dialect: WarehouseDialect): string {

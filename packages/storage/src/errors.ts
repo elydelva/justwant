@@ -24,14 +24,13 @@ export class StorageAdapterError extends StorageError {
 
 export function parseStorageError(raw: unknown): StorageError {
   const err = raw as Record<string, unknown>;
-  const message = typeof err?.message === "string" ? err.message : String(raw ?? "Unknown error");
+  const message = typeof err?.message === "string" ? err.message : "Unknown error";
   const code = err?.code as string | undefined;
 
   if (typeof code === "string") {
     switch (code) {
       case "ECONNREFUSED":
       case "ECONNRESET":
-        return new StorageAdapterError(message, { code });
       case "ETIMEDOUT":
         return new StorageAdapterError(message, { code });
     }

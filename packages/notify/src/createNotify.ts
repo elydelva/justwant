@@ -22,6 +22,15 @@ import type {
 
 const DEFAULT_ON_ERROR: OnError = "throw";
 
+async function notifyPlugins(
+  plugins: NotifyPlugin[],
+  event: Parameters<NonNullable<NotifyPlugin["onSend"]>>[0]
+): Promise<void> {
+  for (const plugin of plugins) {
+    if (plugin.onSend) await plugin.onSend(event);
+  }
+}
+
 export function createNotify(options: CreateNotifyOptions): NotifyInstance {
   const {
     templates: initialTemplates,
@@ -58,38 +67,16 @@ export function createNotify(options: CreateNotifyOptions): NotifyInstance {
 
     const message = (version as (a: unknown) => ChannelMessage)(args);
 
-    for (const plugin of plugins) {
-      if (plugin.onSend) {
-        await plugin.onSend({
-          templateId,
-          canalId,
-          args,
-          message,
-          phase: "before",
-        });
-      }
-    }
+    await notifyPlugins(plugins, { templateId, canalId, args, message, phase: "before" });
 
     let sendResult: unknown;
     try {
       await (canal as { send(msg: ChannelMessage): Promise<void> }).send(message);
-      sendResult = undefined;
     } catch (err) {
       sendResult = err;
       if (onError === "throw") throw err;
     } finally {
-      for (const plugin of plugins) {
-        if (plugin.onSend) {
-          await plugin.onSend({
-            templateId,
-            canalId,
-            args,
-            message,
-            phase: "after",
-            result: sendResult,
-          });
-        }
-      }
+      await notifyPlugins(plugins, { templateId, canalId, args, message, phase: "after", result: sendResult });
     }
   }
 

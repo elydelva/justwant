@@ -32,7 +32,7 @@ export function cloudflareAiEmbeddingEngine(
     async embed(text: string): Promise<number[]> {
       const { data } = await ai.run(model, { text: [text] });
       const vec = data[0];
-      if (!vec || vec.length !== dimension) {
+      if (vec?.length !== dimension) {
         throw new Error(
           `Cloudflare AI returned vector of length ${vec?.length ?? 0}, expected ${dimension}`
         );

@@ -20,7 +20,8 @@ import {
 export function parseWaddlerError(raw: unknown): AdapterError {
   const err = raw as Record<string, unknown>;
   const cause = err?.cause as Record<string, unknown> | undefined;
-  const message = typeof err?.message === "string" ? err.message : String(raw ?? "Unknown error");
+  const message = typeof err?.message === "string" ? err.message : "Unknown error";
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
   const causeMsg = typeof cause?.message === "string" ? (cause.message as string) : "";
   const msgToCheck = causeMsg || message;
   const code = (err?.code ?? cause?.code) as string | undefined;
@@ -28,8 +29,8 @@ export function parseWaddlerError(raw: unknown): AdapterError {
 
   if (errno === 1062 || code === "ER_DUP_ENTRY") {
     return new AdapterUniqueViolationError(message, {
-      table: String(err?.table ?? cause?.table ?? ""),
-      column: String(err?.column ?? cause?.column ?? ""),
+      table: str(err?.table ?? cause?.table),
+      column: str(err?.column ?? cause?.column),
     });
   }
 
@@ -37,24 +38,24 @@ export function parseWaddlerError(raw: unknown): AdapterError {
     switch (code) {
       case "23503":
         return new AdapterForeignKeyViolationError(message, {
-          table: String(err?.table ?? ""),
-          column: String(err?.column ?? ""),
+          table: str(err?.table),
+          column: str(err?.column),
         });
       case "23505":
         return new AdapterUniqueViolationError(message, {
-          table: String(err?.table ?? ""),
-          column: String(err?.column ?? ""),
-          constraint: String(err?.constraint ?? ""),
+          table: str(err?.table),
+          column: str(err?.column),
+          constraint: str(err?.constraint),
         });
       case "23502":
         return new AdapterNotNullViolationError(message, {
-          table: String(err?.table ?? ""),
-          column: String(err?.column ?? ""),
+          table: str(err?.table),
+          column: str(err?.column),
         });
       case "23514":
         return new AdapterCheckViolationError(message, {
-          table: String(err?.table ?? ""),
-          constraint: String(err?.constraint ?? ""),
+          table: str(err?.table),
+          constraint: str(err?.constraint),
         });
       case "ECONNREFUSED":
       case "ECONNRESET":

@@ -1,6 +1,12 @@
 import { parseTtl } from "../ttl.js";
 import type { CacheAdapter, SetOptions } from "../types.js";
 
+function computeExpiresAt(ttl: SetOptions["ttl"]): number | null {
+  const parsed = parseTtl(ttl);
+  if (parsed === undefined) return null;
+  return typeof parsed === "number" ? Date.now() + parsed : parsed.getTime();
+}
+
 interface Entry {
   value: string;
   expiresAt: number | null;
@@ -55,13 +61,7 @@ export function memoryAdapter(): CacheAdapter {
 
     async set(key: string, value: string, opts?: SetOptions): Promise<void> {
       const tags = opts?.tags;
-      const parsed = parseTtl(opts?.ttl);
-      const expiresAt =
-        parsed === undefined
-          ? null
-          : typeof parsed === "number"
-            ? Date.now() + parsed
-            : parsed.getTime();
+      const expiresAt = computeExpiresAt(opts?.ttl);
 
       const existing = store.get(key);
       if (existing?.tags) for (const t of existing.tags) removeTag(key, t);

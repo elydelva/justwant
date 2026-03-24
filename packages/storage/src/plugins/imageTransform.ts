@@ -50,6 +50,47 @@ export interface ImageTransformPluginOptions {
   quality?: number;
 }
 
+function getOutputContentType(
+  format: ImageTransformPluginOptions["format"],
+  fallback: string | undefined
+): string | undefined {
+  if (format === "webp") return "image/webp";
+  if (format === "avif") return "image/avif";
+  if (format === "jpeg") return "image/jpeg";
+  if (format === "png") return "image/png";
+  return fallback;
+}
+
+type SharpChain = {
+  resize: (w?: number, h?: number, o?: object) => SharpChain;
+  webp: (o?: object) => SharpChain;
+  avif: (o?: object) => SharpChain;
+  jpeg: (o?: object) => SharpChain;
+  png: (o?: object) => SharpChain;
+  toBuffer: () => Promise<Buffer>;
+};
+
+function loadSharp(): ((i: Buffer) => SharpChain) | null {
+  try {
+    const sharpModule = require("sharp") as unknown;
+    const fn =
+      typeof sharpModule === "function"
+        ? sharpModule
+        : (sharpModule as { default?: (i: Buffer) => SharpChain }).default;
+    return (fn as (i: Buffer) => SharpChain) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function applyFormat(instance: SharpChain, format: ImageTransformPluginOptions["format"], quality: number): SharpChain {
+  if (format === "webp") return instance.webp({ quality });
+  if (format === "avif") return instance.avif({ quality });
+  if (format === "jpeg") return instance.jpeg({ quality });
+  if (format === "png") return instance.png({ quality });
+  return instance;
+}
+
 export function imageTransformPlugin(options?: ImageTransformPluginOptions): StoragePlugin {
   const { maxWidth, maxHeight, format, quality = 80 } = options ?? {};
 
@@ -58,69 +99,27 @@ export function imageTransformPlugin(options?: ImageTransformPluginOptions): Sto
 
     async upload(params: UploadParams, next: StorageUploadNext) {
       const contentType = params.options?.contentType;
-      if (!isImageContentType(contentType)) {
-        return next(params);
-      }
+      if (!isImageContentType(contentType)) return next(params);
 
-      type SharpChain = {
-        resize: (w?: number, h?: number, o?: object) => SharpChain;
-        webp: (o?: object) => SharpChain;
-        avif: (o?: object) => SharpChain;
-        jpeg: (o?: object) => SharpChain;
-        png: (o?: object) => SharpChain;
-        toBuffer: () => Promise<Buffer>;
-      };
-
-      let sharp: (i: Buffer) => SharpChain;
-      try {
-        const sharpModule = require("sharp") as unknown;
-        const fn =
-          typeof sharpModule === "function"
-            ? sharpModule
-            : (sharpModule as { default?: (i: Buffer) => SharpChain }).default;
-        if (!fn) return next(params);
-        sharp = fn as (i: Buffer) => SharpChain;
-      } catch {
-        return next(params);
-      }
+      const sharp = loadSharp();
+      if (!sharp) return next(params);
 
       const input = await toBuffer(params.data);
-      let instance: SharpChain = sharp(input);
+      let instance = sharp(input);
 
       if (maxWidth ?? maxHeight) {
-        instance = instance.resize(maxWidth, maxHeight, {
-          fit: "inside",
-          withoutEnlargement: true,
-        });
+        instance = instance.resize(maxWidth, maxHeight, { fit: "inside", withoutEnlargement: true });
       }
 
-      const formatOpts = { quality };
-      if (format === "webp") {
-        instance = instance.webp(formatOpts);
-      } else if (format === "avif") {
-        instance = instance.avif(formatOpts);
-      } else if (format === "jpeg") {
-        instance = instance.jpeg(formatOpts);
-      } else if (format === "png") {
-        instance = instance.png(formatOpts);
-      }
+      instance = applyFormat(instance, format, quality);
 
       const output = await instance.toBuffer();
 
-      const ext = format ? `.${format}` : (params.path.match(/\.[^.]+$/) ?? [""])[0];
+      const ext = format ? `.${format}` : (/\.[^.]+$/.exec(params.path) ?? [""])[0];
       const basePath = params.path.replace(/\.[^.]+$/, "");
       const newPath = `${basePath}${ext}`;
 
-      const newContentType =
-        format === "webp"
-          ? "image/webp"
-          : format === "avif"
-            ? "image/avif"
-            : format === "jpeg"
-              ? "image/jpeg"
-              : format === "png"
-                ? "image/png"
-                : params.options?.contentType;
+      const newContentType = getOutputContentType(format, params.options?.contentType);
 
       return next({
         ...params,

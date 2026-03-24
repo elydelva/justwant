@@ -1,6 +1,13 @@
 import { parseTtl } from "../ttl.js";
 import type { CacheAdapter, SetOptions } from "../types.js";
 
+function parseTtlOptions(ttl: SetOptions["ttl"]): { ex?: number; exat?: number } | undefined {
+  const parsed = parseTtl(ttl);
+  if (parsed === undefined) return undefined;
+  if (typeof parsed === "number") return { ex: Math.ceil(parsed / 1000) };
+  return { exat: Math.ceil(parsed.getTime() / 1000) };
+}
+
 export interface UpstashRedisClient {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, options?: { ex?: number; exat?: number }): Promise<unknown>;
@@ -40,16 +47,8 @@ export function upstashAdapter(options: UpstashAdapterOptions): CacheAdapter {
 
     async set(key: string, value: string, opts?: SetOptions): Promise<void> {
       const k = prefix(key, keyPrefix);
-      const parsed = parseTtl(opts?.ttl);
-      const options: { ex?: number; exat?: number } = {};
-      if (parsed !== undefined) {
-        if (typeof parsed === "number") {
-          options.ex = Math.ceil(parsed / 1000);
-        } else {
-          options.exat = Math.ceil(parsed.getTime() / 1000);
-        }
-      }
-      await redis.set(k, value, Object.keys(options).length ? options : undefined);
+      const ttlOpts = opts?.ttl !== undefined ? parseTtlOptions(opts.ttl) : undefined;
+      await redis.set(k, value, ttlOpts);
 
       if (opts?.tags?.length && redis.sadd) {
         for (const tag of opts.tags) {
@@ -83,26 +82,17 @@ export function upstashAdapter(options: UpstashAdapterOptions): CacheAdapter {
       entries: Array<{ key: string; value: string; opts?: SetOptions }>
     ): Promise<void> {
       const obj: Record<string, string> = {};
-      for (const e of entries) {
-        obj[prefix(e.key, keyPrefix)] = e.value;
-      }
+      for (const e of entries) obj[prefix(e.key, keyPrefix)] = e.value;
       await redis.mset(obj);
       for (const e of entries) {
+        const k = prefix(e.key, keyPrefix);
         if (e.opts?.ttl) {
-          const parsed = parseTtl(e.opts.ttl);
-          if (parsed !== undefined) {
-            const ex =
-              typeof parsed === "number"
-                ? Math.ceil(parsed / 1000)
-                : Math.ceil((parsed.getTime() - Date.now()) / 1000);
-            if (ex > 0) await redis.expire(prefix(e.key, keyPrefix), ex);
-          }
+          const ttlOpts = parseTtlOptions(e.opts.ttl);
+          const ex = ttlOpts?.ex ?? (ttlOpts?.exat ? ttlOpts.exat - Math.ceil(Date.now() / 1000) : undefined);
+          if (ex !== undefined && ex > 0) await redis.expire(k, ex);
         }
         if (e.opts?.tags?.length && redis.sadd) {
-          const k = prefix(e.key, keyPrefix);
-          for (const tag of e.opts.tags) {
-            await redis.sadd(tagSetKey(tag), k);
-          }
+          for (const tag of e.opts.tags) await redis.sadd(tagSetKey(tag), k);
         }
       }
     },
@@ -122,15 +112,9 @@ export function upstashAdapter(options: UpstashAdapterOptions): CacheAdapter {
     },
 
     async expire(key: string, ttl: import("../types.js").TTL): Promise<void> {
-      const parsed = parseTtl(ttl);
-      if (parsed === undefined) return;
-      const ttlSec =
-        typeof parsed === "number"
-          ? Math.ceil(parsed / 1000)
-          : Math.ceil((parsed.getTime() - Date.now()) / 1000);
-      if (ttlSec > 0) {
-        await redis.expire(prefix(key, keyPrefix), ttlSec);
-      }
+      const ttlOpts = parseTtlOptions(ttl);
+      const ttlSec = ttlOpts?.ex ?? (ttlOpts?.exat ? ttlOpts.exat - Math.ceil(Date.now() / 1000) : undefined);
+      if (ttlSec !== undefined && ttlSec > 0) await redis.expire(prefix(key, keyPrefix), ttlSec);
     },
 
     async invalidateTag(tag: string): Promise<void> {

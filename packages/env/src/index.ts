@@ -2,16 +2,8 @@
  * @justwant/env — Typed, validated environment variables.
  * Node.js / Bun: full support (files, watch).
  */
-import {
-  type CreateEnvOptions,
-  type CreateEnvResult,
-  type EnvInclude,
-  type EnvSchema,
-  type GroupSchema,
-  type InferEnv,
-  type InferGroupEnv,
-  createEnvWithDeps,
-} from "./core.js";
+import { createEnvWithDeps } from "./core.js";
+export type { CreateEnvOptions, CreateEnvResult, EnvInclude, EnvSchema, GroupSchema, InferEnv, InferGroupEnv } from "./core.js";
 import { mergeSources } from "./utils.js";
 import { watchEnvFiles } from "./watcher.js";
 
@@ -28,16 +20,6 @@ function getNodeEnv(): string {
   }
   return "development";
 }
-
-export type {
-  CreateEnvOptions,
-  CreateEnvResult,
-  EnvInclude,
-  EnvSchema,
-  GroupSchema,
-  InferEnv,
-  InferGroupEnv,
-};
 
 export interface DefineEnvOptions<T extends EnvSchema> {
   vars: T;

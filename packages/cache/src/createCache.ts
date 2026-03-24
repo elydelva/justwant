@@ -2,12 +2,22 @@ import type {
   CacheAdapter,
   CacheDefaults,
   CacheInstance,
-  CacheInternal,
-  CachePlugin,
   CreateCacheOptions,
   OnError,
   SetOptions,
 } from "./types.js";
+
+function buildNamespacedGetMany(
+  getMany: NonNullable<CacheAdapter["getMany"]>,
+  prefixedKey: (k: string) => string
+): (keys: string[]) => Promise<Map<string, string | null>> {
+  return async (keys: string[]) => {
+    const m = await getMany(keys.map(prefixedKey));
+    const out = new Map<string, string | null>();
+    for (const k of keys) out.set(k, m.get(prefixedKey(k)) ?? null);
+    return out;
+  };
+}
 
 const DEFAULT_DEFAULTS: Required<CacheDefaults> = {
   ttl: "1h",
@@ -67,7 +77,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       if (p?.get) {
         const n = next;
         const get = p.get;
-        next = (k) => get(k, (overrideKey) => n(overrideKey !== undefined ? overrideKey : k));
+        next = (k) => get(k, (overrideKey) => n(overrideKey ?? k));
       }
     }
     return next;
@@ -89,9 +99,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
         const n = next;
         const set = p.set;
         next = (k, v, o) =>
-          set(k, v, o, (ok, ov, oo) =>
-            n(ok !== undefined ? ok : k, ov !== undefined ? ov : v, oo !== undefined ? oo : o)
-          );
+          set(k, v, o, (ok, ov, oo) => n(ok ?? k, ov ?? v, oo ?? o));
       }
     }
     return next;
@@ -104,7 +112,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       if (p?.delete) {
         const n = next;
         const del = p.delete;
-        next = (k) => del(k, (overrideKey) => n(overrideKey !== undefined ? overrideKey : k));
+        next = (k) => del(k, (overrideKey) => n(overrideKey ?? k));
       }
     }
     return next;
@@ -117,7 +125,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       if (p?.has) {
         const n = next;
         const has = p.has;
-        next = (k) => has(k, (overrideKey) => n(overrideKey !== undefined ? overrideKey : k));
+        next = (k) => has(k, (overrideKey) => n(overrideKey ?? k));
       }
     }
     return next;
@@ -356,31 +364,13 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
         set: (k, v, o) => adapter.set(prefixedKey(k), v, o),
         delete: (k) => adapter.delete(prefixedKey(k)),
         has: (k) => adapter.has(prefixedKey(k)),
-        getMany: (() => {
-          const getMany = adapter.getMany;
-          return getMany
-            ? (keys: string[]) =>
-                getMany(keys.map(prefixedKey)).then((m) => {
-                  const out = new Map<string, string | null>();
-                  for (const k of keys) {
-                    out.set(k, m.get(prefixedKey(k)) ?? null);
-                  }
-                  return out;
-                })
-            : undefined;
-        })(),
-        setMany: (() => {
-          const setMany = adapter.setMany;
-          return setMany
-            ? (entries: Array<{ key: string; value: string; opts?: SetOptions }>) =>
-                setMany(
-                  entries.map((e) => ({
-                    ...e,
-                    key: prefixedKey(e.key),
-                  }))
-                )
-            : undefined;
-        })(),
+        getMany: adapter.getMany
+          ? buildNamespacedGetMany(adapter.getMany, prefixedKey)
+          : undefined,
+        setMany: adapter.setMany
+          ? (entries: Array<{ key: string; value: string; opts?: SetOptions }>) =>
+              adapter.setMany!(entries.map((e) => ({ ...e, key: prefixedKey(e.key) })))
+          : undefined,
         deleteMany: (() => {
           const deleteMany = adapter.deleteMany;
           return deleteMany ? (keys: string[]) => deleteMany(keys.map(prefixedKey)) : undefined;

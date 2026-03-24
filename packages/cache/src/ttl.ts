@@ -7,7 +7,7 @@ const UNITS: Record<string, number> = {
   d: 24 * 60 * 60 * 1000,
 };
 
-const STRING_REGEX = /^(\d+)(s|m|h|d)$/i;
+const STRING_REGEX = /^(\d+)([smhd])$/i;
 
 /**
  * Parse TTL to milliseconds from now, or return a Date for absolute expiry.
@@ -21,7 +21,7 @@ export function parseTtl(ttl: TTL | undefined, now = Date.now()): number | Date 
   if (ttl instanceof Date) return ttl;
   if (typeof ttl !== "string") return undefined;
 
-  const match = ttl.trim().match(STRING_REGEX);
+  const match = STRING_REGEX.exec(ttl.trim());
   if (!match) return undefined;
 
   const value = Number.parseInt(match[1] ?? "0", 10);

@@ -3,8 +3,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import type { SQL } from "drizzle-orm";
-import type { Column } from "drizzle-orm";
+import type { Column, SQL } from "drizzle-orm";
 
 /**
  * Builds a WHERE condition from a partial object.

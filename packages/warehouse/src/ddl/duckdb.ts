@@ -2,11 +2,10 @@
  * DDL for DuckDB.
  */
 
-import type { FieldDef } from "@justwant/contract";
-import type { TableContract } from "@justwant/contract";
+import type { FieldDef, TableContract } from "@justwant/contract";
 
 function escapeIdentifier(name: string): string {
-  return `"${String(name).replace(/"/g, '""')}"`;
+  return `"${String(name).replaceAll('"', '""')}"`;
 }
 
 function columnTypeForDuckDb(field: FieldDef<unknown, boolean>): string {

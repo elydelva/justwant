@@ -1,4 +1,3 @@
-import { parseTtl } from "../ttl.js";
 import type { CachePlugin } from "../types.js";
 
 export interface StalePluginOptions {
@@ -10,11 +9,6 @@ export interface StalePluginOptions {
  * Serves stale values while revalidating in the background. Extends effective TTL.
  */
 export function stalePlugin(options: StalePluginOptions): CachePlugin {
-  const staleMs =
-    typeof options.staleTtl === "string"
-      ? ((parseTtl(options.staleTtl) as number) ?? 0)
-      : options.staleTtl;
-
   return {
     name: "stale",
     async get(key, next) {
