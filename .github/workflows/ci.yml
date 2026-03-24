@@ -87,6 +87,10 @@ jobs:
             mkdir -p "$dir/client"
             cp -r packages/db/node_modules/.prisma/client/. "$dir/client/"
           done
+      - name: Push Prisma schema to SQLite test db
+        run: DATABASE_URL=file:./test.db bun run --cwd packages/db prisma db push --skip-generate
+        env:
+          DATABASE_URL: file:./test.db
       # Coverage reporters (text + lcov) and threshold are set in bunfig.toml.
       # Threshold is commented out there — enforced by SonarCloud Quality Gate instead.
       - name: Run tests with coverage
