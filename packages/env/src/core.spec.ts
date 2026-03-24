@@ -228,6 +228,131 @@ describe("createEnvWithDeps", () => {
     });
   });
 
+  describe("has with dotted keys (groups)", () => {
+    test("has returns true for existing group.key", () => {
+      const env = createEnvWithDeps(
+        {
+          vars: {},
+          groups: { db: { HOST: mockSchema((v) => ({ value: v ?? "" })) } },
+          sources: { inline: {} },
+        },
+        { ...baseDeps, mergeSources: () => ({ DB_HOST: "localhost" }) }
+      );
+      expect(env.has("db.HOST")).toBe(true);
+    });
+
+    test("has returns false for group.key when schema returns undefined (validation fail)", () => {
+      const env = createEnvWithDeps(
+        {
+          vars: {},
+          groups: { db: { HOST: mockSchema((v) => v ? { value: v } : { issues: [{ message: "required" }] }) } },
+          validation: { onError: "silent" },
+          sources: { inline: {} },
+        },
+        { ...baseDeps, mergeSources: () => ({}) }
+      );
+      expect(env.has("db.HOST")).toBe(false);
+    });
+
+    test("has returns false for unknown group", () => {
+      const env = createEnvWithDeps(
+        {
+          vars: { FOO: mockSchema((v) => ({ value: v ?? "" })) },
+          sources: { inline: {} },
+        },
+        { ...baseDeps, mergeSources: () => ({ FOO: "bar" }) }
+      );
+      expect(env.has("unknown.key")).toBe(false);
+    });
+  });
+
+  describe("validateSync edge cases", () => {
+    test("schema without ~standard adds issue and returns undefined", () => {
+      const env = createEnvWithDeps(
+        {
+          vars: { FOO: {} as EnvSchema[string] },
+          validation: { onError: "silent" },
+          sources: { inline: {} },
+        },
+        { ...baseDeps, mergeSources: () => ({ FOO: "bar" }) }
+      );
+      expect(env.FOO).toBeUndefined();
+    });
+
+    test("async-returning schema adds issue and returns undefined", () => {
+      const asyncSchema = {
+        "~standard": { validate: (_v: unknown) => Promise.resolve({ value: "async" }) },
+      } as EnvSchema[string];
+      const env = createEnvWithDeps(
+        {
+          vars: { FOO: asyncSchema },
+          validation: { onError: "silent" },
+          sources: { inline: {} },
+        },
+        { ...baseDeps, mergeSources: () => ({ FOO: "bar" }) }
+      );
+      expect(env.FOO).toBeUndefined();
+    });
+  });
+
+  describe("validateGroupVars with clientPrefix", () => {
+    test("finds group var via clientPrefix array", () => {
+      const env = createEnvWithDeps(
+        {
+          vars: {},
+          groups: { db: { HOST: mockSchema((v) => ({ value: v ?? "" })) } },
+          clientPrefix: ["NEXT_PUBLIC_", "VITE_"],
+          sources: { inline: {} },
+        },
+        { ...baseDeps, mergeSources: () => ({ VITE_DB_HOST: "myhost" }) }
+      );
+      expect((env as unknown as { db: { HOST: string } }).db?.HOST).toBe("myhost");
+    });
+  });
+
+  describe("modes with group key", () => {
+    test("mode check for group.key throws when group var fails validation", () => {
+      const envFn = () =>
+        createEnvWithDeps(
+          {
+            vars: {},
+            groups: {
+              db: { HOST: mockSchema((v) => v ? { value: v } : { issues: [{ message: "required" }] }) },
+            },
+            modes: { production: ["db.HOST"] },
+            mode: "production",
+            sources: { inline: {} },
+          },
+          { ...baseDeps, mergeSources: () => ({}) }
+        );
+      expect(envFn).toThrow(EnvironmentError);
+    });
+  });
+
+  describe("watch files", () => {
+    test("watchEnvFiles is called when watch=true and onReload provided", () => {
+      let watchCalled = false;
+      const watchDeps: CreateEnvDeps = {
+        ...baseDeps,
+        mergeSources: () => ({ FOO: "bar" }),
+        watchEnvFiles: (_cwd, _files, _onChange) => {
+          watchCalled = true;
+          return () => {};
+        },
+      };
+      createEnvWithDeps(
+        {
+          vars: { FOO: mockSchema((v) => ({ value: v ?? "" })) },
+          watch: true,
+          onReload: () => {},
+          sources: { inline: {} },
+        },
+        watchDeps
+      );
+      expect(watchCalled).toBe(true);
+    });
+  });
+
   describe("redact", () => {
     test("toJSON redacts keys matching redact config", () => {
       const env = createEnvWithDeps(
