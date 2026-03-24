@@ -93,13 +93,13 @@ jobs:
       - name: Push Prisma schema to SQLite test db
         run: bun run --cwd packages/db prisma db push --skip-generate
         env:
-          DATABASE_URL: file:./test.db
+          DATABASE_URL: file:${{ github.workspace }}/packages/db/prisma/test.db
       # Coverage reporters (text + lcov) and threshold are set in bunfig.toml.
       # Threshold is commented out there — enforced by SonarCloud Quality Gate instead.
       - name: Run tests with coverage
         run: bun test --coverage
         env:
-          DATABASE_URL: file:./packages/db/test.db
+          DATABASE_URL: file:${{ github.workspace }}/packages/db/prisma/test.db
       - name: Upload coverage report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
