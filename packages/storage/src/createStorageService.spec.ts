@@ -154,6 +154,29 @@ describe("createStorageService", () => {
     expect(result).toEqual(Buffer.alloc(0));
   });
 
+  test("delete plugin chain is invoked", async () => {
+    const source = defineLocalSource({ rootDir });
+    const bucket = defineBucket({ source, name: "plugin-delete" });
+    let deleteCalled = false;
+    const storage = createStorageService({
+      buckets: [bucket],
+      defaultBucket: bucket,
+      onError: "throw",
+      plugins: [
+        {
+          delete: async (params, next) => {
+            deleteCalled = true;
+            return next(params);
+          },
+        },
+      ],
+    });
+    await storage.upload({ path: "plugin-del.txt", data: "data", contentType: "text/plain" });
+    await storage.delete({ path: "plugin-del.txt" });
+    expect(deleteCalled).toBe(true);
+    expect(await storage.exists({ path: "plugin-del.txt" })).toBe(false);
+  });
+
   test("onError silent returns false for exists on error", async () => {
     const source = defineLocalSource({ rootDir });
     const bucket = defineBucket({ source, name: "silent" });

@@ -162,6 +162,37 @@ describe("createOrganisationService", () => {
     expect(found).toEqual(acme);
   });
 
+  test("findOne returns organisation by field", async () => {
+    const orgRepo = createMockOrganisationsRepo([
+      { id: "org_1", type: "organisation", name: "Acme", slug: "acme" },
+    ]);
+    const membershipsRepo = createMemoryRepo<Membership>() as MembershipsRepo;
+    const assignmentsRepo = createMemoryRepo<Assignment>();
+    const overridesRepo = createMemoryRepo<Override>();
+    const membership = createMembershipService({ repo: membershipsRepo, groups: [OrganisationGroup] });
+    const permission = createPermissionService({ repos: { assignments: assignmentsRepo, overrides: overridesRepo }, realms: [OrganisationRealm] });
+    const org = createOrganisationService({ repo: orgRepo, deps: { membership, permission }, organisations: [OrganisationOrg] });
+    const found = await org.findOne({ slug: "acme" });
+    expect(found?.name).toBe("Acme");
+    const notFound = await org.findOne({ slug: "nope" });
+    expect(notFound).toBeNull();
+  });
+
+  test("findMany returns organisations matching filter", async () => {
+    const orgRepo = createMockOrganisationsRepo([
+      { id: "org_1", type: "organisation", name: "Acme", slug: "acme" },
+      { id: "org_2", type: "organisation", name: "Corp", slug: "corp" },
+    ]);
+    const membershipsRepo = createMemoryRepo<Membership>() as MembershipsRepo;
+    const assignmentsRepo = createMemoryRepo<Assignment>();
+    const overridesRepo = createMemoryRepo<Override>();
+    const membership = createMembershipService({ repo: membershipsRepo, groups: [OrganisationGroup] });
+    const permission = createPermissionService({ repos: { assignments: assignmentsRepo, overrides: overridesRepo }, realms: [OrganisationRealm] });
+    const org = createOrganisationService({ repo: orgRepo, deps: { membership, permission }, organisations: [OrganisationOrg] });
+    const all = await org.findMany({});
+    expect(all).toHaveLength(2);
+  });
+
   test("findBySlug returns organisation when exists", async () => {
     const orgRepo = createMockOrganisationsRepo([
       { id: "org_1", type: "organisation", name: "Acme", slug: "acme" },
