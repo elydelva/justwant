@@ -492,4 +492,40 @@ describe("createWaddlerAdapter", () => {
 
     expect(created).toEqual({ id: "u1", email: "test@x.com", name: "Test" });
   });
+
+  test("createDb with close propagates close()", async () => {
+    const { createDb } = await import("./core.js");
+    const { createBunSqliteAdapter } = await import("./bun-sqlite/index.js");
+    let closed = false;
+    const adapter = createBunSqliteAdapter({ connection: ":memory:" });
+    const db = createDb({ ...adapter, close: async () => { closed = true; } });
+    expect(typeof db.close).toBe("function");
+    await db.close!();
+    expect(closed).toBe(true);
+  });
+
+  test("findOne with empty where uses LIMIT 1 path", async () => {
+    const { waddler } = await import("waddler/bun-sqlite");
+    const sql = waddler(":memory:");
+    await sql`CREATE TABLE users (id TEXT PRIMARY KEY, email TEXT NOT NULL, name TEXT)`;
+    const adapter = createWaddlerAdapter(sql, { dialect: "sqlite" });
+    // No softDelete column → hits the no-where LIMIT path
+    const users = adapter.defineTable("users", UserContract, mapping, { softDeleteColumn: null });
+    await users.create({ id: "u1", email: "a@b.com", name: "Alice" });
+    await users.create({ id: "u2", email: "b@b.com", name: "Bob" });
+    const found = await users.findOne({});
+    expect(found).not.toBeNull();
+  });
+
+  test("findMany with no where returns all rows", async () => {
+    const { waddler } = await import("waddler/bun-sqlite");
+    const sql = waddler(":memory:");
+    await sql`CREATE TABLE users (id TEXT PRIMARY KEY, email TEXT NOT NULL, name TEXT)`;
+    const adapter = createWaddlerAdapter(sql, { dialect: "sqlite" });
+    const users = adapter.defineTable("users", UserContract, mapping);
+    await users.create({ id: "u1", email: "a@b.com" });
+    await users.create({ id: "u2", email: "b@b.com" });
+    const found = await users.findMany({});
+    expect(found).toHaveLength(2);
+  });
 });
