@@ -1,24 +1,19 @@
-# @justwant — Instructions pour l'IA
+---
+description: TypeScript-first library ecosystem that covers authentication, observability, billing, notifications, file storage, and much more — using infrastructure you already own.
+alwaysApply: true
+---
 
-## Documentation des packages
+# @justwant — AI Instructions Hub
 
-Ce monorepo contient des packages `@justwant/*`. **Pour tout travail sur un package, lis son README** :
+Full documentation for each topic lives in `docs/instructions/`. Always consult the relevant doc before acting.
 
-```
-packages/<nom-du-package>/README.md
-```
+## Topics
 
-Chaque README documente : installation, usage, plugins, adapters, API.
-
-## Entry point
-
-- **Skill** : `justwant-packages/SKILL.md` — doc complète pour l'IA (references/*.md par package)
-- **Règle Cursor** : `.cursor/rules/justwant-packages.mdc`
-- **Vue d'ensemble** : `docs/00-overview.md`
-- **Packages** : `packages/*/README.md`
-
-## Conventions
-
-- TypeScript strict
-- Tests : `bun test`
-- Lint/format : `bun run check`
+| Topic | Doc |
+|-------|-----|
+| Runtime, APIs, testing, frontend | @docs/instructions/bun.md |
+| Conventional commits, versioning, releases, CI | @docs/instructions/versioning.md |
+| ADR workflow (status, PR/issue linking, rules) | @docs/instructions/adr-workflow.md |
+| ADR template (canonical structure for new ADRs) | @docs/instructions/adr-template.md |
+| GitHub sync — when and how to sync with GitHub | @docs/instructions/github-sync.md |
+| Issue & PR templates — usage | @docs/instructions/templates.md |
