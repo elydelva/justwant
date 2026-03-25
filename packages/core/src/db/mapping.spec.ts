@@ -25,8 +25,9 @@ describe("mapRowToContract", () => {
       createdAt?: string;
     }>(row, mapping, contract);
     expect(result.id).toBe("1");
-    expect(result.name).toBeUndefined();
+    expect(result.name).toBe("Alice");
     expect(result.score).toBe(9.5);
+    expect(result.createdAt).toBeUndefined();
   });
 
   it("converts null to undefined for optional fields", () => {
