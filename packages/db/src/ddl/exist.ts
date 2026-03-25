@@ -2,16 +2,9 @@
  * SQL to check if a table exists.
  */
 
+import { escapeStringLiteral } from "@justwant/core/db";
+import { escapeIdentifier } from "./escape.js";
 import type { SqlDialect } from "./index.js";
-
-function escapeIdentifier(name: string, dialect: SqlDialect): string {
-  const q = dialect === "mysql" ? "`" : '"';
-  return `${q}${String(name).replace(dialect === "mysql" ? /`/g : /"/g, dialect === "mysql" ? "``" : '""')}${q}`;
-}
-
-function escapeStringLiteral(value: string): string {
-  return `'${String(value).replace(/'/g, "''")}'`;
-}
 
 export function getExistTableSQL(tableName: string, dialect: SqlDialect, schema?: string): string {
   if (dialect === "sqlite") {
