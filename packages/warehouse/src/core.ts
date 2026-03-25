@@ -3,6 +3,7 @@
  */
 
 import type { InferContract, TableContract, TableFields } from "@justwant/contract";
+import { parseExistResult, toRows } from "@justwant/core/db";
 import { appendOrderBy } from "./buildOrderBy.js";
 import { appendWhere } from "./buildWhere.js";
 import { getCreateTableSQL, getDropTableSQL, getExistTableSQL } from "./ddl/index.js";
@@ -19,13 +20,6 @@ import type {
   WarehouseMappedTable,
 } from "./types.js";
 
-/** Normalize query result to row array. */
-function toRows(result: unknown): Record<string, unknown>[] {
-  if (Array.isArray(result)) return result as Record<string, unknown>[];
-  const r = result as { rows?: unknown[] };
-  return (r?.rows ?? []) as Record<string, unknown>[];
-}
-
 /** Normalize BigInt/string to number in aggregate results (DuckDB, ClickHouse return BigInt or string for count/sum). */
 function normalizeAggregateRow(row: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -35,14 +29,6 @@ function normalizeAggregateRow(row: Record<string, unknown>): Record<string, unk
     else out[k] = v;
   }
   return out;
-}
-
-/** Parse exist() query result to boolean. */
-function parseExistResult(rows: Record<string, unknown>[]): boolean {
-  const row = rows[0];
-  if (!row) return false;
-  const val = Object.values(row)[0];
-  return val === 1 || val === true || (typeof val === "number" && val !== 0);
 }
 
 /** Execute DDL/mutation (CREATE, DROP, INSERT). ClickHouse requires .command() to avoid JSON parse on empty response. */

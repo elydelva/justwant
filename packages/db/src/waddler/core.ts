@@ -5,6 +5,7 @@
 import type { AnyContract, InferContract } from "@justwant/contract";
 import type { TableContract } from "@justwant/contract";
 import { ContractValidationError, validateContractData } from "@justwant/contract/validate";
+import { parseExistResult, toRows } from "@justwant/core/db";
 import type { BoundQuery, CreateInput } from "@justwant/db";
 import { getCreateTableSQL, getDropTableSQL, getExistTableSQL } from "../ddl/index.js";
 import { parseWaddlerError } from "./errors.js";
@@ -46,21 +47,6 @@ function resolveTableSchema(source: TableSource): string | undefined {
 function resolveSimpleTableName(source: TableSource): string {
   if (typeof source === "string") return source;
   return source.table;
-}
-
-/** Parse exist() query result to boolean. */
-function parseExistResult(rows: Record<string, unknown>[]): boolean {
-  const row = rows[0];
-  if (!row) return false;
-  const val = Object.values(row)[0];
-  return val === 1 || val === true || (typeof val === "number" && val !== 0);
-}
-
-/** Normalize query result to row array. */
-function toRows(result: unknown): Record<string, unknown>[] {
-  if (Array.isArray(result)) return result as Record<string, unknown>[];
-  const r = result as { rows?: unknown[] };
-  return (r?.rows ?? []) as Record<string, unknown>[];
 }
 
 /**
