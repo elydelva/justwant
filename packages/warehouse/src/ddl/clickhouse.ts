@@ -5,10 +5,7 @@
 
 import type { FieldDef } from "@justwant/contract";
 import type { TableContract } from "@justwant/contract";
-
-function escapeIdentifier(name: string): string {
-  return `"${String(name).replace(/"/g, '""')}"`;
-}
+import { escapeIdentifier } from "@justwant/core/db";
 
 function columnTypeForClickHouse(field: FieldDef<unknown, boolean>): string {
   const ct = field._columnType ?? "TEXT";
