@@ -200,7 +200,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@justwant/contract": "workspace:*"
+    "@justwant/contract": "workspace:*",
+    "@justwant/core": "workspace:*"
   },
   "peerDependencies": {
     "@standard-schema/spec": "^1.0.0",

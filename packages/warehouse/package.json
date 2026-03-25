@@ -42,7 +42,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@justwant/contract": "workspace:*"
+    "@justwant/contract": "workspace:*",
+    "@justwant/core": "workspace:*"
   },
   "peerDependencies": {
     "waddler": "*"

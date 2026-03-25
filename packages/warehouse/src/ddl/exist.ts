@@ -2,15 +2,8 @@
  * SQL to check if a table exists.
  */
 
+import { escapeIdentifier, escapeStringLiteral } from "@justwant/core/db";
 import type { WarehouseDialect } from "../types.js";
-
-function escapeIdentifier(name: string): string {
-  return `"${String(name).replace(/"/g, '""')}"`;
-}
-
-function escapeStringLiteral(value: string): string {
-  return `'${String(value).replace(/'/g, "''")}'`;
-}
 
 export function getExistTableSQL(tableName: string, dialect: WarehouseDialect): string {
   if (dialect === "clickhouse") {

@@ -2,12 +2,8 @@
  * SQL to drop a table.
  */
 
+import { escapeIdentifier } from "./escape.js";
 import type { SqlDialect } from "./index.js";
-
-function escapeIdentifier(name: string, dialect: SqlDialect): string {
-  const q = dialect === "mysql" ? "`" : '"';
-  return `${q}${String(name).replace(dialect === "mysql" ? /`/g : /"/g, dialect === "mysql" ? "``" : '""')}${q}`;
-}
 
 export function getDropTableSQL(tableName: string, dialect: SqlDialect, schema?: string): string {
   const tableId =
