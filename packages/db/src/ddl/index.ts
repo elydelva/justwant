@@ -11,10 +11,7 @@ export type SqlDialect = "sqlite" | "pg" | "mysql";
 export { getExistTableSQL } from "./exist.js";
 export { getDropTableSQL } from "./drop.js";
 
-function escapeIdentifier(name: string, dialect: SqlDialect): string {
-  const q = dialect === "mysql" ? "`" : '"';
-  return `${q}${String(name).replace(dialect === "mysql" ? /`/g : /"/g, dialect === "mysql" ? "``" : '""')}${q}`;
-}
+import { escapeIdentifier } from "./escape.js";
 
 function columnTypeForDialect(field: FieldDef<unknown, boolean>, dialect: SqlDialect): string {
   const ct = field._columnType ?? "TEXT";

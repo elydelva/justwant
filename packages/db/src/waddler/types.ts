@@ -4,7 +4,10 @@
  */
 
 import type { AnyContract, TableContract } from "@justwant/contract";
+import type { WaddlerQuery, WaddlerSql } from "@justwant/core/db";
 import type { MappedTable, MappedTableInternal } from "@justwant/db";
+
+export type { WaddlerSql, WaddlerQuery };
 
 /** String-based mapping: contract key → column name. */
 export type StringMapping<TContract extends AnyContract> = {
@@ -13,27 +16,6 @@ export type StringMapping<TContract extends AnyContract> = {
 
 /** Table source: table name or schema.table. */
 export type TableSource = string | { schema?: string; table: string };
-
-/**
- * Waddler SQL client interface.
- * Compatible with waddler/node-postgres, waddler/neon-http, etc.
- */
-export interface WaddlerSql {
-  (strings: TemplateStringsArray, ...values: unknown[]): WaddlerQuery;
-  identifier: (
-    name: string | { schema?: string; table: string; column?: string; as?: string }
-  ) => unknown;
-  raw: (sql: string) => unknown;
-  values: (tuples: unknown[][]) => unknown;
-  append?: (part: unknown) => WaddlerQuery;
-}
-
-/** Query result - thenable, may have append for building. */
-export interface WaddlerQuery {
-  then<T>(onfulfilled?: (value: unknown) => T | PromiseLike<T>): Promise<T>;
-  catch<T>(onrejected?: (reason: unknown) => T | PromiseLike<T>): Promise<T>;
-  append?: (part: unknown) => WaddlerQuery;
-}
 
 export interface WaddlerMappedTableInternal<TContract extends AnyContract>
   extends MappedTableInternal<TContract> {
