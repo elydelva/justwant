@@ -4,6 +4,9 @@
  */
 
 import type { InferContract, TableContract, TableFields } from "@justwant/contract";
+import type { StringMapping, WaddlerQuery, WaddlerSql } from "@justwant/core/db";
+
+export type { WaddlerSql, WaddlerQuery, StringMapping };
 
 export type WarehouseDialect = "clickhouse" | "duckdb";
 
@@ -14,33 +17,6 @@ export interface WarehouseConnectionConfig {
   driver?: unknown;
   /** Release connection when done. Call warehouse.close() or await on shutdown. */
   close?: () => Promise<void>;
-}
-
-/** String-based mapping: contract key → column name. */
-export type StringMapping<T extends Record<string, unknown>> = {
-  [K in keyof T]: { name: string };
-};
-
-/**
- * Waddler SQL client interface.
- * Compatible with waddler/clickhouse, waddler/duckdb-neo.
- */
-export interface WaddlerSql {
-  (strings: TemplateStringsArray, ...values: unknown[]): WaddlerQuery;
-  identifier: (
-    name: string | { schema?: string; table: string; column?: string; as?: string }
-  ) => unknown;
-  raw: (sql: string) => unknown;
-  values: (tuples: unknown[][]) => unknown;
-  default?: unknown;
-  append?: (part: unknown) => WaddlerQuery;
-}
-
-/** Query result - thenable, may have append for building. */
-export interface WaddlerQuery {
-  then<T>(onfulfilled?: (value: unknown) => T | PromiseLike<T>): Promise<T>;
-  catch<T>(onrejected?: (reason: unknown) => T | PromiseLike<T>): Promise<T>;
-  append?: (part: unknown) => WaddlerQuery;
 }
 
 export interface QueryOptions<T> {
