@@ -4,8 +4,12 @@
  */
 import {
   type CreateEnvOptions,
+  type CreateEnvResult,
+  type EnvInclude,
   type EnvSchema,
   type GroupSchema,
+  type InferEnv,
+  type InferGroupEnv,
   createEnvWithDeps,
 } from "./core.js";
 import { mergeSources } from "./utils.js";
@@ -33,7 +37,7 @@ export type {
   GroupSchema,
   InferEnv,
   InferGroupEnv,
-} from "./core.js";
+};
 
 export interface DefineEnvOptions<T extends EnvSchema> {
   vars: T;
