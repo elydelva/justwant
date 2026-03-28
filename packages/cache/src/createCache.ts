@@ -34,6 +34,32 @@ function runWithErrorHandling<T>(fn: () => Promise<T>, onError: OnError, fallbac
   });
 }
 
+async function storeFetched<T>(
+  cache: CacheInstance,
+  opts: (SetOptions & { keyFn?: (item: T) => string }) | undefined,
+  keyFn: ((item: T) => string) | undefined,
+  fetched: T[],
+  missingKeys: string[],
+  result: Map<string, T>
+): Promise<void> {
+  if (keyFn) {
+    for (const item of fetched) {
+      const k = keyFn(item);
+      result.set(k, item);
+      await cache.set(k, item, opts);
+    }
+  } else {
+    for (let i = 0; i < missingKeys.length; i++) {
+      const k = missingKeys[i];
+      const item = fetched[i];
+      if (k !== undefined && item !== undefined) {
+        result.set(k, item);
+        await cache.set(k, item, opts);
+      }
+    }
+  }
+}
+
 export function createCache(options: CreateCacheOptions): CacheInstance {
   const { adapter, plugins = [], defaults = {}, onError = "silent" } = options;
 
@@ -320,23 +346,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       }
       if (missing.length > 0) {
         const fetched = await fetchMissing(missing);
-        const keyFn = opts?.keyFn;
-        if (keyFn) {
-          for (const item of fetched) {
-            const k = keyFn(item);
-            result.set(k, item);
-            await cache.set(k, item, opts);
-          }
-        } else {
-          for (let i = 0; i < missing.length; i++) {
-            const k = missing[i];
-            const item = fetched[i];
-            if (k !== undefined && item !== undefined) {
-              result.set(k, item);
-              await cache.set(k, item, opts);
-            }
-          }
-        }
+        await storeFetched(cache, opts, opts?.keyFn, fetched, missing, result);
       }
       return result;
     },
