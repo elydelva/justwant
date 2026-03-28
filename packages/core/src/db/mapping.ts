@@ -9,6 +9,23 @@ export interface ColumnLike {
   name: string;
 }
 
+function resolveFieldValue(
+  value: unknown,
+  fieldDef: { _required?: boolean; _columnType?: string } | undefined
+): unknown {
+  if (fieldDef && !fieldDef._required && value === null) return undefined;
+  if (
+    value !== null &&
+    value !== undefined &&
+    typeof value === "string" &&
+    fieldDef?._columnType === "TEXT"
+  ) {
+    const d = new Date(value as string);
+    if (/^\d{4}-\d{2}-\d{2}/.test(value as string) && !Number.isNaN(d.getTime())) return d;
+  }
+  return value;
+}
+
 /**
  * Maps a DB row to contract shape.
  * - Converts null to undefined for optional fields.
@@ -22,20 +39,9 @@ export function mapRowToContract<T>(
   const result: Record<string, unknown> = {};
   for (const [contractKey, col] of Object.entries(mapping)) {
     const colName = col.name;
-    let value = row[colName];
+    const value = row[colName];
     const fieldDef = contract[contractKey as keyof typeof contract];
-    if (fieldDef && !fieldDef._required && value === null) {
-      result[contractKey] = undefined;
-    } else {
-      if (value !== null && value !== undefined && typeof value === "string" && fieldDef) {
-        const ct = fieldDef._columnType;
-        if (ct === "TEXT" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-          const d = new Date(value);
-          if (!Number.isNaN(d.getTime())) value = d;
-        }
-      }
-      result[contractKey] = value;
-    }
+    result[contractKey] = resolveFieldValue(value, fieldDef);
   }
   return result as T;
 }
