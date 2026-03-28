@@ -84,6 +84,7 @@ export function parsePrismaError(raw: unknown): AdapterError {
           column: String(meta?.column ?? meta?.constraint ?? ""),
         });
       case "P2014":
+      case "P2017":
         return new AdapterForeignKeyViolationError(message, {
           column: String(meta?.relation_name ?? ""),
         });
@@ -135,10 +136,6 @@ export function parsePrismaError(raw: unknown): AdapterError {
       case "P2018":
         return new AdapterNotFoundError(message, {
           table: String(meta?.modelName ?? meta?.model_name ?? ""),
-        });
-      case "P2017":
-        return new AdapterForeignKeyViolationError(message, {
-          column: String(meta?.relation_name ?? ""),
         });
       case "P2026":
         return new AdapterUnsupportedError(message, {

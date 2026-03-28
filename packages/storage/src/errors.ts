@@ -31,7 +31,6 @@ export function parseStorageError(raw: unknown): StorageError {
     switch (code) {
       case "ECONNREFUSED":
       case "ECONNRESET":
-        return new StorageAdapterError(message, { code });
       case "ETIMEDOUT":
         return new StorageAdapterError(message, { code });
     }
