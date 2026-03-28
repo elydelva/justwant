@@ -1,32 +1,32 @@
 name: Feature / ADR
-description: Nouvelle fonctionnalité liée à un ADR ou à une décision technique
+description: New feature tied to an ADR or a technical decision
 labels: ["feature"]
 body:
   - type: markdown
     attributes:
       value: |
-        Ouvre une issue avant de commencer le travail. Si un ADR existe déjà, lie-le ci-dessous.
+        Open an issue before starting work. If an ADR already exists, link it below.
 
   - type: textarea
     id: context
     attributes:
-      label: Contexte
-      description: Quel besoin ou décision technique motive cette issue ? Si elle correspond à un ADR, mentionner le numéro (ex. ADR-003).
+      label: Context
+      description: What need or technical decision motivates this issue? If it maps to an ADR, mention the number (e.g. ADR-003).
     validations:
       required: true
 
   - type: textarea
     id: goal
     attributes:
-      label: Objectif
-      description: Ce que cette issue doit accomplir, en une ou deux phrases.
+      label: Goal
+      description: What this issue must accomplish, in one or two sentences.
     validations:
       required: true
 
   - type: textarea
     id: tasks
     attributes:
-      label: Tâches
+      label: Tasks
       placeholder: |
         - [ ]
         - [ ]
@@ -36,16 +36,16 @@ body:
   - type: input
     id: adr
     attributes:
-      label: ADR associé
-      placeholder: "ADR-XXX ou aucun"
+      label: Related ADR
+      placeholder: "ADR-XXX or none"
     validations:
       required: false
 
   - type: textarea
     id: acceptance
     attributes:
-      label: Critères d'acceptation
-      description: Comment saura-t-on que c'est terminé ? Tests, comportement observable, etc.
+      label: Acceptance criteria
+      description: How will we know it's done? Tests, observable behavior, etc.
       placeholder: |
         - [ ]
     validations:

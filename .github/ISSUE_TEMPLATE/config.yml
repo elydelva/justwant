@@ -2,4 +2,4 @@ blank_issues_enabled: false
 contact_links:
   - name: Question / Discussion
     url: https://github.com/elydelva/justwant/discussions
-    about: Pour toute question générale, utilise les Discussions plutôt qu'une issue.
+    about: For general questions, use Discussions rather than an issue.
