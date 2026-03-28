@@ -92,12 +92,10 @@ export function memoryAdapter(): CacheAdapter {
       for (const e of entries) {
         const tags = e.opts?.tags;
         const parsed = parseTtl(e.opts?.ttl);
-        const expiresAt =
-          parsed === undefined
-            ? null
-            : typeof parsed === "number"
-              ? Date.now() + parsed
-              : parsed.getTime();
+        let expiresAt: number | null;
+        if (parsed === undefined) expiresAt = null;
+        else if (typeof parsed === "number") expiresAt = Date.now() + parsed;
+        else expiresAt = parsed.getTime();
 
         const existing = store.get(e.key);
         if (existing?.tags) for (const t of existing.tags) removeTag(e.key, t);
