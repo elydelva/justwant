@@ -68,7 +68,7 @@ export function createNotify(options: CreateNotifyOptions): NotifyInstance {
 
   async function send<TArgs>(opts: SendOptions<TArgs>): Promise<void> {
     const { templateId, canalId, args } = opts;
-    const canal = requireCanal(canals as Record<string, Canal | undefined>, canalId, onError);
+    const canal = requireCanal(canals, canalId, onError);
     if (!canal) return;
     const versionFn = requireTemplateVersion(registry, templateId, canalId, canal.kind, onError);
     if (!versionFn) return;

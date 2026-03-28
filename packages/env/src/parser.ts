@@ -34,7 +34,7 @@ export function parseEnvFile(content: string): Record<string, string> {
 
     // Line continuation: lines ending with \
     while (line.endsWith("\\") && i + 1 < lines.length) {
-      line = `${line.slice(0, -1).trimEnd()}\n${lines[++i] ?? ""}`;
+      line = `${line.slice(0, -1)}\n${lines[++i] ?? ""}`;
     }
 
     const parsed = parseLine(line);

@@ -147,7 +147,7 @@ function resolveRawValue(
   const prefixes = prefix ? (Array.isArray(prefix) ? prefix : [prefix]) : [];
   const primaryKey = prefixes.length > 0 ? prefixes[0] + internalKey : internalKey;
   let raw = merged[primaryKey] ?? merged[internalKey];
-  if (!raw) {
+  if (raw === undefined) {
     for (const p of prefixes) {
       raw = merged[p + internalKey];
       if (raw !== undefined) break;
@@ -207,14 +207,23 @@ function validateGroupVar(
   rawValue = rawValue ?? "";
 
   const std = (schema as { "~standard"?: { validate: (v: unknown) => unknown } })["~standard"];
-  if (!std?.validate) return { rawValue, issues: [] };
+  if (!std?.validate) {
+    return {
+      rawValue,
+      issues: [{ key: groupKey, message: "Schema does not implement Standard Schema" }],
+    };
+  }
 
   const result = std.validate(rawValue || undefined) as
     | { value?: unknown; issues?: readonly { message?: string }[] }
     | Promise<unknown>;
 
-  if (result && typeof (result as Promise<unknown>).then === "function")
-    return { rawValue, issues: [] };
+  if (result && typeof (result as Promise<unknown>).then === "function") {
+    return {
+      rawValue,
+      issues: [{ key: groupKey, message: "Async validation not supported for env" }],
+    };
+  }
 
   const r = result as { value?: unknown; issues?: readonly { message?: string }[] };
   if (r.issues) return { rawValue, issues: formatSchemaIssues(groupKey, r.issues) };

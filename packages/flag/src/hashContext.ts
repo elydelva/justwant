@@ -8,7 +8,7 @@ import { hashString } from "@justwant/crypto/hash";
 
 function toStableString(value: string | Record<string, unknown>): string {
   if (typeof value === "string") return value;
-  const keys = Object.keys(value).sort((a, b) => a.localeCompare(b));
+  const keys = Object.keys(value).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const parts = keys.map((k) => `${k}:${JSON.stringify(value[k])}`);
   return parts.join("|");
 }

@@ -251,7 +251,7 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
           .map(([col, val]) => sql`${sql.identifier(col)} = ${val}`)
           .reduce(
             (acc, part, i) => (i === 0 ? part : (sql`${acc}, ${part}` as typeof acc)),
-            sql.raw("") as unknown
+            sql.raw("")
           );
 
         const updateQuery = sql`UPDATE ${tableId} SET ${setClause} WHERE ${sql.identifier(idColName)} = ${id}${supportsReturning ? sql.raw(" RETURNING *") : sql.raw("")}`;

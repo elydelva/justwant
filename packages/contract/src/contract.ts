@@ -17,6 +17,7 @@ export type FieldDef<T, Req extends boolean> = {
   readonly _required: Req;
   readonly _nullable: boolean;
   readonly _columnType?: string;
+  readonly _kind?: "date" | "string" | "uuid" | "json";
   readonly _schema?: StandardSchemaV1<unknown, T>;
   readonly _primaryKey?: boolean;
   readonly _unique?: boolean;

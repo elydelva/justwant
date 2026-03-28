@@ -18,6 +18,7 @@ import {
 export interface FieldBuilderState<T> {
   readonly _type: T;
   readonly _columnType: string;
+  readonly _kind?: "date" | "string" | "uuid" | "json";
   readonly _required: boolean;
   readonly _nullable: boolean;
   readonly _schema?: StandardSchemaV1<unknown, T>;
@@ -73,11 +74,13 @@ function createFieldBuilder<T>(state: FieldBuilderState<T>): FieldBuilder<T> {
 
 function fieldBuilder<T>(
   columnType: string,
-  schema?: StandardSchemaV1<unknown, T>
+  schema?: StandardSchemaV1<unknown, T>,
+  kind?: FieldBuilderState<T>["_kind"]
 ): FieldBuilder<T> {
   return createFieldBuilder<T>({
     _type: undefined as T,
     _columnType: columnType,
+    _kind: kind,
     _required: false,
     _nullable: true,
     _schema: schema,
@@ -85,13 +88,13 @@ function fieldBuilder<T>(
 }
 
 /** Primitives */
-export const uuid = () => fieldBuilder<string>("TEXT", uuidSchema);
-export const string = () => fieldBuilder<string>("TEXT");
+export const uuid = () => fieldBuilder<string>("TEXT", uuidSchema, "uuid");
+export const string = () => fieldBuilder<string>("TEXT", undefined, "string");
 export const number = () => fieldBuilder<number>("REAL");
 export const integer = () => fieldBuilder<number>("INTEGER");
 export const boolean = () => fieldBuilder<boolean>("INTEGER");
-export const date = () => fieldBuilder<Date>("TEXT");
-export const json = () => fieldBuilder<unknown>("TEXT");
+export const date = () => fieldBuilder<Date>("TEXT", undefined, "date");
+export const json = () => fieldBuilder<unknown>("TEXT", undefined, "json");
 
 /** Semantic (sugar for string().schema(...)) */
 export const email = () => string().schema(emailSchema);

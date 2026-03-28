@@ -11,17 +11,17 @@ export interface ColumnLike {
 
 function resolveFieldValue(
   value: unknown,
-  fieldDef: { _required?: boolean; _columnType?: string } | undefined
+  fieldDef: { _required?: boolean; _kind?: string } | undefined
 ): unknown {
   if (fieldDef && !fieldDef._required && value === null) return undefined;
   if (
     value !== null &&
     value !== undefined &&
     typeof value === "string" &&
-    fieldDef?._columnType === "TEXT"
+    fieldDef?._kind === "date"
   ) {
-    const d = new Date(value as string);
-    if (/^\d{4}-\d{2}-\d{2}/.test(value as string) && !Number.isNaN(d.getTime())) return d;
+    const d = new Date(value);
+    if (/^\d{4}-\d{2}-\d{2}/.test(value) && !Number.isNaN(d.getTime())) return d;
   }
   return value;
 }
@@ -29,7 +29,7 @@ function resolveFieldValue(
 /**
  * Maps a DB row to contract shape.
  * - Converts null to undefined for optional fields.
- * - Converts ISO date strings to Date for date fields (TEXT columns with _columnType).
+ * - Converts ISO date strings to Date only for fields with _kind === "date".
  */
 export function mapRowToContract<T>(
   row: Record<string, unknown>,

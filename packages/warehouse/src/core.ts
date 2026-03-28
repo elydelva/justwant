@@ -46,9 +46,13 @@ function resolveClickhouseTypes(
   mapping: Record<string, { name: string }>,
   fields: Record<string, unknown>
 ): string[] {
+  const nameToKey: Record<string, string> = {};
+  for (const [key, col] of Object.entries(mapping)) {
+    nameToKey[col.name] = key;
+  }
   return colOrder.map((col) => {
-    const key = Object.entries(mapping).find(([, c]) => c.name === col)?.[0];
-    const field = key ? fields[key as keyof typeof fields] : undefined;
+    const key = nameToKey[col];
+    const field = key ? fields[key] : undefined;
     if (!field) return "String";
     const base =
       (field as { _columnType?: string })._columnType === "REAL"
