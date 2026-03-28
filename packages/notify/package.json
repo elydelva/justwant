@@ -1,6 +1,6 @@
 {
   "name": "@justwant/notify",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Notifications via templates and channels (email, SMS, console). Resend & Twilio SDK support.",
   "type": "module",
   "license": "MIT",
@@ -61,7 +61,11 @@
     "test": "bun test",
     "check": "bun run typecheck && bun test"
   },
-  "files": ["dist", "README.md", "TESTING.md"],
+  "files": [
+    "dist",
+    "README.md",
+    "TESTING.md"
+  ],
   "publishConfig": {
     "access": "public"
   },

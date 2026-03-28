@@ -1,5 +1,12 @@
 # @justwant/preference
 
+## [0.3.1](https://github.com/elydelva/justwant/compare/preference-v0.3.0...preference-v0.3.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* **sonar:** fix all 40 SonarQube MAJOR (medium) issues ([d902d86](https://github.com/elydelva/justwant/commit/d902d861e5157de270fa6147eedc9fb51b02594d))
+
 ## [0.3.0](https://github.com/elydelva/justwant/compare/preference-v0.2.0...preference-v0.3.0) (2026-03-28)
 
 
