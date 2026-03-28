@@ -1,5 +1,5 @@
 ---
-name: justwant-packages
+name: justwant
 description: >-
   Provides complete documentation for the @justwant TypeScript library ecosystem.
   Use when working with cache, storage, job, flag, permission, waitlist, referral,

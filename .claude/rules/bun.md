@@ -36,40 +36,4 @@ test("hello world", () => {
 
 Use HTML imports with `Bun.serve()`. Don't use `vite`. Supports React, CSS, Tailwind out of the box.
 
-```ts
-// index.ts
-import index from "./index.html"
-
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => new Response(JSON.stringify({ id: req.params.id })),
-    },
-  },
-  development: { hmr: true, console: true },
-})
-```
-
-```html
-<!-- index.html -->
-<html>
-  <body>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
-```
-
-```tsx
-// frontend.tsx
-import React from "react";
-import { createRoot } from "react-dom/client";
-import './index.css';
-
-const root = createRoot(document.body);
-root.render(<h1>Hello, world!</h1>);
-```
-
 Run with: `bun --hot ./index.ts`
-
-> Further reference: `node_modules/bun-types/docs/**.mdx`

@@ -1,0 +1,52 @@
+name: Feature / ADR
+description: Nouvelle fonctionnalité liée à un ADR ou à une décision technique
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ouvre une issue avant de commencer le travail. Si un ADR existe déjà, lie-le ci-dessous.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte
+      description: Quel besoin ou décision technique motive cette issue ? Si elle correspond à un ADR, mentionner le numéro (ex. ADR-003).
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Objectif
+      description: Ce que cette issue doit accomplir, en une ou deux phrases.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tâches
+      placeholder: |
+        - [ ]
+        - [ ]
+    validations:
+      required: false
+
+  - type: input
+    id: adr
+    attributes:
+      label: ADR associé
+      placeholder: "ADR-XXX ou aucun"
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critères d'acceptation
+      description: Comment saura-t-on que c'est terminé ? Tests, comportement observable, etc.
+      placeholder: |
+        - [ ]
+    validations:
+      required: false

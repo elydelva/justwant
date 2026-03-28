@@ -78,10 +78,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "publishConfig": {
     "access": "public"
   },

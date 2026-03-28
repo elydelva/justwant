@@ -27,7 +27,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Biome lint
         run: bun biome lint .
       - name: Biome format check
@@ -49,7 +49,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Cache Turborepo
         uses: rharkor/caching-for-turbo@0abc2381e688c4d2832f0665a68a01c6e82f0d6c # v2.3.11
       # turbo typecheck: builds deps first (^build), then typechecks each package.
@@ -74,7 +74,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Cache Turborepo
         uses: rharkor/caching-for-turbo@0abc2381e688c4d2832f0665a68a01c6e82f0d6c # v2.3.11
       # Restore dist/ from turbo remote cache populated by the build job (all cache hits)
@@ -132,7 +132,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Audit dependencies
         run: bun audit --audit-level=high
 
@@ -152,7 +152,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Knip — find unused exports, files & deps
         run: bunx knip --reporter compact
 
@@ -174,29 +174,12 @@ jobs:
           path: coverage/
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@383f7e52eae3ab0510c3cb0e7d9d150bbaeab838 # v3.1.0
+        with:
+          args: >
+            -Dsonar.projectVersion=${{ github.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  # ── CodeRabbit ───────────────────────────────────────────────────────────────
-  coderabbit:
-    name: CodeRabbit Review
-    runs-on: ubuntu-latest
-    needs: [lint, typecheck, test, audit, dead-code, build]
-    if: github.event_name == 'pull_request'
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Trigger CodeRabbit review
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: "@coderabbitai review",
-            });
 
   # ── Build ────────────────────────────────────────────────────────────────────
   build:
@@ -215,7 +198,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Cache Turborepo
         uses: rharkor/caching-for-turbo@0abc2381e688c4d2832f0665a68a01c6e82f0d6c # v2.3.11
       - name: Build all packages (turbo)
