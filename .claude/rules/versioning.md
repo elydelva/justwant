@@ -4,7 +4,7 @@
 
 [Conventional Commits](https://www.conventionalcommits.org/). Scope = package name without `@justwant/` (e.g. `auth`, `cache`).
 
-```
+```text
 <type>(<scope>): <description>
 ```
 

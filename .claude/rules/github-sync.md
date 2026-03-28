@@ -23,7 +23,7 @@ All GitHub content (PR titles, PR bodies, issue titles, issue bodies, comments) 
 
 `[TYPE/Feature Name]` — human-readable, not a commit message.
 
-```
+```text
 [FEAT/Auth]       Add OAuth 2.1 PKCE flow
 [FIX/Cache]       Handle Redis connection timeout
 [DOCS/ADR]        ADR workflow and templates

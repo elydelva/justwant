@@ -2,7 +2,7 @@
 
 ## Locations
 
-```
+```text
 .github/
   ISSUE_TEMPLATE/
     bug.yml       ← bug report (auto-proposed by GitHub)

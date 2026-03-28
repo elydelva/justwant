@@ -53,7 +53,7 @@ See [`docs/instructions/templates.md`](./docs/instructions/templates.md) for the
 
 This project uses [Conventional Commits](https://www.conventionalcommits.org/). Examples:
 
-```
+```text
 feat(auth): add OAuth 2.1 PKCE flow
 fix(cache): handle Redis connection timeout
 chore(ci): update release-please config
@@ -64,7 +64,7 @@ Breaking changes: add `!` after the type (`feat(auth)!:`) or a `BREAKING CHANGE:
 
 ## Monorepo structure
 
-```
+```text
 packages/   — publishable @justwant/* packages
 docs/       — ADRs, instructions, templates
 ```
