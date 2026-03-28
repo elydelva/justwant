@@ -34,7 +34,6 @@ export function createDrizzleAdapter(
   options?: CreateDrizzleAdapterOptions
 ): DrizzleAdapter {
   const dialect = options?.dialect ?? inferDialect(db);
-  const onQuery = options?.onQuery;
 
   const adapter: DrizzleAdapter = {
     dialect,
@@ -45,7 +44,6 @@ export function createDrizzleAdapter(
         defineOptions && "softDeleteColumn" in defineOptions
           ? defineOptions.softDeleteColumn
           : "deletedAt";
-      const tableName = getTableName(table);
 
       const mapped = defineMappedTable(table, contract, mapping, defineOptions);
 

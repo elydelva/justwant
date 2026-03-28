@@ -163,7 +163,6 @@ export function createJob(options: CreateJobOptions): JobService {
     engine,
     repo,
     plugins = [],
-    defaults,
     skipRuntimeCheck,
     crons = [],
     queues: queueDefs = [],
