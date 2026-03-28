@@ -1,8 +1,10 @@
 language: "en-US"
 
 reviews:
-  # Disable automatic review on PR open/update — triggered manually via workflow
-  # once all CI checks pass (see .github/workflows/coderabbit.yml)
   auto_review:
-    enabled: false
+    enabled: true
     drafts: false
+  tools:
+    github-checks:
+      enabled: true
+      timeout_ms: 300000
