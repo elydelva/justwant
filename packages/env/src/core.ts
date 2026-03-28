@@ -139,6 +139,80 @@ function collectKeysFromGroups(
   return map;
 }
 
+function validateVar(
+  internalKey: string,
+  schema: EnvSchema[string],
+  prefix: string | string[] | undefined,
+  merged: Record<string, string>
+): { rawValue: string; validatedValue?: unknown; issues: { key: string; message: string }[] } {
+  let rawValue: string | undefined;
+  const envKey = prefix ? (Array.isArray(prefix) ? prefix[0] : prefix) + internalKey : internalKey;
+  rawValue = merged[envKey] ?? merged[internalKey];
+  if (!rawValue && prefix) {
+    for (const p of Array.isArray(prefix) ? prefix : [prefix]) {
+      rawValue = merged[p + internalKey];
+      if (rawValue !== undefined) break;
+    }
+  }
+  rawValue = rawValue ?? "";
+
+  const std = (schema as { "~standard"?: { validate: (v: unknown) => unknown } })["~standard"];
+  if (!std?.validate) {
+    return {
+      rawValue,
+      issues: [{ key: internalKey, message: "Schema does not implement Standard Schema" }],
+    };
+  }
+
+  const result = std.validate(rawValue !== "" ? rawValue : undefined) as
+    | { value?: unknown; issues?: readonly { message?: string }[] }
+    | Promise<unknown>;
+
+  if (result && typeof (result as Promise<unknown>).then === "function") {
+    return {
+      rawValue,
+      issues: [{ key: internalKey, message: "Async validation not supported for env" }],
+    };
+  }
+
+  const r = result as { value?: unknown; issues?: readonly { message?: string }[] };
+  if (r.issues) {
+    return { rawValue, issues: formatSchemaIssues(internalKey, r.issues) };
+  }
+  return { rawValue, validatedValue: r.value, issues: [] };
+}
+
+function validateGroupVar(
+  envKey: string,
+  groupKey: string,
+  schema: EnvSchema[string],
+  merged: Record<string, string>,
+  clientPrefix: string | string[] | undefined
+): { rawValue: string; validatedValue?: unknown; issues: { key: string; message: string }[] } {
+  let rawValue = merged[envKey];
+  if (rawValue === undefined && clientPrefix) {
+    for (const p of Array.isArray(clientPrefix) ? clientPrefix : [clientPrefix]) {
+      rawValue = merged[p + envKey];
+      if (rawValue !== undefined) break;
+    }
+  }
+  rawValue = rawValue ?? "";
+
+  const std = (schema as { "~standard"?: { validate: (v: unknown) => unknown } })["~standard"];
+  if (!std?.validate) return { rawValue, issues: [] };
+
+  const result = std.validate(rawValue || undefined) as
+    | { value?: unknown; issues?: readonly { message?: string }[] }
+    | Promise<unknown>;
+
+  if (result && typeof (result as Promise<unknown>).then === "function")
+    return { rawValue, issues: [] };
+
+  const r = result as { value?: unknown; issues?: readonly { message?: string }[] };
+  if (r.issues) return { rawValue, issues: formatSchemaIssues(groupKey, r.issues) };
+  return { rawValue, validatedValue: r.value, issues: [] };
+}
+
 export function createEnvWithDeps<
   T extends EnvSchema,
   G extends GroupSchema | undefined = undefined,
@@ -186,7 +260,6 @@ export function createEnvWithDeps<
     raw: Record<string, string>;
   } {
     const merged = mergeSources(sources ?? {}, cwd, expand);
-
     const validated: Record<string, unknown> = {};
     const raw: Record<string, string> = {};
     const issues: { key: string; message: string }[] = [];
@@ -194,78 +267,32 @@ export function createEnvWithDeps<
     for (const internalKey of flatKeys) {
       const entry = mergedVars.get(internalKey);
       if (!entry) continue;
-      const { schema, prefix } = entry;
-      const envKey = prefix
-        ? (Array.isArray(prefix) ? prefix[0] : prefix) + internalKey
-        : internalKey;
-      let rawValue = merged[envKey] ?? merged[internalKey];
-      if (!rawValue && prefix) {
-        for (const p of Array.isArray(prefix) ? prefix : [prefix]) {
-          rawValue = merged[p + internalKey];
-          if (rawValue !== undefined) break;
-        }
-      }
-
-      raw[internalKey] = rawValue ?? "";
-      const std = (schema as { "~standard"?: { validate: (v: unknown) => unknown } })["~standard"];
-      if (!std?.validate) {
-        issues.push({ key: internalKey, message: "Schema does not implement Standard Schema" });
-        continue;
-      }
-
-      const result = std.validate(
-        rawValue !== undefined && rawValue !== "" ? rawValue : undefined
-      ) as
-        | { value?: unknown; issues?: readonly { message?: string }[] }
-        | Promise<{ value?: unknown; issues?: readonly { message?: string }[] }>;
-
-      if (result && typeof (result as Promise<unknown>).then === "function") {
-        issues.push({ key: internalKey, message: "Async validation not supported for env" });
-      } else {
-        const r = result as { value?: unknown; issues?: readonly { message?: string }[] };
-        if (r.issues) {
-          for (const i of formatSchemaIssues(internalKey, r.issues)) {
-            issues.push(i);
-          }
-        } else if ("value" in r) {
-          validated[internalKey] = r.value;
-        }
-      }
+      const {
+        rawValue,
+        validatedValue,
+        issues: varIssues,
+      } = validateVar(internalKey, entry.schema, entry.prefix, merged);
+      raw[internalKey] = rawValue;
+      issues.push(...varIssues);
+      if (varIssues.length === 0 && validatedValue !== undefined)
+        validated[internalKey] = validatedValue;
     }
 
     if (groups && groupKeys) {
       for (const [envKey, { group, key }] of groupKeys) {
         const schema = groups[group]?.[key];
         if (!schema) continue;
-
-        let rawValue = merged[envKey];
-        if (rawValue === undefined && clientPrefix) {
-          for (const p of Array.isArray(clientPrefix) ? clientPrefix : [clientPrefix]) {
-            rawValue = merged[p + envKey];
-            if (rawValue !== undefined) break;
-          }
-        }
-
-        raw[`${group}.${key}`] = rawValue ?? "";
-
-        const std = (schema as { "~standard"?: { validate: (v: unknown) => unknown } })[
-          "~standard"
-        ];
-        if (!std?.validate) continue;
-
-        const result = std.validate(rawValue ?? undefined) as
-          | { value?: unknown; issues?: readonly { message?: string }[] }
-          | Promise<unknown>;
-
-        if (result && typeof (result as Promise<unknown>).then === "function") continue;
-        const r = result as { value?: unknown; issues?: readonly { message?: string }[] };
-        if (r.issues) {
-          for (const iss of formatSchemaIssues(`${group}.${key}`, r.issues)) {
-            issues.push(iss);
-          }
-        } else if ("value" in r) {
+        const groupKey = `${group}.${key}`;
+        const {
+          rawValue,
+          validatedValue,
+          issues: varIssues,
+        } = validateGroupVar(envKey, groupKey, schema, merged, clientPrefix);
+        raw[groupKey] = rawValue;
+        issues.push(...varIssues);
+        if (varIssues.length === 0 && validatedValue !== undefined) {
           if (!validated[group]) (validated[group] as Record<string, unknown>) = {};
-          (validated[group] as Record<string, unknown>)[key] = r.value;
+          (validated[group] as Record<string, unknown>)[key] = validatedValue;
         }
       }
     }
@@ -274,11 +301,10 @@ export function createEnvWithDeps<
       for (const req of modes[mode]) {
         const k = String(req);
         const hasFlat = k in validated;
-        const hasGroup = groups && k.includes(".");
-        if (!hasFlat && !hasGroup) {
-          const [g, key] = k.split(".");
+        if (!hasFlat) {
+          const [g, gkey] = k.split(".");
           const has =
-            g && key ? (validated[g] as Record<string, unknown>)?.[key] !== undefined : false;
+            g && gkey ? (validated[g] as Record<string, unknown>)?.[gkey] !== undefined : false;
           if (!has) issues.push({ key: k, message: `Required for mode ${mode}` });
         }
       }
