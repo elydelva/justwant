@@ -19,7 +19,7 @@ ensure_supabase_running() {
   echo "Starting Supabase (may take 1-2 min on first run)..."
   npx supabase start --workdir . 2>&1 || true
   local waited=0
-  while [ "$waited" -lt "$MAX_WAIT" ]; do
+  while [[ "$waited" -lt "$MAX_WAIT" ]]; do
     if is_supabase_ready; then
       return 0
     fi
@@ -35,7 +35,7 @@ get_supabase_env() {
 }
 
 main() {
-  if [ -n "$SUPABASE_SERVICE_KEY" ] && [ -n "$SUPABASE_URL" ]; then
+  if [[ -n "$SUPABASE_SERVICE_KEY" ]] && [[ -n "$SUPABASE_URL" ]]; then
     echo "export SUPABASE_URL=\"$SUPABASE_URL\""
     echo "export SUPABASE_SERVICE_KEY=\"$SUPABASE_SERVICE_KEY\""
     return 0
@@ -45,7 +45,7 @@ main() {
   fi
   local env_output
   env_output=$(get_supabase_env)
-  if [ -z "$env_output" ]; then
+  if [[ -z "$env_output" ]]; then
     echo "Could not get Supabase credentials" >&2
     return 1
   fi
