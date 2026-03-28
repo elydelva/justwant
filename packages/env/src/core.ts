@@ -263,6 +263,18 @@ function checkModeRequirements(
   }
 }
 
+function reportIssues(
+  issues: { key: string; message: string }[],
+  skip: boolean,
+  onError: "throw" | "warn" | "silent" | false,
+  reporter: ((issues: { key: string; message: string }[]) => void) | undefined
+): void {
+  if (skip || issues.length === 0) return;
+  if (onError === "throw") throw new EnvironmentError(issues);
+  if (reporter) reporter(issues);
+  else if (onError === "warn") console.warn("[env]", new EnvironmentError(issues).message);
+}
+
 export function createEnvWithDeps<
   T extends EnvSchema,
   G extends GroupSchema | undefined = undefined,
@@ -336,11 +348,7 @@ export function createEnvWithDeps<
       checkModeRequirements(modes[mode], validated, mode, issues);
     }
 
-    if (!skip && issues.length > 0) {
-      if (onError === "throw") throw new EnvironmentError(issues);
-      if (reporter) reporter(issues);
-      else if (onError === "warn") console.warn("[env]", new EnvironmentError(issues).message);
-    }
+    reportIssues(issues, skip, onError, reporter);
 
     return { validated, raw };
   }

@@ -369,10 +369,10 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
         delete: (k) => adapter.delete(prefixedKey(k)),
         has: (k) => adapter.has(prefixedKey(k)),
         getMany: adapterGetMany
-          ? (keys: string[]) =>
-              adapterGetMany(keys.map(prefixedKey)).then(
-                (m) => new Map(keys.map((k) => [k, m.get(prefixedKey(k)) ?? null]))
-              )
+          ? async (keys: string[]) => {
+              const m = await adapterGetMany(keys.map(prefixedKey));
+              return new Map(keys.map((k) => [k, m.get(prefixedKey(k)) ?? null]));
+            }
           : undefined,
         setMany: adapterSetMany
           ? (entries: Array<{ key: string; value: string; opts?: SetOptions }>) =>
