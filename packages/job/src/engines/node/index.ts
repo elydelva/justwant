@@ -120,7 +120,7 @@ export function nodeEngine(options: NodeEngineOptions = {}): JobEngineContract {
       definitions.set(id, queueDef);
       if (handler) {
         handlers.set(id, handler);
-        await scheduleJob(queueDef, handler);
+        scheduleJob(queueDef, handler);
       }
     },
 
@@ -128,7 +128,7 @@ export function nodeEngine(options: NodeEngineOptions = {}): JobEngineContract {
       const id = queueId(queueDef);
       handlers.set(id, handler);
       definitions.set(id, queueDef);
-      await scheduleJob(queueDef, handler);
+      scheduleJob(queueDef, handler);
     },
 
     async unregister(id: string): Promise<void> {
