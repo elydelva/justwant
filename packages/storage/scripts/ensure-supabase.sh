@@ -10,6 +10,7 @@ MAX_WAIT="${SUPABASE_START_TIMEOUT:-180}"
 
 is_supabase_ready() {
   curl -sSf -o /dev/null -w "%{http_code}" "$SUPABASE_READY_URL" 2>/dev/null | grep -qE '^(200|401|404)$'
+  return $?
 }
 
 ensure_supabase_running() {
@@ -32,6 +33,7 @@ ensure_supabase_running() {
 
 get_supabase_env() {
   npx supabase status -o env --workdir . 2>/dev/null | grep -E '^(API_URL|SERVICE_ROLE_KEY)=' || true
+  return $?
 }
 
 main() {
