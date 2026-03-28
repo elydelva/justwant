@@ -186,6 +186,85 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
       const fromDbRow = (row: Record<string, unknown>) =>
         mapRowToContract<InferContract<typeof contract>>(row, mappingRecord, contract);
 
+      async function doCreate(
+        data: CreateInput<typeof contract>
+      ): Promise<InferContract<typeof contract>> {
+        const validated = validateContractData(data as Record<string, unknown>, contract);
+        if (!validated.ok) {
+          throw new ContractValidationError(validated.issues);
+        }
+        const values = toDbValues(validated.value);
+        const idMapping = mappingRecord.id;
+        if (idMapping && !(idMapping.name in values)) {
+          values[idMapping.name] = crypto.randomUUID();
+        }
+        const cols = Object.keys(values);
+        const vals = Object.values(values);
+        const colList =
+          dialect === "mysql"
+            ? cols.map((c) => `\`${String(c).replace(/`/g, "``")}\``).join(", ")
+            : cols.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(", ");
+        const returning = supportsReturning ? " RETURNING *" : "";
+
+        const insertQuery = sql`INSERT INTO ${tableId} (${sql.raw(colList)}) VALUES ${sql.values([vals])}${sql.raw(returning)}`;
+        const rows = toRows(await insertQuery);
+
+        if (supportsReturning && rows[0]) {
+          return fromDbRow(rows[0]);
+        }
+        if (!supportsReturning && dialect === "mysql") {
+          const insertedId = values[idColName];
+          if (insertedId == null) throw new Error("MySQL create requires id in data");
+          const selectQuery = sql`SELECT * FROM ${tableId} WHERE ${sql.identifier(idColName)} = ${insertedId}`;
+          const lastRows = toRows(await selectQuery);
+          const row = lastRows[0];
+          if (!row) throw new Error("Insert did not return row");
+          return fromDbRow(row);
+        }
+        const row = rows[0];
+        if (!row) throw new Error("Insert did not return row");
+        return fromDbRow(row);
+      }
+
+      async function doUpdate(
+        id: string,
+        data: Partial<InferContract<typeof contract>>
+      ): Promise<InferContract<typeof contract>> {
+        const dataRecord = data as Record<string, unknown>;
+        const validated = validateContractData(dataRecord, contract, {
+          keys: Object.keys(dataRecord),
+        });
+        if (!validated.ok) {
+          throw new ContractValidationError(validated.issues);
+        }
+        const values = toDbValues(validated.value);
+        const entries = Object.entries(values);
+        if (entries.length === 0) {
+          const selectQuery = sql`SELECT * FROM ${tableId} WHERE ${sql.identifier(idColName)} = ${id}`;
+          const rows = toRows(await selectQuery);
+          const row = rows[0];
+          if (!row) throw new Error("Update did not return row");
+          return fromDbRow(row);
+        }
+
+        const setClause = entries
+          .map(([col, val]) => sql`${sql.identifier(col)} = ${val}`)
+          .reduce(
+            (acc, part, i) => (i === 0 ? part : (sql`${acc}, ${part}` as typeof acc)),
+            sql.raw("") as unknown
+          );
+
+        const updateQuery = sql`UPDATE ${tableId} SET ${setClause} WHERE ${sql.identifier(idColName)} = ${id}${supportsReturning ? sql.raw(" RETURNING *") : sql.raw("")}`;
+        const rows = toRows(await updateQuery);
+
+        if (supportsReturning && rows[0]) return fromDbRow(rows[0]);
+        const selectQuery = sql`SELECT * FROM ${tableId} WHERE ${sql.identifier(idColName)} = ${id}`;
+        const selRows = toRows(await selectQuery);
+        const selRow = selRows[0];
+        if (!selRow) throw new Error("Update did not return row");
+        return fromDbRow(selRow);
+      }
+
       const sqlOps = {
         findById: (id: string) =>
           createBoundQuery(async () => {
@@ -228,81 +307,10 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
             return rows.map((r) => fromDbRow(r));
           }),
 
-        create: (data: CreateInput<typeof contract>) =>
-          createBoundQuery(async () => {
-            const validated = validateContractData(data as Record<string, unknown>, contract);
-            if (!validated.ok) {
-              throw new ContractValidationError(validated.issues);
-            }
-            const values = toDbValues(validated.value);
-            const idMapping = mappingRecord.id;
-            if (idMapping && !(idMapping.name in values)) {
-              values[idMapping.name] = crypto.randomUUID();
-            }
-            const cols = Object.keys(values);
-            const vals = Object.values(values);
-            const colList =
-              dialect === "mysql"
-                ? cols.map((c) => `\`${String(c).replace(/`/g, "``")}\``).join(", ")
-                : cols.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(", ");
-            const returning = supportsReturning ? " RETURNING *" : "";
-
-            const insertQuery = sql`INSERT INTO ${tableId} (${sql.raw(colList)}) VALUES ${sql.values([vals])}${sql.raw(returning)}`;
-            const rows = toRows(await insertQuery);
-
-            if (supportsReturning && rows[0]) {
-              return fromDbRow(rows[0]);
-            }
-            if (!supportsReturning && dialect === "mysql") {
-              const insertedId = values[idColName];
-              if (insertedId == null) throw new Error("MySQL create requires id in data");
-              const selectQuery = sql`SELECT * FROM ${tableId} WHERE ${sql.identifier(idColName)} = ${insertedId}`;
-              const lastRows = toRows(await selectQuery);
-              const row = lastRows[0];
-              if (!row) throw new Error("Insert did not return row");
-              return fromDbRow(row);
-            }
-            const row = rows[0];
-            if (!row) throw new Error("Insert did not return row");
-            return fromDbRow(row);
-          }),
+        create: (data: CreateInput<typeof contract>) => createBoundQuery(() => doCreate(data)),
 
         update: (id: string, data: Partial<InferContract<typeof contract>>) =>
-          createBoundQuery(async () => {
-            const dataRecord = data as Record<string, unknown>;
-            const validated = validateContractData(dataRecord, contract, {
-              keys: Object.keys(dataRecord),
-            });
-            if (!validated.ok) {
-              throw new ContractValidationError(validated.issues);
-            }
-            const values = toDbValues(validated.value);
-            const entries = Object.entries(values);
-            if (entries.length === 0) {
-              const selectQuery = sql`SELECT * FROM ${tableId} WHERE ${sql.identifier(idColName)} = ${id}`;
-              const rows = toRows(await selectQuery);
-              const row = rows[0];
-              if (!row) throw new Error("Update did not return row");
-              return fromDbRow(row);
-            }
-
-            const setClause = entries
-              .map(([col, val]) => sql`${sql.identifier(col)} = ${val}`)
-              .reduce(
-                (acc, part, i) => (i === 0 ? part : (sql`${acc}, ${part}` as typeof acc)),
-                sql.raw("") as unknown
-              );
-
-            const updateQuery = sql`UPDATE ${tableId} SET ${setClause} WHERE ${sql.identifier(idColName)} = ${id}${supportsReturning ? sql.raw(" RETURNING *") : sql.raw("")}`;
-            const rows = toRows(await updateQuery);
-
-            if (supportsReturning && rows[0]) return fromDbRow(rows[0]);
-            const selectQuery = sql`SELECT * FROM ${tableId} WHERE ${sql.identifier(idColName)} = ${id}`;
-            const selRows = toRows(await selectQuery);
-            const selRow = selRows[0];
-            if (!selRow) throw new Error("Update did not return row");
-            return fromDbRow(selRow);
-          }),
+          createBoundQuery(() => doUpdate(id, data)),
 
         delete: (id: string) =>
           createBoundQuery(async () => {
