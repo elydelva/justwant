@@ -15,6 +15,10 @@ GitHub Issues and PRs are a UX layer — never rely on them for critical context
 | PR merged | Issue closes automatically |
 | Work dropped | Close issue; set `status: abandoned` in ADR |
 
+## Language
+
+All GitHub content (PR titles, PR bodies, issue titles, issue bodies, comments) must be written in **English**.
+
 ## PR title format
 
 `[TYPE/Feature Name]` — human-readable, not a commit message.

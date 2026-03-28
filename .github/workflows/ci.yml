@@ -27,7 +27,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Biome lint
         run: bun biome lint .
       - name: Biome format check
@@ -49,7 +49,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Cache Turborepo
         uses: rharkor/caching-for-turbo@0abc2381e688c4d2832f0665a68a01c6e82f0d6c # v2.3.11
       # turbo typecheck: builds deps first (^build), then typechecks each package.
@@ -74,7 +74,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Cache Turborepo
         uses: rharkor/caching-for-turbo@0abc2381e688c4d2832f0665a68a01c6e82f0d6c # v2.3.11
       # Restore dist/ from turbo remote cache populated by the build job (all cache hits)
@@ -132,7 +132,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Audit dependencies
         run: bun audit --audit-level=high
 
@@ -152,7 +152,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Knip — find unused exports, files & deps
         run: bunx knip --reporter compact
 
@@ -198,7 +198,7 @@ jobs:
           key: bun-${{ hashFiles('bun.lock') }}
           restore-keys: bun-
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Cache Turborepo
         uses: rharkor/caching-for-turbo@0abc2381e688c4d2832f0665a68a01c6e82f0d6c # v2.3.11
       - name: Build all packages (turbo)
