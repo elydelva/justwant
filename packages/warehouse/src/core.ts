@@ -41,6 +41,44 @@ async function executeMutation(q: WaddlerQuery, dialect: WarehouseDialect): Prom
   }
 }
 
+function resolveClickhouseTypes(
+  colOrder: string[],
+  mapping: Record<string, { name: string }>,
+  fields: Record<string, unknown>
+): string[] {
+  return colOrder.map((col) => {
+    const key = Object.entries(mapping).find(([, c]) => c.name === col)?.[0];
+    const field = key ? fields[key as keyof typeof fields] : undefined;
+    if (!field) return "String";
+    const base =
+      (field as { _columnType?: string })._columnType === "REAL"
+        ? "Float64"
+        : (field as { _columnType?: string })._columnType === "INTEGER"
+          ? "Int64"
+          : "String";
+    return !(field as { _required?: boolean })._required ? `Nullable(${base})` : base;
+  });
+}
+
+function buildInsertTuples(
+  rows: Record<string, unknown>[],
+  colOrder: string[],
+  mapping: Record<string, { name: string }>,
+  dialect: WarehouseDialect,
+  sqlDefault: unknown
+): unknown[][] {
+  return rows.map((row) => {
+    const dbRow = mapContractToRow(row, mapping);
+    return colOrder.map((col) => {
+      const val = dbRow[col];
+      if (val === undefined) {
+        return dialect === "clickhouse" ? null : (sqlDefault ?? null);
+      }
+      return val;
+    });
+  });
+}
+
 export interface CreateWarehouseFromSqlOptions {
   dialect: WarehouseDialect;
   driver?: unknown;
@@ -121,35 +159,21 @@ export function createWarehouseFromSql(
           try {
             const colOrder = Object.entries(mapping).map(([, col]) => col.name);
             const sqlDefault = (sql as { default?: unknown }).default;
-            const tuples = rows.map((row) => {
-              const dbRow = mapContractToRow(row as Record<string, unknown>, mapping);
-              return colOrder.map((col) => {
-                const val = dbRow[col];
-                if (val === undefined) {
-                  return dialect === "clickhouse" ? null : (sqlDefault ?? null);
-                }
-                return val;
-              });
-            });
+            const tuples = buildInsertTuples(
+              rows as Record<string, unknown>[],
+              colOrder,
+              mapping,
+              dialect,
+              sqlDefault
+            );
             const colList = colOrder.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(", ");
             const types =
               dialect === "clickhouse"
-                ? colOrder.map((col) => {
-                    const key = Object.entries(mapping).find(([, c]) => c.name === col)?.[0];
-                    const field = key
-                      ? contract.fields[key as keyof typeof contract.fields]
-                      : undefined;
-                    if (!field) return "String";
-                    const base =
-                      (field as { _columnType?: string })._columnType === "REAL"
-                        ? "Float64"
-                        : (field as { _columnType?: string })._columnType === "INTEGER"
-                          ? "Int64"
-                          : "String";
-                    return !(field as { _required?: boolean })._required
-                      ? `Nullable(${base})`
-                      : base;
-                  })
+                ? resolveClickhouseTypes(
+                    colOrder,
+                    mapping,
+                    contract.fields as Record<string, unknown>
+                  )
                 : undefined;
             const valuesArg =
               types !== undefined
