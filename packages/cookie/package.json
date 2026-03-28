@@ -9,14 +9,7 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/cookie"
   },
-  "keywords": [
-    "cookie",
-    "cookies",
-    "parse",
-    "serialize",
-    "set-cookie",
-    "typed"
-  ],
+  "keywords": ["cookie", "cookies", "parse", "serialize", "set-cookie", "typed"],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -62,10 +55,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "publishConfig": {
     "access": "public"
   },

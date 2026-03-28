@@ -9,13 +9,7 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/organisation"
   },
-  "keywords": [
-    "organisation",
-    "organization",
-    "membership",
-    "permission",
-    "typescript"
-  ],
+  "keywords": ["organisation", "organization", "membership", "permission", "typescript"],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -52,10 +46,7 @@
     "test": "bun test",
     "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "publishConfig": {
     "access": "public"
   },
