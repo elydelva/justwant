@@ -25,6 +25,30 @@ function prefix(key: string, p: string) {
   return p ? `${p}${key}` : key;
 }
 
+async function applyEntryOptions(
+  redis: UpstashRedisClient,
+  keyPrefix: string | undefined,
+  tagSetKey: (tag: string) => string,
+  e: { key: string; opts?: SetOptions }
+): Promise<void> {
+  if (e.opts?.ttl) {
+    const parsed = parseTtl(e.opts.ttl);
+    if (parsed !== undefined) {
+      const ex =
+        typeof parsed === "number"
+          ? Math.ceil(parsed / 1000)
+          : Math.ceil((parsed.getTime() - Date.now()) / 1000);
+      if (ex > 0) await redis.expire(prefix(e.key, keyPrefix ?? ""), ex);
+    }
+  }
+  if (e.opts?.tags?.length && redis.sadd) {
+    const k = prefix(e.key, keyPrefix ?? "");
+    for (const tag of e.opts.tags) {
+      await redis.sadd(tagSetKey(tag), k);
+    }
+  }
+}
+
 export function upstashAdapter(options: UpstashAdapterOptions): CacheAdapter {
   const { redis, keyPrefix = "", tagPrefix = "tag:" } = options;
 
@@ -88,22 +112,7 @@ export function upstashAdapter(options: UpstashAdapterOptions): CacheAdapter {
       }
       await redis.mset(obj);
       for (const e of entries) {
-        if (e.opts?.ttl) {
-          const parsed = parseTtl(e.opts.ttl);
-          if (parsed !== undefined) {
-            const ex =
-              typeof parsed === "number"
-                ? Math.ceil(parsed / 1000)
-                : Math.ceil((parsed.getTime() - Date.now()) / 1000);
-            if (ex > 0) await redis.expire(prefix(e.key, keyPrefix), ex);
-          }
-        }
-        if (e.opts?.tags?.length && redis.sadd) {
-          const k = prefix(e.key, keyPrefix);
-          for (const tag of e.opts.tags) {
-            await redis.sadd(tagSetKey(tag), k);
-          }
-        }
+        await applyEntryOptions(redis, keyPrefix, tagSetKey, e);
       }
     },
 
