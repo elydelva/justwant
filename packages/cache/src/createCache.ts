@@ -361,36 +361,23 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       nsOpts?: Partial<CacheDefaults> & { onError?: OnError }
     ): CacheInstance {
       const prefixedKey = (k: string) => `${prefix}:${k}`;
+      const adapterGetMany = adapter.getMany;
+      const adapterSetMany = adapter.setMany;
       const wrappedAdapter: CacheAdapter = {
         get: (k) => adapter.get(prefixedKey(k)),
         set: (k, v, o) => adapter.set(prefixedKey(k), v, o),
         delete: (k) => adapter.delete(prefixedKey(k)),
         has: (k) => adapter.has(prefixedKey(k)),
-        getMany: (() => {
-          const getMany = adapter.getMany;
-          return getMany
-            ? (keys: string[]) =>
-                getMany(keys.map(prefixedKey)).then((m) => {
-                  const out = new Map<string, string | null>();
-                  for (const k of keys) {
-                    out.set(k, m.get(prefixedKey(k)) ?? null);
-                  }
-                  return out;
-                })
-            : undefined;
-        })(),
-        setMany: (() => {
-          const setMany = adapter.setMany;
-          return setMany
-            ? (entries: Array<{ key: string; value: string; opts?: SetOptions }>) =>
-                setMany(
-                  entries.map((e) => ({
-                    ...e,
-                    key: prefixedKey(e.key),
-                  }))
-                )
-            : undefined;
-        })(),
+        getMany: adapterGetMany
+          ? (keys: string[]) =>
+              adapterGetMany(keys.map(prefixedKey)).then(
+                (m) => new Map(keys.map((k) => [k, m.get(prefixedKey(k)) ?? null]))
+              )
+          : undefined,
+        setMany: adapterSetMany
+          ? (entries: Array<{ key: string; value: string; opts?: SetOptions }>) =>
+              adapterSetMany(entries.map((e) => ({ ...e, key: prefixedKey(e.key) })))
+          : undefined,
         deleteMany: (() => {
           const deleteMany = adapter.deleteMany;
           return deleteMany ? (keys: string[]) => deleteMany(keys.map(prefixedKey)) : undefined;

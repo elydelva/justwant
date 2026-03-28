@@ -158,7 +158,7 @@ export function createDrizzleAdapter(
             const rows = fullCond
               ? ((await q.where(fullCond)) as Record<string, unknown>[])
               : ((await q) as Record<string, unknown>[]);
-            return rows.map((r) => fromDbRow(r));
+            return rows.map(fromDbRow);
           }),
 
         create: (data: CreateInput<typeof contract>) =>

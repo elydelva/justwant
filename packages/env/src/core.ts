@@ -139,22 +139,30 @@ function collectKeysFromGroups(
   return map;
 }
 
+function resolveRawValue(
+  internalKey: string,
+  prefix: string | string[] | undefined,
+  merged: Record<string, string>
+): string {
+  const prefixes = prefix ? (Array.isArray(prefix) ? prefix : [prefix]) : [];
+  const primaryKey = prefixes.length > 0 ? prefixes[0] + internalKey : internalKey;
+  let raw = merged[primaryKey] ?? merged[internalKey];
+  if (!raw) {
+    for (const p of prefixes) {
+      raw = merged[p + internalKey];
+      if (raw !== undefined) break;
+    }
+  }
+  return raw ?? "";
+}
+
 function validateVar(
   internalKey: string,
   schema: EnvSchema[string],
   prefix: string | string[] | undefined,
   merged: Record<string, string>
 ): { rawValue: string; validatedValue?: unknown; issues: { key: string; message: string }[] } {
-  let rawValue: string | undefined;
-  const envKey = prefix ? (Array.isArray(prefix) ? prefix[0] : prefix) + internalKey : internalKey;
-  rawValue = merged[envKey] ?? merged[internalKey];
-  if (!rawValue && prefix) {
-    for (const p of Array.isArray(prefix) ? prefix : [prefix]) {
-      rawValue = merged[p + internalKey];
-      if (rawValue !== undefined) break;
-    }
-  }
-  rawValue = rawValue ?? "";
+  const rawValue = resolveRawValue(internalKey, prefix, merged);
 
   const std = (schema as { "~standard"?: { validate: (v: unknown) => unknown } })["~standard"];
   if (!std?.validate) {
@@ -211,6 +219,48 @@ function validateGroupVar(
   const r = result as { value?: unknown; issues?: readonly { message?: string }[] };
   if (r.issues) return { rawValue, issues: formatSchemaIssues(groupKey, r.issues) };
   return { rawValue, validatedValue: r.value, issues: [] };
+}
+
+function applyGroupVars(
+  groupKeys: Map<string, { group: string; key: string }>,
+  groups: GroupSchema,
+  merged: Record<string, string>,
+  clientPrefix: string | string[] | undefined,
+  validated: Record<string, unknown>,
+  raw: Record<string, string>,
+  issues: { key: string; message: string }[]
+): void {
+  for (const [envKey, { group, key }] of groupKeys) {
+    const schema = groups[group]?.[key];
+    if (!schema) continue;
+    const groupKey = `${group}.${key}`;
+    const {
+      rawValue,
+      validatedValue,
+      issues: varIssues,
+    } = validateGroupVar(envKey, groupKey, schema, merged, clientPrefix);
+    raw[groupKey] = rawValue;
+    issues.push(...varIssues);
+    if (varIssues.length === 0 && validatedValue !== undefined) {
+      if (!validated[group]) (validated[group] as Record<string, unknown>) = {};
+      (validated[group] as Record<string, unknown>)[key] = validatedValue;
+    }
+  }
+}
+
+function checkModeRequirements(
+  modeRequirements: readonly (string | number | symbol)[],
+  validated: Record<string, unknown>,
+  mode: string,
+  issues: { key: string; message: string }[]
+): void {
+  for (const req of modeRequirements) {
+    const k = String(req);
+    if (k in validated) continue;
+    const [g, gkey] = k.split(".");
+    const has = g && gkey ? (validated[g] as Record<string, unknown>)?.[gkey] !== undefined : false;
+    if (!has) issues.push({ key: k, message: `Required for mode ${mode}` });
+  }
 }
 
 export function createEnvWithDeps<
@@ -279,35 +329,11 @@ export function createEnvWithDeps<
     }
 
     if (groups && groupKeys) {
-      for (const [envKey, { group, key }] of groupKeys) {
-        const schema = groups[group]?.[key];
-        if (!schema) continue;
-        const groupKey = `${group}.${key}`;
-        const {
-          rawValue,
-          validatedValue,
-          issues: varIssues,
-        } = validateGroupVar(envKey, groupKey, schema, merged, clientPrefix);
-        raw[groupKey] = rawValue;
-        issues.push(...varIssues);
-        if (varIssues.length === 0 && validatedValue !== undefined) {
-          if (!validated[group]) (validated[group] as Record<string, unknown>) = {};
-          (validated[group] as Record<string, unknown>)[key] = validatedValue;
-        }
-      }
+      applyGroupVars(groupKeys, groups, merged, clientPrefix, validated, raw, issues);
     }
 
     if (modes && mode && modes[mode]) {
-      for (const req of modes[mode]) {
-        const k = String(req);
-        const hasFlat = k in validated;
-        if (!hasFlat) {
-          const [g, gkey] = k.split(".");
-          const has =
-            g && gkey ? (validated[g] as Record<string, unknown>)?.[gkey] !== undefined : false;
-          if (!has) issues.push({ key: k, message: `Required for mode ${mode}` });
-        }
-      }
+      checkModeRequirements(modes[mode], validated, mode, issues);
     }
 
     if (!skip && issues.length > 0) {

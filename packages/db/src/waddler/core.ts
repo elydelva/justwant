@@ -304,7 +304,7 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
               softDeleteColName
             );
             const rows = toRows(await query);
-            return rows.map((r) => fromDbRow(r));
+            return rows.map(fromDbRow);
           }),
 
         create: (data: CreateInput<typeof contract>) => createBoundQuery(() => doCreate(data)),

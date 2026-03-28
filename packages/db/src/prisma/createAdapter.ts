@@ -163,7 +163,7 @@ export function createPrismaAdapter(
               take: options?.take,
               skip: options?.skip,
             });
-            return rows.map((r) => fromDbRow(r));
+            return rows.map(fromDbRow);
           }),
 
         create: (data: CreateInput<typeof contract>) => createBoundQuery(() => doCreate(data)),

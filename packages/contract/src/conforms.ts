@@ -45,7 +45,9 @@ export type ConformsTo<
 export function conformsTo<TTable extends AnyContract, TExpected extends AnyContract>(
   _table: ConformsTo<TTable, TExpected> extends true ? ConformableTable : never,
   _expectedContract: TExpected | TableContract<TExpected>
-): void {}
+): void {
+  // compile-time only — no runtime behaviour needed
+}
 
 /**
  * Runtime assertion + cast: verifies table conforms to expected contract,
