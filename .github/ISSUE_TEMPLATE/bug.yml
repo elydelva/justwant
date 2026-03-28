@@ -1,0 +1,73 @@
+name: Bug report
+description: Comportement inattendu ou régression
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de remplir ce formulaire. Supprime les sections qui ne s'appliquent pas.
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Comportement observé
+      description: Décris ce qui se passe actuellement.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+      description: Décris ce qui devrait se passer.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Étapes pour reproduire
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environnement
+      placeholder: |
+        - OS :
+        - Version / commit :
+        - Commande exécutée :
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack trace
+      render: shell
+    validations:
+      required: false
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - Bloquant
+        - Majeur
+        - Mineur
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte additionnel
+      description: PR liée, ADR concerné, screenshot, etc.
+    validations:
+      required: false

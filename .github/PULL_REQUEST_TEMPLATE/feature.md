@@ -8,7 +8,7 @@ Closes #<!-- numéro de l'issue -->
 
 <!-- Lien vers le fichier ADR implémenté par cette PR. -->
 
-[ADR-XXX](../../adr/ADR-XXX-slug.md)
+[ADR-XXX](../../docs/adr/ADR-XXX-slug.md)
 
 ## Changements notables
 
