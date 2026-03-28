@@ -24,10 +24,11 @@ bun run build        # build all packages
 ## Structure
 
 ```
-packages/   — publishable @justwant/* packages (independently versioned)
-docs/adr/   — architectural decision records
-docs/instructions/  — human-readable contributor docs
-.claude/rules/      — detailed LLM instructions (loaded by Claude Code)
+packages/            — publishable @justwant/* packages (independently versioned)
+docs/adr/            — architectural decision records
+docs/instructions/   — human-readable contributor docs
+.claude/rules/       — LLM instructions (loaded by Claude Code)
+.claude/skills/      — Claude Code skills (/justwant, etc.)
 ```
 
 ## Rules
