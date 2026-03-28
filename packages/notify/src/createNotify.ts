@@ -22,6 +22,39 @@ import type {
 
 const DEFAULT_ON_ERROR: OnError = "throw";
 
+function requireCanal(
+  canals: Record<string, Canal | undefined>,
+  canalId: string,
+  onError: OnError
+): Canal | null {
+  const canal = canals[canalId];
+  if (!canal) {
+    if (onError === "throw") throw new CanalNotFoundError(canalId);
+    return null;
+  }
+  return canal;
+}
+
+function requireTemplateVersion(
+  registry: Map<string, Template>,
+  templateId: string,
+  canalId: string,
+  kind: Canal["kind"],
+  onError: OnError
+): ((a: unknown) => ChannelMessage) | null {
+  const template = registry.get(templateId);
+  if (!template) {
+    if (onError === "throw") throw new TemplateNotFoundError(templateId);
+    return null;
+  }
+  const version = template.versions[kind];
+  if (!version) {
+    if (onError === "throw") throw new TemplateVersionNotFoundError(templateId, canalId, kind);
+    return null;
+  }
+  return version as (a: unknown) => ChannelMessage;
+}
+
 export function createNotify(options: CreateNotifyOptions): NotifyInstance {
   const {
     templates: initialTemplates,
@@ -35,28 +68,12 @@ export function createNotify(options: CreateNotifyOptions): NotifyInstance {
 
   async function send<TArgs>(opts: SendOptions<TArgs>): Promise<void> {
     const { templateId, canalId, args } = opts;
-    const canal = canals[canalId];
-    if (!canal) {
-      if (onError === "throw") throw new CanalNotFoundError(canalId);
-      return;
-    }
+    const canal = requireCanal(canals as Record<string, Canal | undefined>, canalId, onError);
+    if (!canal) return;
+    const versionFn = requireTemplateVersion(registry, templateId, canalId, canal.kind, onError);
+    if (!versionFn) return;
 
-    const template = registry.get(templateId);
-    if (!template) {
-      if (onError === "throw") throw new TemplateNotFoundError(templateId);
-      return;
-    }
-
-    const kind = canal.kind;
-    const version = template.versions[kind];
-    if (!version) {
-      if (onError === "throw") {
-        throw new TemplateVersionNotFoundError(templateId, canalId, kind);
-      }
-      return;
-    }
-
-    const message = (version as (a: unknown) => ChannelMessage)(args);
+    const message = versionFn(args);
 
     for (const plugin of plugins) {
       if (plugin.onSend) {
