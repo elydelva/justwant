@@ -1,6 +1,6 @@
 {
   "name": "@justwant/event",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Typed event bus. Root = defineEvent, createEventBus. /primitive = createPrimitiveEventBus (primitive).",
   "type": "module",
   "license": "MIT",
@@ -9,7 +9,14 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/event"
   },
-  "keywords": ["event", "event-bus", "pubsub", "typed", "emit", "listen"],
+  "keywords": [
+    "event",
+    "event-bus",
+    "pubsub",
+    "typed",
+    "emit",
+    "listen"
+  ],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -30,7 +37,10 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },

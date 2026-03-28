@@ -1,5 +1,19 @@
 # @justwant/db
 
+## [0.4.0](https://github.com/elydelva/justwant/compare/db-v0.3.0...db-v0.4.0) (2026-03-28)
+
+
+### Features
+
+* **config:** enhance configuration management with multi-source support and validation ([98d70bd](https://github.com/elydelva/justwant/commit/98d70bd3a1345bae2e5c6de5ad73ccfd0ea0100d))
+* **core:** introduce @justwant/core and eliminate SQL utility duplication across db and warehouse ([8d4d596](https://github.com/elydelva/justwant/commit/8d4d596b7a69203173ebec4148ce63d6ae8912fa))
+* **cron, refereal, waitlist, actor, bezier, flag, preference:** initiale realease ([9dcaacb](https://github.com/elydelva/justwant/commit/9dcaacb2636630250b9549154877a5fe4947c2e8))
+
+
+### Dependencies
+
+* **db,warehouse:** add @justwant/core as dependency ([712d0b4](https://github.com/elydelva/justwant/commit/712d0b45bb88f1763e196c11d25669733da2f248))
+
 ## 0.3.0
 
 ### Minor Changes

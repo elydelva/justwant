@@ -1,5 +1,18 @@
 # @justwant/core
 
+## [0.2.0](https://github.com/elydelva/justwant/compare/core-v0.1.0...core-v0.2.0) (2026-03-28)
+
+
+### Features
+
+* **core:** add @justwant/core package with shared SQL utilities ([2b5636e](https://github.com/elydelva/justwant/commit/2b5636e376ec04087c1d8ede2d089a7270069b84))
+* **core:** introduce @justwant/core and eliminate SQL utility duplication across db and warehouse ([8d4d596](https://github.com/elydelva/justwant/commit/8d4d596b7a69203173ebec4148ce63d6ae8912fa))
+
+
+### Bug Fixes
+
+* **core:** correct mapRowToContract test assertion ([a2c18b0](https://github.com/elydelva/justwant/commit/a2c18b010929a1004b4a597860515c7ddce1978f))
+
 ## 0.1.0
 
 ### Minor Changes

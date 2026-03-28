@@ -1,6 +1,6 @@
 {
   "name": "@justwant/warehouse",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "DAL for data warehouses (OLAP). Batch insert, query, aggregate. ClickHouse, DuckDB.",
   "type": "module",
   "license": "MIT",
@@ -9,7 +9,14 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/warehouse"
   },
-  "keywords": ["warehouse", "olap", "clickhouse", "duckdb", "dal", "contract"],
+  "keywords": [
+    "warehouse",
+    "olap",
+    "clickhouse",
+    "duckdb",
+    "dal",
+    "contract"
+  ],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -37,7 +44,11 @@
     "test:e2e:full": "docker compose up -d && sleep 5 && bun test",
     "test:e2e:down": "docker compose down"
   },
-  "files": ["dist", "README.md", "docs"],
+  "files": [
+    "dist",
+    "README.md",
+    "docs"
+  ],
   "publishConfig": {
     "access": "public"
   },
