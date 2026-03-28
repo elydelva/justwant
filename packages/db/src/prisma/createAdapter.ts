@@ -109,6 +109,14 @@ export function createPrismaAdapter(
         ? { [softDeleteField]: null }
         : (undefined as Record<string, unknown> | undefined);
 
+      async function doCreate(
+        data: CreateInput<typeof contract>
+      ): Promise<InferContract<typeof contract>> {
+        const values = toDbValues(data as Record<string, unknown>);
+        const row = await delegate.create({ data: values });
+        return fromDbRow(row);
+      }
+
       const mergeWhere = (
         userWhere: Record<string, unknown> | undefined
       ): Record<string, unknown> | undefined => {
@@ -158,12 +166,7 @@ export function createPrismaAdapter(
             return rows.map((r) => fromDbRow(r));
           }),
 
-        create: (data: CreateInput<typeof contract>) =>
-          createBoundQuery(async () => {
-            const values = toDbValues(data as Record<string, unknown>);
-            const row = await delegate.create({ data: values });
-            return fromDbRow(row);
-          }),
+        create: (data: CreateInput<typeof contract>) => createBoundQuery(() => doCreate(data)),
 
         update: (id: PrismaId, data: Partial<InferContract<typeof contract>>) =>
           createBoundQuery(async () => {
