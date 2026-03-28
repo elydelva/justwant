@@ -1,6 +1,6 @@
 {
   "name": "@justwant/lock",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Distributed locks and semaphores. Mutex, ownership, counting semaphore. Declarative createLockable, createLockOwner, hooks.",
   "type": "module",
   "license": "MIT",
@@ -9,7 +9,13 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/lock"
   },
-  "keywords": ["lock", "mutex", "semaphore", "distributed", "typescript"],
+  "keywords": [
+    "lock",
+    "mutex",
+    "semaphore",
+    "distributed",
+    "typescript"
+  ],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -66,7 +72,10 @@
     "test": "bun test",
     "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
