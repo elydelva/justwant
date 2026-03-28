@@ -34,7 +34,6 @@ export function defineMappedTable<TTable extends Table, TContract extends AnyCon
   mapping: MappingFor<TTable, TContract>,
   options?: DefineMappedTableOptions
 ): DrizzleMappedTable<TTable, TContract> {
-  const opts = { ...defaultOptions, ...options };
   const tableName = getTableName(table);
 
   const internal: DrizzleMappedTableInternal<TTable, TContract> = {

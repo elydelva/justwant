@@ -35,6 +35,16 @@ export interface TestVectorStorageOptions {
 /**
  * In-memory vector storage for tests only. Not for production.
  */
+function matchesFilter(
+  metadata: Record<string, unknown>,
+  filter: Record<string, unknown>
+): boolean {
+  for (const [k, v] of Object.entries(filter)) {
+    if (metadata[k] !== v) return false;
+  }
+  return true;
+}
+
 export function testVectorStorageAdapter(options: TestVectorStorageOptions): VectorStorage {
   const { dimension } = options;
   const storage = new Map<string, Map<string, StoredVector>>();
@@ -46,16 +56,6 @@ export function testVectorStorageAdapter(options: TestVectorStorageOptions): Vec
       storage.set(indexId, idx);
     }
     return idx;
-  }
-
-  function matchesFilter(
-    metadata: Record<string, unknown>,
-    filter: Record<string, unknown>
-  ): boolean {
-    for (const [k, v] of Object.entries(filter)) {
-      if (metadata[k] !== v) return false;
-    }
-    return true;
   }
 
   return {

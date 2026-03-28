@@ -117,7 +117,7 @@ export function createOrganisationService(
 
   return {
     async create(data) {
-      const { type, ...rest } = data;
+      const { type } = data;
       if (!type) {
         throw new Error("Organisation type is required");
       }

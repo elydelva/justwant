@@ -72,7 +72,7 @@ export function createPreferenceDbAdapter(
         rows = [...rows].sort((a, b) => {
           const aVal = (a as unknown as Record<string, unknown>)[field] ?? "";
           const bVal = (b as unknown as Record<string, unknown>)[field] ?? "";
-          const cmp = aVal === bVal ? 0 : aVal < bVal ? -1 : 1;
+          const cmp = aVal < bVal ? -1 : Number(aVal > bVal);
           return direction === "desc" ? -cmp : cmp;
         });
       }

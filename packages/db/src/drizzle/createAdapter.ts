@@ -34,7 +34,6 @@ export function createDrizzleAdapter(
   options?: CreateDrizzleAdapterOptions
 ): DrizzleAdapter {
   const dialect = options?.dialect ?? inferDialect(db);
-  const onQuery = options?.onQuery;
 
   const adapter: DrizzleAdapter = {
     dialect,
@@ -45,7 +44,6 @@ export function createDrizzleAdapter(
         defineOptions && "softDeleteColumn" in defineOptions
           ? defineOptions.softDeleteColumn
           : "deletedAt";
-      const tableName = getTableName(table);
 
       const mapped = defineMappedTable(table, contract, mapping, defineOptions);
 
@@ -112,7 +110,7 @@ export function createDrizzleAdapter(
       const dbAny = db as Record<string, unknown>;
       type DbMethod = (...args: unknown[]) => unknown;
       // biome-ignore lint/suspicious/noExplicitAny: Drizzle union workaround for method chaining
-      type Chainable = any;
+      type Chainable = any; // NOSONAR
       const select = () => (dbAny.select as DbMethod).call(dbAny) as unknown as Chainable;
       const insert = (t: unknown) =>
         (dbAny.insert as DbMethod).call(dbAny, t) as unknown as Chainable;
@@ -123,11 +121,11 @@ export function createDrizzleAdapter(
       const sql = {
         findById: (id: string) =>
           createBoundQuery(async () => {
-            const conditions = idCol
-              ? baseWhere
-                ? and(eq(idCol as never, id), baseWhere)
-                : eq(idCol as never, id)
-              : eq((table as Record<string, unknown>).id as never, id);
+            let conditions: ReturnType<typeof eq>;
+            if (idCol && baseWhere)
+              conditions = and(eq(idCol as never, id), baseWhere) as ReturnType<typeof eq>;
+            else if (idCol) conditions = eq(idCol as never, id);
+            else conditions = eq((table as Record<string, unknown>).id as never, id);
             const rows = (await select().from(table).where(conditions).limit(1)) as Record<
               string,
               unknown

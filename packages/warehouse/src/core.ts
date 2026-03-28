@@ -54,12 +54,10 @@ function resolveClickhouseTypes(
     const key = nameToKey[col];
     const field = key ? fields[key] : undefined;
     if (!field) return "String";
-    const base =
-      (field as { _columnType?: string })._columnType === "REAL"
-        ? "Float64"
-        : (field as { _columnType?: string })._columnType === "INTEGER"
-          ? "Int64"
-          : "String";
+    let base: string;
+    if ((field as { _columnType?: string })._columnType === "REAL") base = "Float64";
+    else if ((field as { _columnType?: string })._columnType === "INTEGER") base = "Int64";
+    else base = "String";
     return !(field as { _required?: boolean })._required ? `Nullable(${base})` : base;
   });
 }
@@ -230,14 +228,13 @@ export function createWarehouseFromSql(
             const selectEntries = Object.entries(options.select);
             const selectExprs = selectEntries.map(([alias, expr]) => `${expr} AS ${alias}`);
             const groupByCols = groupBy.map((k) => mapping[k as string]?.name).filter(Boolean);
+            const quotedGroupCols = groupByCols.map((c) => `"${c}"`);
             const selectClause =
               groupByCols.length > 0
-                ? [...groupByCols.map((c) => `"${c}"`), ...selectExprs].join(", ")
+                ? [...quotedGroupCols, ...selectExprs].join(", ")
                 : selectExprs.join(", ");
             const groupByClause =
-              groupByCols.length > 0
-                ? ` GROUP BY ${groupByCols.map((c) => `"${c}"`).join(", ")}`
-                : "";
+              groupByCols.length > 0 ? ` GROUP BY ${quotedGroupCols.join(", ")}` : "";
 
             const query: WaddlerQuery = sql`SELECT ${sql.raw(selectClause)} FROM ${tableId}`;
             const append = query.append;

@@ -128,8 +128,10 @@ export function createCookieStore<T extends Record<string, TypedCookie<unknown>>
   const adapter = options?.adapter;
   const pruneOpt = options?.pruneUntracked;
   const pruneUntracked = !!pruneOpt;
-  const pruneDeleteOpts: Pick<CookieOptions, "path" | "domain"> | undefined =
-    pruneOpt === true ? { path: "/" } : typeof pruneOpt === "object" ? pruneOpt : undefined;
+  let pruneDeleteOpts: Pick<CookieOptions, "path" | "domain"> | undefined;
+  if (pruneOpt === true) pruneDeleteOpts = { path: "/" };
+  else if (typeof pruneOpt === "object") pruneDeleteOpts = pruneOpt;
+  else pruneDeleteOpts = undefined;
   const trackedNames = new Set(entries.map(([, c]) => c.name));
 
   const parseFromHeader = (

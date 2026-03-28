@@ -66,7 +66,7 @@ export function createWaitlistDbAdapter(
         rows = [...rows].sort((a, b) => {
           const aVal = a[field] ?? "";
           const bVal = b[field] ?? "";
-          const cmp = aVal === bVal ? 0 : aVal < bVal ? -1 : 1;
+          const cmp = aVal < bVal ? -1 : Number(aVal > bVal);
           return direction === "desc" ? -cmp : cmp;
         });
       }

@@ -65,12 +65,10 @@ export function redisAdapter(options: RedisAdapterOptions): CacheAdapter {
     async set(key: string, value: string, opts?: SetOptions): Promise<void> {
       const k = prefix(key, keyPrefix);
       const parsed = parseTtl(opts?.ttl);
-      const ttlSec =
-        parsed === undefined
-          ? undefined
-          : typeof parsed === "number"
-            ? Math.ceil(parsed / 1000)
-            : Math.ceil((parsed.getTime() - Date.now()) / 1000);
+      let ttlSec: number | undefined;
+      if (parsed === undefined) ttlSec = undefined;
+      else if (typeof parsed === "number") ttlSec = Math.ceil(parsed / 1000);
+      else ttlSec = Math.ceil((parsed.getTime() - Date.now()) / 1000);
 
       if (ttlSec !== undefined && ttlSec > 0) {
         await redis.set(k, value, "EX", ttlSec);

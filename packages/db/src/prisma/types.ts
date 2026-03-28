@@ -14,7 +14,7 @@ export type PrismaMapping = Record<string, { name: string }>;
  * so we use a generic type for reusability.
  */
 // biome-ignore lint/suspicious/noExplicitAny: PrismaClient is project-specific; we need a common interface
-export type PrismaClient = any;
+export type PrismaClient = any; // NOSONAR
 
 export interface PrismaMappedTableInternal<TContract extends AnyContract>
   extends MappedTableInternal<TContract> {

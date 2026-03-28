@@ -70,8 +70,6 @@ export function createEmbeddingService(options: CreateEmbeddingServiceOptions): 
     throw new InvalidStorageError("storage must implement query()");
   }
 
-  const universeMap = new Map(universes.map((u) => [u.id, u]));
-
   return {
     async embed(text: string, opts?: { model?: string }) {
       return engine.embed(text, opts);

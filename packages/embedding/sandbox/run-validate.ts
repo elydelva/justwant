@@ -9,14 +9,7 @@
 import { runSandbox } from "./core.js";
 import { validateSandboxResult } from "./validate.js";
 
-async function main() {
-  const result = await runSandbox(false);
-  validateSandboxResult(result);
-  result.close?.();
-  console.log(`OK (storage: ${result.storageBackend})`);
-}
-
-main().catch((err) => {
-  console.error(err.message);
-  process.exit(1);
-});
+const result = await runSandbox(false);
+validateSandboxResult(result);
+result.close?.();
+console.log(`OK (storage: ${result.storageBackend})`);

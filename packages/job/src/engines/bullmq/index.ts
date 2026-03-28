@@ -97,7 +97,6 @@ export function bullmqEngine(options: BullMQEngineOptions): JobEngineContract {
   const { connection, concurrency = 1, prefix = "job" } = options;
   const queues = new Map<string, Queue>();
   const workers = new Map<string, Worker>();
-  const handlers = new Map<string, JobHandler>();
   const definitions = new Map<string, QueueDefinition>();
 
   function getQueue(id: string): Queue {
@@ -142,9 +141,6 @@ export function bullmqEngine(options: BullMQEngineOptions): JobEngineContract {
     async register(queueDef: QueueDefinition, handler?: JobHandler): Promise<void> {
       const id = queueId(queueDef);
       definitions.set(id, queueDef);
-      if (handler) {
-        handlers.set(id, handler);
-      }
 
       const queue = getQueue(id);
       const cron = queueDef.cron;
@@ -185,7 +181,6 @@ export function bullmqEngine(options: BullMQEngineOptions): JobEngineContract {
 
     async handle(queueDef: QueueDefinition, handler: JobHandler): Promise<void> {
       const id = queueId(queueDef);
-      handlers.set(id, handler);
       definitions.set(id, queueDef);
 
       const existingWorker = workers.get(id);
@@ -216,7 +211,6 @@ export function bullmqEngine(options: BullMQEngineOptions): JobEngineContract {
         await worker.close();
         workers.delete(id);
       }
-      handlers.delete(id);
       definitions.delete(id);
     },
 

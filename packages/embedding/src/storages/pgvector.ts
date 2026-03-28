@@ -79,7 +79,6 @@ export function pgvectorStorageAdapter(options: PgvectorStorageAdapterOptions): 
       const topK = options?.topK ?? 10;
       const vecStr = formatVector(vector);
       const metaSelect = options?.includeMetadata ? ", metadata" : "";
-      const metaCol = options?.includeMetadata ? "metadata" : "NULL::jsonb as metadata";
 
       const res = await db.query(
         `SELECT id, (1 - (embedding <=> $1::vector)) as score${metaSelect}
