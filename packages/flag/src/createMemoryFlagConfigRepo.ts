@@ -8,6 +8,8 @@ import type { ConfigOverride, CreateInput, FindManyOptions, FlagConfigRepo } fro
 
 export function createMemoryFlagConfigRepo(): FlagConfigRepo {
   const overrides: ConfigOverride[] = [];
+  let seq = 0;
+  const seqMap = new Map<string, number>();
 
   return {
     async create(data: CreateInput<ConfigOverride>): Promise<ConfigOverride> {
@@ -20,6 +22,7 @@ export function createMemoryFlagConfigRepo(): FlagConfigRepo {
         rolledBack: data.rolledBack ?? false,
         createdAt: data.createdAt ?? now,
       };
+      seqMap.set(full.id, seq++);
       overrides.push(full);
       return full;
     },
@@ -46,7 +49,7 @@ export function createMemoryFlagConfigRepo(): FlagConfigRepo {
           let cmp: number;
           if (aVal < bVal) cmp = -1;
           else if (aVal > bVal) cmp = 1;
-          else cmp = 0;
+          else cmp = (seqMap.get(a.id) ?? 0) - (seqMap.get(b.id) ?? 0);
           return direction === "desc" ? -cmp : cmp;
         });
       }
