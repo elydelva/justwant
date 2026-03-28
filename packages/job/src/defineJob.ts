@@ -23,6 +23,31 @@ const defaultLogger: JobLogger = {
   error: (msg, meta) => console.error(`[job] ${msg}`, meta ?? ""),
 };
 
+function validateWithValibot<T>(schema: unknown, value: unknown, jobId: string): T {
+  try {
+    const v = require("valibot") as {
+      safeParse: (
+        s: unknown,
+        d: unknown
+      ) => { success: boolean; output?: T; issues?: Array<{ message?: string }> };
+    };
+    const r = v.safeParse(schema, value);
+    if (!r.success && r.issues?.length) {
+      throw new JobValidationError(
+        "Payload validation failed",
+        jobId,
+        r.issues.map((i) => ({ path: "", message: i.message ?? "Validation failed" }))
+      );
+    }
+    return (r as { output?: T }).output as T;
+  } catch (err) {
+    if (err instanceof JobValidationError) throw err;
+    throw new JobValidationError("Payload validation failed", jobId, [
+      { path: "", message: err instanceof Error ? err.message : "Validation failed" },
+    ]);
+  }
+}
+
 function validatePayload<T>(
   schema: StandardSchemaV1<unknown, T>,
   value: unknown,
@@ -50,31 +75,7 @@ function validatePayload<T>(
     return (r.value ?? value) as T;
   }
   if (typeof (schema as { _run?: unknown })._run === "function") {
-    try {
-      const v = require("valibot") as {
-        safeParse: (
-          s: unknown,
-          d: unknown
-        ) => { success: boolean; output?: T; issues?: Array<{ message?: string }> };
-      };
-      const r = v.safeParse(schema, value);
-      if (!r.success && r.issues?.length) {
-        throw new JobValidationError(
-          "Payload validation failed",
-          jobId,
-          (r.issues as { message?: string }[]).map((i) => ({
-            path: "",
-            message: i.message ?? "Validation failed",
-          }))
-        );
-      }
-      return (r as { output?: T }).output as T;
-    } catch (err) {
-      if (err instanceof JobValidationError) throw err;
-      throw new JobValidationError("Payload validation failed", jobId, [
-        { path: "", message: err instanceof Error ? err.message : "Validation failed" },
-      ]);
-    }
+    return validateWithValibot(schema, value, jobId);
   }
   return value as T;
 }
