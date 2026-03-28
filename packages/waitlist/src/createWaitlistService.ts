@@ -104,11 +104,14 @@ export function createWaitlistService(options: CreateWaitlistServiceOptions): Wa
       const key = toListKey(list);
       const listDef = typeof list === "string" ? undefined : list;
       const rawMetadata = opts.metadata ?? {};
-      const metadata: Record<string, unknown> = listDef?.schema
-        ? (validateMetadata(listDef.schema, rawMetadata, key) as Record<string, unknown>)
-        : typeof rawMetadata === "object" && rawMetadata !== null
-          ? (rawMetadata as Record<string, unknown>)
-          : {};
+      let metadata: Record<string, unknown>;
+      if (listDef?.schema) {
+        metadata = validateMetadata(listDef.schema, rawMetadata, key) as Record<string, unknown>;
+      } else if (typeof rawMetadata === "object" && rawMetadata !== null) {
+        metadata = rawMetadata as Record<string, unknown>;
+      } else {
+        metadata = {};
+      }
 
       const shape = toRepo(actor);
       const existing = await repo.findOne({

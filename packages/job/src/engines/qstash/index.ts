@@ -172,12 +172,14 @@ export function qstashEngine(options: QStashEngineOptions): JobEngineContract {
             "Upstash-Signature"
           ));
     if (!signature) return false;
-    const body =
-      req instanceof Request
-        ? await req.clone().text()
-        : typeof (req as { text?: () => Promise<string> }).text === "function"
-          ? await (req as { text: () => Promise<string> }).text()
-          : "";
+    let body: string;
+    if (req instanceof Request) {
+      body = await req.clone().text();
+    } else if (typeof (req as { text?: () => Promise<string> }).text === "function") {
+      body = await (req as { text: () => Promise<string> }).text();
+    } else {
+      body = "";
+    }
     const receiver = new Receiver({ currentSigningKey: signingKey, nextSigningKey });
     return receiver.verify({ body, signature, url: baseUrl });
   }

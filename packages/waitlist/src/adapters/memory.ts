@@ -53,7 +53,10 @@ export function createMemoryWaitlistAdapter(): WaitlistRepository {
         rows = [...rows].sort((a, b) => {
           const aVal = (a as unknown as Record<string, unknown>)[field] ?? "";
           const bVal = (b as unknown as Record<string, unknown>)[field] ?? "";
-          const cmp = aVal === bVal ? 0 : aVal < bVal ? -1 : 1;
+          let cmp: number;
+          if (aVal < bVal) cmp = -1;
+          else if (aVal > bVal) cmp = 1;
+          else cmp = 0;
           return direction === "desc" ? -cmp : cmp;
         });
       }

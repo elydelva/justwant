@@ -56,12 +56,10 @@ export function memoryAdapter(): CacheAdapter {
     async set(key: string, value: string, opts?: SetOptions): Promise<void> {
       const tags = opts?.tags;
       const parsed = parseTtl(opts?.ttl);
-      const expiresAt =
-        parsed === undefined
-          ? null
-          : typeof parsed === "number"
-            ? Date.now() + parsed
-            : parsed.getTime();
+      let expiresAt: number | null;
+      if (parsed === undefined) expiresAt = null;
+      else if (typeof parsed === "number") expiresAt = Date.now() + parsed;
+      else expiresAt = parsed.getTime();
 
       const existing = store.get(key);
       if (existing?.tags) for (const t of existing.tags) removeTag(key, t);

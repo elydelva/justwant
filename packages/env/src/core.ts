@@ -144,7 +144,10 @@ function resolveRawValue(
   prefix: string | string[] | undefined,
   merged: Record<string, string>
 ): string {
-  const prefixes = prefix ? (Array.isArray(prefix) ? prefix : [prefix]) : [];
+  let prefixes: string[];
+  if (!prefix) prefixes = [];
+  else if (Array.isArray(prefix)) prefixes = prefix;
+  else prefixes = [prefix];
   const primaryKey = prefixes.length > 0 ? prefixes[0] + internalKey : internalKey;
   let raw = merged[primaryKey] ?? merged[internalKey];
   if (raw === undefined) {

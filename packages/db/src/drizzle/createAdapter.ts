@@ -121,11 +121,11 @@ export function createDrizzleAdapter(
       const sql = {
         findById: (id: string) =>
           createBoundQuery(async () => {
-            const conditions = idCol
-              ? baseWhere
-                ? and(eq(idCol as never, id), baseWhere)
-                : eq(idCol as never, id)
-              : eq((table as Record<string, unknown>).id as never, id);
+            let conditions: ReturnType<typeof eq>;
+            if (idCol && baseWhere)
+              conditions = and(eq(idCol as never, id), baseWhere) as ReturnType<typeof eq>;
+            else if (idCol) conditions = eq(idCol as never, id);
+            else conditions = eq((table as Record<string, unknown>).id as never, id);
             const rows = (await select().from(table).where(conditions).limit(1)) as Record<
               string,
               unknown
