@@ -2,8 +2,7 @@
  * DDL for DuckDB.
  */
 
-import type { FieldDef } from "@justwant/contract";
-import type { TableContract } from "@justwant/contract";
+import type { FieldDef, TableContract } from "@justwant/contract";
 import { escapeIdentifier } from "@justwant/core/db";
 
 function columnTypeForDuckDb(field: FieldDef<unknown, boolean>): string {

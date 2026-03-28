@@ -3,8 +3,7 @@
  * Extracted from tableContract - adapter-specific SQL generation.
  */
 
-import type { FieldDef } from "@justwant/contract";
-import type { TableContract } from "@justwant/contract";
+import type { FieldDef, TableContract } from "@justwant/contract";
 
 export type SqlDialect = "sqlite" | "pg" | "mysql";
 

@@ -2,8 +2,7 @@
  * @justwant/lock — Hook types
  */
 
-import type { LockOwner } from "../types/index.js";
-import type { Lockable } from "../types/index.js";
+import type { LockOwner, Lockable } from "../types/index.js";
 
 export type LockOperation = "acquire" | "release" | "extend" | "forceRelease";
 

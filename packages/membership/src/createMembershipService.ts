@@ -7,9 +7,7 @@
 import { AlreadyMemberError } from "./errors/AlreadyMemberError.js";
 import { InvalidMemberTypeError } from "./errors/InvalidMemberTypeError.js";
 import { NotMemberError } from "./errors/NotMemberError.js";
-import type { GroupLike } from "./types/index.js";
-import type { MemberLike } from "./types/index.js";
-import type { Group, Member, MembershipsRepo } from "./types/index.js";
+import type { Group, GroupLike, Member, MemberLike, MembershipsRepo } from "./types/index.js";
 
 export interface CreateMembershipServiceOptions {
   repo: MembershipsRepo;

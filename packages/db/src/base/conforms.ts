@@ -2,8 +2,7 @@
  * MappedTable-specific conformity check.
  */
 
-import type { AnyContract } from "@justwant/contract";
-import type { TableContract } from "@justwant/contract";
+import type { AnyContract, TableContract } from "@justwant/contract";
 import { assertTableConforms as _assertTableConforms } from "@justwant/contract/conforms";
 import type { MappedTable } from "./table.js";
 

@@ -3,8 +3,7 @@
  * MergeTree requires ORDER BY - use first column from mapping.
  */
 
-import type { FieldDef } from "@justwant/contract";
-import type { TableContract } from "@justwant/contract";
+import type { FieldDef, TableContract } from "@justwant/contract";
 import { escapeIdentifier } from "@justwant/core/db";
 
 function columnTypeForClickHouse(field: FieldDef<unknown, boolean>): string {

@@ -4,8 +4,7 @@
  * Returns a function that produces Group instances.
  */
 
-import type { MemberLike } from "./types/index.js";
-import type { Group } from "./types/index.js";
+import type { Group, MemberLike } from "./types/index.js";
 
 export interface DefineGroupOptions<N extends string = string> {
   name: N;

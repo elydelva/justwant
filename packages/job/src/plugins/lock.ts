@@ -3,8 +3,7 @@
  * Prevents double execution across instances using distributed lock.
  */
 
-import type { LockApi } from "@justwant/lock";
-import type { LockOwner, Lockable } from "@justwant/lock";
+import type { LockApi, LockOwner, Lockable } from "@justwant/lock";
 import type { JobPlugin } from "../types.js";
 
 export interface LockPluginOptions {
