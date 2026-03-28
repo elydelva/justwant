@@ -110,7 +110,7 @@ export function createDrizzleAdapter(
       const dbAny = db as Record<string, unknown>;
       type DbMethod = (...args: unknown[]) => unknown;
       // biome-ignore lint/suspicious/noExplicitAny: Drizzle union workaround for method chaining
-      type Chainable = any;
+      type Chainable = any; // NOSONAR
       const select = () => (dbAny.select as DbMethod).call(dbAny) as unknown as Chainable;
       const insert = (t: unknown) =>
         (dbAny.insert as DbMethod).call(dbAny, t) as unknown as Chainable;

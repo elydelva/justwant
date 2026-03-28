@@ -18,7 +18,7 @@ import type { MappingFor } from "./mapping.js";
  */
 /** Any Drizzle database instance (pg, mysql, sqlite). */
 // biome-ignore lint/suspicious/noExplicitAny: DrizzleClient is a union; we need a common interface
-export type DrizzleClient = any;
+export type DrizzleClient = any; // NOSONAR
 
 export interface DrizzleMappedTableInternal<TTable extends Table, TContract extends AnyContract>
   extends MappedTableInternal<TContract> {
