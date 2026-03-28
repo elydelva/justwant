@@ -83,7 +83,7 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
         const merged = {
           ...defaultConfig,
           ...remoteConfig,
-          ...(override ?? {}),
+          ...override,
         };
         if (rule.config) {
           const { valid, issues, value } = validateConfig(

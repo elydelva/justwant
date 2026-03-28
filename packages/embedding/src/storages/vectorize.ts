@@ -9,12 +9,14 @@
 import { EMBEDDING_CAPABILITY } from "../types.js";
 import type { VectorStorage } from "../types.js";
 
+type VectorizeMetadata = Record<string, string | number | boolean>;
+
 export interface VectorizeIndex {
   upsert(
     vectors: Array<{
       id: string;
       values: number[];
-      metadata?: Record<string, string | number | boolean>;
+      metadata?: VectorizeMetadata;
     }>
   ): Promise<unknown>;
   query(
@@ -38,11 +40,9 @@ export interface VectorizeStorageAdapterOptions {
 }
 
 /** Coerce metadata values to Vectorize-supported types (string, number, boolean). */
-function toVectorizeMetadata(
-  meta?: Record<string, unknown>
-): Record<string, string | number | boolean> | undefined {
+function toVectorizeMetadata(meta?: Record<string, unknown>): VectorizeMetadata | undefined {
   if (!meta || Object.keys(meta).length === 0) return undefined;
-  const out: Record<string, string | number | boolean> = {};
+  const out: VectorizeMetadata = {};
   for (const [k, v] of Object.entries(meta)) {
     if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
       out[k] = v;
@@ -93,7 +93,7 @@ export function vectorizeStorageAdapter(options: VectorizeStorageAdapterOptions)
       const result = await vectorize.query(vector, {
         topK: options?.topK ?? 10,
         returnMetadata: options?.includeMetadata ? "all" : "none",
-        filter: options?.filter as Record<string, string | number | boolean> | undefined,
+        filter: options?.filter as VectorizeMetadata | undefined,
       });
       return result.matches.map((m) => ({
         id: m.id ?? "",

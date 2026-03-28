@@ -29,7 +29,7 @@ export function getCreateTableSQL(
   const parts: string[] = [];
 
   for (const [key, col] of Object.entries(mapping)) {
-    const field = fields[key as keyof typeof fields];
+    const field = fields[key];
     if (!field) continue;
     const colName = col.name;
     const type = columnTypeForDuckDb(field);

@@ -298,7 +298,7 @@ export function createJob(options: CreateJobOptions): JobService {
       }
 
       try {
-        const body = preParsedBody !== undefined ? preParsedBody : await parseBody(req);
+        const body = preParsedBody ?? (await parseBody(req));
         const payload = validatePayloadWithSchema(reg.definition.job.schema, body, queueIdParam);
         await executeWithPlugins(queueIdParam, payload);
         return { status: 200, body: { ok: true } };

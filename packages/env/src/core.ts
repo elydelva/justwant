@@ -7,6 +7,7 @@ import { redactRecord } from "./redact.js";
 
 export type EnvSchema = Record<string, StandardSchemaV1<unknown, unknown>>;
 export type GroupSchema = Record<string, EnvSchema>;
+type ClientPrefix = string | string[];
 
 export interface SourceConfig {
   files?: string[];
@@ -100,10 +101,10 @@ function createEnvProxy(
         if (!g || k === undefined) return fallback;
         const group = (validated[g] as Record<string, unknown>) ?? {};
         const v = group[k];
-        return v !== undefined ? v : fallback;
+        return v ?? fallback;
       }
       const v = validated[key];
-      return v !== undefined ? v : fallback;
+      return v ?? fallback;
     },
     has(key: string): boolean {
       if (key.includes(".")) {
@@ -141,7 +142,7 @@ function collectKeysFromGroups(
 
 function resolveRawValue(
   internalKey: string,
-  prefix: string | string[] | undefined,
+  prefix: ClientPrefix | undefined,
   merged: Record<string, string>
 ): string {
   let prefixes: string[];
@@ -175,7 +176,7 @@ function validateVar(
     };
   }
 
-  const result = std.validate(rawValue !== "" ? rawValue : undefined) as
+  const result = std.validate(rawValue === "" ? undefined : rawValue) as
     | { value?: unknown; issues?: readonly { message?: string }[] }
     | Promise<unknown>;
 
@@ -368,10 +369,7 @@ export function createEnvWithDeps<
   let state = loadAndValidate();
   const proxy = createEnvProxy(state.validated, state.raw, redact);
 
-  const result = Object.assign(
-    Object.create(proxy) as CreateEnvResult<T, G>,
-    state.validated as Record<string, unknown>
-  );
+  const result = Object.assign(Object.create(proxy) as CreateEnvResult<T, G>, state.validated);
 
   if (watchFiles && onReload && watchEnvFiles) {
     const nodeEnv = deps.getNodeEnv();

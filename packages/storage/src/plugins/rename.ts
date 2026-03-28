@@ -13,8 +13,8 @@ export interface RenamePluginOptions {
 function sanitizePath(path: string): string {
   return path
     .replaceAll(/[<>:"|?*]/g, "_")
-    .replace(/\/+/g, "/")
-    .replace(/^\/+|\/+$/g, "");
+    .replaceAll(/\/+/g, "/")
+    .replaceAll(/^\/+|\/+$/g, "");
 }
 
 function getExtension(path: string): string {
@@ -27,7 +27,7 @@ function slugify(name: string): string {
   return name
     .toLowerCase()
     .replaceAll(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replaceAll(/^-+|-+$/g, "");
 }
 
 async function toBuffer(

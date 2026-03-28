@@ -40,7 +40,7 @@ export function qstashMiddleware(
       }
     }
 
-    const body = (await c.req.json().catch(() => ({}))) as unknown;
+    const body = await c.req.json().catch(() => ({}));
     const result = await jobService.dispatch(jobId, c.req.raw, body);
 
     if (result.status >= 400) {

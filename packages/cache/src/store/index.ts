@@ -38,7 +38,7 @@ export function createCacheStore<TSchema extends Record<string, StoreEntryDef<un
   const result: Record<string, unknown> = {};
 
   for (const [name, def] of Object.entries(schema)) {
-    const d = def as StoreEntryDef<unknown>;
+    const d = def;
     const entry = createCacheEntry({
       cache,
       key: (k: string) => k,

@@ -63,7 +63,7 @@ export function mapRowToContract<T>(
   for (const [contractKey, col] of Object.entries(mapping)) {
     const colName = col.name;
     const value = row[colName];
-    const fieldDef = contract[contractKey as keyof typeof contract];
+    const fieldDef = contract[contractKey];
     if (fieldDef && !fieldDef._required && value === null) {
       result[contractKey] = undefined;
     } else {

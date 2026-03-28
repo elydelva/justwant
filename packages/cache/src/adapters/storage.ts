@@ -87,11 +87,11 @@ export function storageAdapter(storage: StorageLike): CacheAdapter {
 
       storage.setItem(key, value);
       const parsed = parseTtl(opts?.ttl);
-      if (parsed !== undefined) {
+      if (parsed === undefined) {
+        storage.removeItem(ttlKey(key));
+      } else {
         const expiresAt = typeof parsed === "number" ? Date.now() + parsed : parsed.getTime();
         storage.setItem(ttlKey(key), String(expiresAt));
-      } else {
-        storage.removeItem(ttlKey(key));
       }
       if (opts?.tags?.length) {
         storage.setItem(tagsKey(key), JSON.stringify(opts.tags));

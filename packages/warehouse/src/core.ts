@@ -178,12 +178,12 @@ export function createWarehouseFromSql(
                   )
                 : undefined;
             const valuesArg =
-              types !== undefined
-                ? (sql as { values: (v: unknown[][], t?: string[]) => unknown }).values(
+              types === undefined
+                ? sql.values(tuples)
+                : (sql as { values: (v: unknown[][], t?: string[]) => unknown }).values(
                     tuples,
                     types
-                  )
-                : sql.values(tuples);
+                  );
             await executeMutation(
               sql`INSERT INTO ${tableId} (${sql.raw(colList)}) VALUES ${valuesArg}`,
               dialect

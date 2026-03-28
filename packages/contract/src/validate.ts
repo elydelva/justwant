@@ -92,13 +92,11 @@ export function validateContractData<T extends Record<string, unknown>>(
 ): ValidateResult<T> {
   const issues: ValidationIssue[] = [];
   const result = { ...data } as Record<string, unknown>;
-  const keysToValidate = options?.keys ?? (Object.keys(contract) as (keyof typeof contract)[]);
+  const keysToValidate = options?.keys ?? Object.keys(contract);
 
   for (const key of keysToValidate) {
     if (!(key in data)) continue; // skip keys not in data (e.g. partial update)
-    const field = (contract as Record<string, unknown>)[key] as
-      | FieldDef<unknown, boolean>
-      | undefined;
+    const field = contract[key] as FieldDef<unknown, boolean> | undefined;
     if (!field) continue;
     const {
       issues: fieldIssues,
@@ -107,7 +105,7 @@ export function validateContractData<T extends Record<string, unknown>>(
     } = validateField(String(key), field, data[key as keyof T]);
     issues.push(...fieldIssues);
     if (fieldIssues.length === 0 && hasValidatedValue) {
-      result[key as string] = validatedValue;
+      result[key] = validatedValue;
     }
   }
 

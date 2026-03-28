@@ -57,7 +57,7 @@ export function defineCookie<T = string>(
   const opts = isParser ? undefined : (parserOrOptions as DefineCookieOptions<T>);
   const schema = opts?.schema;
   const defaultValue = opts?.default;
-  const onMismatch = opts?.onMismatch ?? (defaultValue !== undefined ? "fallback" : undefined);
+  const onMismatch = opts?.onMismatch ?? (defaultValue === undefined ? undefined : "fallback");
 
   const parseWithMeta = (raw: string | undefined): { value: T; remove?: boolean } => {
     if (schema) {

@@ -40,7 +40,7 @@ export function mapRowToContract<T>(
   for (const [contractKey, col] of Object.entries(mapping)) {
     const colName = col.name;
     const value = row[colName];
-    const fieldDef = contract[contractKey as keyof typeof contract];
+    const fieldDef = contract[contractKey];
     result[contractKey] = resolveFieldValue(value, fieldDef);
   }
   return result as T;

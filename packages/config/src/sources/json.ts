@@ -39,7 +39,7 @@ export function defineJsonSource(options: DefineJsonSourceOptions = {}): ConfigS
   let data: Record<string, unknown> | null = null;
 
   function getData(): Record<string, unknown> {
-    if (data === null) data = loadData(options);
+    data ??= loadData(options);
     return data;
   }
 

@@ -8,7 +8,7 @@ const SALT_LEN = 16;
 const SEP = ".";
 
 function b64urlEncode(bytes: Uint8Array): string {
-  const b64 = btoa(String.fromCharCode(...bytes));
+  const b64 = btoa(String.fromCodePoint(...bytes));
   return b64.replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
 

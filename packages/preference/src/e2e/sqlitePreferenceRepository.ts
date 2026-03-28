@@ -34,7 +34,7 @@ function rowToEntry(row: Record<string, unknown>): PreferenceEntry {
     actorType: row.actor_type as string,
     actorId: row.actor_id as string,
     actorOrgId: row.actor_org_id ? (row.actor_org_id as string) : undefined,
-    value: row.value != null ? JSON.parse(row.value as string) : null,
+    value: row.value == null ? null : JSON.parse(row.value as string),
     createdAt: new Date(row.created_at as string),
     updatedAt: new Date(row.updated_at as string),
   };
@@ -141,8 +141,8 @@ export function createSqlitePreferenceRepository(db: Database): PreferenceReposi
       const orderBy = opts?.orderBy
         ? ` ORDER BY ${colMap[opts.orderBy.field] ?? opts.orderBy.field} ${opts.orderBy.direction.toUpperCase()}`
         : "";
-      const limit = opts?.limit != null ? ` LIMIT ${opts.limit}` : "";
-      const offset = opts?.offset != null ? ` OFFSET ${opts.offset}` : "";
+      const limit = opts?.limit == null ? "" : ` LIMIT ${opts.limit}`;
+      const offset = opts?.offset == null ? "" : ` OFFSET ${opts.offset}`;
       const sql = `${baseSql}${orderBy}${limit}${offset}`;
       const rows = db.query(sql).all(...params) as Record<string, unknown>[];
       return rows.map(rowToEntry);
@@ -157,7 +157,7 @@ export function createSqlitePreferenceRepository(db: Database): PreferenceReposi
 
       const updatedAt = data.updatedAt ?? new Date();
       const value =
-        data.value !== undefined ? JSON.stringify(data.value) : (existing.value as string);
+        data.value === undefined ? (existing.value as string) : JSON.stringify(data.value);
 
       db.run(`UPDATE ${TABLE} SET value = ?, updated_at = ? WHERE id = ?`, [
         value,

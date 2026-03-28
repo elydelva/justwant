@@ -47,8 +47,8 @@ export function statsPlugin(): CachePlugin {
       try {
         const v = await next(key);
         getLatencies.push(performance.now() - start);
-        if (v !== null) hits++;
-        else misses++;
+        if (v === null) misses++;
+        else hits++;
         return v;
       } catch (e) {
         errors++;

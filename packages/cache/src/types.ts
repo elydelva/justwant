@@ -16,7 +16,7 @@ export interface CacheAdapter {
   getMany?(keys: string[]): Promise<Map<string, string | null>>;
   setMany?(entries: Array<{ key: string; value: string; opts?: SetOptions }>): Promise<void>;
   deleteMany?(keys: string[]): Promise<void>;
-  ttl?(key: string): Promise<number | null | -1>;
+  ttl?(key: string): Promise<number | null>;
   expire?(key: string, ttl: TTL): Promise<void>;
   persist?(key: string): Promise<void>;
   invalidateTag?(tag: string): Promise<void>;
@@ -78,7 +78,7 @@ export interface CacheInstance {
   wrap<T>(key: string, fn: () => Promise<T>, opts?: SetOptions): Promise<T>;
   pull<T = unknown>(key: string): Promise<T | null>;
   setNx(key: string, value: unknown, opts?: SetOptions): Promise<boolean>;
-  ttl(key: string): Promise<number | null | -1>;
+  ttl(key: string): Promise<number | null>;
   expire(key: string, ttl: TTL): Promise<void>;
   persist(key: string): Promise<void>;
   invalidateTag(tag: string): Promise<void>;

@@ -112,7 +112,7 @@ export function tieredAdapter(options: TieredAdapterOptions): CacheAdapter {
       ]);
     },
 
-    async ttl(key: string): Promise<number | null | -1> {
+    async ttl(key: string): Promise<number | null> {
       if (l1.ttl) return l1.ttl(key);
       return l2.ttl?.(key) ?? -1;
     },

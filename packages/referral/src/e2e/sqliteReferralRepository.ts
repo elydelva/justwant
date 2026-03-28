@@ -8,6 +8,7 @@ import { randomUUID } from "node:crypto";
 import type { Referral, ReferralRepository } from "../types.js";
 
 const TABLE = "referrals";
+type SqlParam = string | number | null;
 
 export const CREATE_TABLE_SQL = `
   CREATE TABLE ${TABLE} (
@@ -77,7 +78,7 @@ export function createSqliteReferralRepository(db: Database): ReferralRepository
 
     async findOne(where): Promise<Referral | null> {
       const conditions: string[] = [];
-      const params: (string | number | null)[] = [];
+      const params: SqlParam[] = [];
 
       if (where.id != null) {
         conditions.push("id = ?");
@@ -118,7 +119,7 @@ export function createSqliteReferralRepository(db: Database): ReferralRepository
 
     async findMany(where, opts = {}): Promise<Referral[]> {
       const conditions: string[] = [];
-      const params: (string | number | null)[] = [];
+      const params: SqlParam[] = [];
 
       if (where.id != null) {
         conditions.push("id = ?");
@@ -154,7 +155,7 @@ export function createSqliteReferralRepository(db: Database): ReferralRepository
       const orderClause = orderBy
         ? `ORDER BY ${orderBy.field} ${orderBy.direction.toUpperCase()}`
         : "ORDER BY createdAt DESC";
-      const allParams: (string | number | null)[] = [...params, limit, offset];
+      const allParams: SqlParam[] = [...params, limit, offset];
       const rows = db
         .query(`SELECT * FROM ${TABLE} ${clause} ${orderClause} LIMIT ? OFFSET ?`)
         .all(...allParams) as Record<string, unknown>[];
@@ -163,7 +164,7 @@ export function createSqliteReferralRepository(db: Database): ReferralRepository
 
     async count(where): Promise<number> {
       const conditions: string[] = [];
-      const params: (string | number | null)[] = [];
+      const params: SqlParam[] = [];
 
       if (where.id != null) {
         conditions.push("id = ?");

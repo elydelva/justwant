@@ -30,7 +30,7 @@ function extractId<T>(item: T, idField: string): string {
   const rec = item as Record<string, unknown>;
   const val = rec[idField];
   if (typeof val !== "string") {
-    throw new Error(`Expected string id at "${idField}", got ${typeof val}`);
+    throw new TypeError(`Expected string id at "${idField}", got ${typeof val}`);
   }
   return val;
 }

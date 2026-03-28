@@ -336,7 +336,7 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
           contract,
           sql: sqlOps,
           tableName,
-          mapping: mapping as StringMapping<typeof contract>,
+          mapping,
           client: sql,
         },
         create: (data) => sqlOps.create(data).execute(),

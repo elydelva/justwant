@@ -91,7 +91,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       if (p?.get) {
         const n = next;
         const get = p.get;
-        next = (k) => get(k, (overrideKey) => n(overrideKey !== undefined ? overrideKey : k));
+        next = (k) => get(k, (overrideKey) => n(overrideKey ?? k));
       }
     }
     return next;
@@ -112,10 +112,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       if (p?.set) {
         const n = next;
         const set = p.set;
-        next = (k, v, o) =>
-          set(k, v, o, (ok, ov, oo) =>
-            n(ok !== undefined ? ok : k, ov !== undefined ? ov : v, oo !== undefined ? oo : o)
-          );
+        next = (k, v, o) => set(k, v, o, (ok, ov, oo) => n(ok ?? k, ov ?? v, oo ?? o));
       }
     }
     return next;
@@ -128,7 +125,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       if (p?.delete) {
         const n = next;
         const del = p.delete;
-        next = (k) => del(k, (overrideKey) => n(overrideKey !== undefined ? overrideKey : k));
+        next = (k) => del(k, (overrideKey) => n(overrideKey ?? k));
       }
     }
     return next;
@@ -141,7 +138,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       if (p?.has) {
         const n = next;
         const has = p.has;
-        next = (k) => has(k, (overrideKey) => n(overrideKey !== undefined ? overrideKey : k));
+        next = (k) => has(k, (overrideKey) => n(overrideKey ?? k));
       }
     }
     return next;
@@ -227,7 +224,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       return true;
     },
 
-    async ttl(key: string): Promise<number | null | -1> {
+    async ttl(key: string): Promise<number | null> {
       if (!adapter.ttl) {
         return runWithErrorHandling(
           async () => {

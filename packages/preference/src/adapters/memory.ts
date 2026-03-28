@@ -78,8 +78,8 @@ export function createMemoryPreferenceAdapter(): PreferenceRepository {
         preferenceKey: data.preferenceKey ?? existing.preferenceKey,
         actorType: data.actorType ?? existing.actorType,
         actorId: data.actorId ?? existing.actorId,
-        actorOrgId: data.actorOrgId !== undefined ? data.actorOrgId : existing.actorOrgId,
-        value: data.value !== undefined ? data.value : existing.value,
+        actorOrgId: data.actorOrgId ?? existing.actorOrgId,
+        value: data.value ?? existing.value,
         createdAt: data.createdAt ?? existing.createdAt,
         updatedAt: new Date(),
       };

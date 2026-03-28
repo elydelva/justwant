@@ -23,7 +23,7 @@ export function qstashMiddleware(
     req: Request,
     context?: { params?: Promise<{ jobId: string }> | { jobId: string } }
   ): Promise<Response> {
-    const params = context?.params != null ? await Promise.resolve(context.params) : undefined;
+    const params = context?.params == null ? undefined : await Promise.resolve(context.params);
     const jobId =
       params && typeof params === "object" && "jobId" in params ? params.jobId : undefined;
     if (!jobId) {

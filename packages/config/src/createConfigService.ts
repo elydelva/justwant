@@ -6,7 +6,7 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { ConfigValidationError } from "./errors/index.js";
 import { resolveValue } from "./resolve.js";
-import type { EnvironmentDef, SourcesMap } from "./types/index.js";
+import type { EnvironmentDef } from "./types/index.js";
 
 export interface CreateConfigServiceOptions {
   environments: readonly EnvironmentDef[];
@@ -56,7 +56,7 @@ export function createConfigService(options: CreateConfigServiceOptions): Config
   const env: EnvironmentDef = activeEnv;
 
   async function getValue(key: string): Promise<unknown> {
-    const defs = (env.sources as SourcesMap)[key];
+    const defs = env.sources[key];
     if (!defs) return undefined;
     return resolveValue(defs);
   }

@@ -122,7 +122,7 @@ export function upstashAdapter(options: UpstashAdapterOptions): CacheAdapter {
       await redis.del(...prefixed);
     },
 
-    async ttl(key: string): Promise<number | null | -1> {
+    async ttl(key: string): Promise<number | null> {
       const k = prefix(key, keyPrefix);
       const t = await redis.ttl(k);
       if (t === -2) return -1;
