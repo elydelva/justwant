@@ -1,30 +1,30 @@
-## Résumé
+## Summary
 
-<!-- Une ou deux phrases décrivant ce que cette PR accomplit. -->
+<!-- One or two sentences describing what this PR accomplishes. -->
 
-Closes #<!-- numéro de l'issue -->
+Closes #<!-- issue number -->
 
-## ADR associé
+## Related ADR
 
-<!-- Lien vers le fichier ADR implémenté par cette PR. -->
+<!-- Link to the ADR file implemented by this PR. -->
 
 [ADR-XXX](../../docs/adr/ADR-XXX-slug.md)
 
-## Changements notables
+## Notable changes
 
-<!-- Bullet points des changements techniques importants.
-     Ne pas paraphraser les commits — mentionner ce qui est non-évident. -->
+<!-- Bullet points of important technical changes.
+     Don't paraphrase commits — mention what is non-obvious. -->
 
 -
 
 ## Checklist
 
-- [ ] Les tests passent (`bun test`)
-- [ ] Le type check passe (`bun run typecheck`)
-- [ ] Le lint passe (`bun run lint`)
-- [ ] Le frontmatter de l'ADR est mis à jour (`pr`, `pr_url`, `status`)
-- [ ] `docs/adr/README.md` est à jour
+- [ ] Tests pass (`bun test`)
+- [ ] Type check passes (`bun run typecheck`)
+- [ ] Lint passes (`bun run lint`)
+- [ ] ADR frontmatter updated (`pr`, `pr_url`, `status`)
+- [ ] `docs/adr/README.md` is up to date
 
-## Notes de review
+## Review notes
 
-<!-- Points d'attention particuliers pour le reviewer, compromis acceptés, etc. -->
+<!-- Particular points of attention for the reviewer, accepted trade-offs, etc. -->
