@@ -4,6 +4,7 @@
  */
 
 import type { Actor } from "@justwant/actor";
+
 export type { Actor };
 
 /** Parrainage — persisted entity. */

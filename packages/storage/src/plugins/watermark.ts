@@ -33,10 +33,10 @@ function buildCloudflareParams(opts: Record<string, unknown>): string {
 
 function buildImgproxyParams(opts: Record<string, unknown>): string {
   const parts: string[] = [];
-  if (opts.w) parts.push(`w:${opts.w}`);
-  if (opts.h) parts.push(`h:${opts.h}`);
-  if (opts.resize) parts.push(`rs:${opts.resize}`);
-  if (opts.wm) parts.push(`wm:${opts.wm}`);
+  if (opts.w) parts.push(`w:${String(opts.w)}`);
+  if (opts.h) parts.push(`h:${String(opts.h)}`);
+  if (opts.resize) parts.push(`rs:${String(opts.resize)}`);
+  if (opts.wm) parts.push(`wm:${String(opts.wm)}`);
   const s = parts.join("/");
   return s ? `/${s}` : "";
 }

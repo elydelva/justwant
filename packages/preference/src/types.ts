@@ -2,10 +2,9 @@
  * @justwant/preference — Core types
  */
 
-import type { Actor } from "@justwant/actor";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
-export type { Actor };
+export type { Actor } from "@justwant/actor";
 
 /** Persisted preference entry. */
 export interface PreferenceEntry {
