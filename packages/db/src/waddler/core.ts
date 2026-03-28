@@ -12,12 +12,9 @@ import { mapRowToContract } from "./mapping.js";
 import type {
   CreateWaddlerAdapterOptions,
   Db,
-  DefineWaddlerTableOptions,
   StringMapping,
-  TableOptions,
   TableSource,
   WaddlerConnectionConfig,
-  WaddlerDialect,
   WaddlerMappedTable,
   WaddlerQuery,
   WaddlerSql,

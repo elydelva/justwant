@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createEmbeddingService } from "./createEmbeddingService.js";
 import { defineEmbeddable as defineEmb } from "./defineEmbeddable.js";
-import { defineEmbeddable, defineUniverse } from "./defineUniverse.js";
+import { defineUniverse } from "./defineUniverse.js";
 import { InvalidStorageError, UniverseNotFoundError } from "./errors.js";
 import { EMBEDDING_CAPABILITY } from "./types.js";
 import type { EmbeddingEngine, VectorStorage } from "./types.js";

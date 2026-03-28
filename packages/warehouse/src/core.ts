@@ -58,7 +58,7 @@ function resolveClickhouseTypes(
     if ((field as { _columnType?: string })._columnType === "REAL") base = "Float64";
     else if ((field as { _columnType?: string })._columnType === "INTEGER") base = "Int64";
     else base = "String";
-    return !(field as { _required?: boolean })._required ? `Nullable(${base})` : base;
+    return (field as { _required?: boolean })._required ? base : `Nullable(${base})`;
   });
 }
 

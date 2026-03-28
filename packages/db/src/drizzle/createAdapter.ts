@@ -5,18 +5,11 @@
 import type { InferContract } from "@justwant/contract";
 import type { BoundQuery, CreateInput } from "@justwant/db";
 import { and, eq, isNull } from "drizzle-orm";
-import type { Table } from "drizzle-orm";
 import { buildWhere } from "./buildWhere.js";
 import { defineMappedTable } from "./defineMappedTable.js";
 import { parseDbError } from "./errors.js";
 import { mapRowToContract } from "./mapping.js";
-import type { MappingFor } from "./mapping.js";
-import type {
-  DefineMappedTableOptions,
-  DrizzleAdapter,
-  DrizzleClient,
-  DrizzleMappedTable,
-} from "./types.js";
+import type { DrizzleAdapter, DrizzleClient, DrizzleMappedTable } from "./types.js";
 
 export interface CreateDrizzleAdapterOptions {
   debug?: boolean;

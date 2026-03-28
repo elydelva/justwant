@@ -6,7 +6,7 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { ConfigValidationError } from "./errors/index.js";
 import { resolveValue } from "./resolve.js";
-import type { EnvironmentDef, SourcesMap, ValueDef } from "./types/index.js";
+import type { EnvironmentDef, SourcesMap } from "./types/index.js";
 
 export interface CreateConfigServiceOptions {
   environments: readonly EnvironmentDef[];

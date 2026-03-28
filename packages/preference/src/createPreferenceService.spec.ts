@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
-import * as v from "valibot";
 import { createMemoryPreferenceAdapter } from "./adapters/memory.js";
 import { createPreferenceService } from "./createPreferenceService.js";
 import { definePreference } from "./definePreference.js";

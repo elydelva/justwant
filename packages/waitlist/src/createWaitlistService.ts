@@ -5,7 +5,7 @@
 
 import { actorKey, fromRepo, toRepo } from "@justwant/actor";
 import type { WaitlistList } from "./defineList.js";
-import { AlreadySubscribedError, EmptyWaitlistError, NotSubscribedError } from "./errors.js";
+import { AlreadySubscribedError, NotSubscribedError } from "./errors.js";
 import type { Actor, WaitlistEntry, WaitlistPlugin, WaitlistRepository } from "./types.js";
 
 function toListKey(list: WaitlistList | string): string {

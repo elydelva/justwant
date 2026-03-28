@@ -8,7 +8,7 @@ import { describe, expect, test } from "bun:test";
 import { defineContract, field } from "@justwant/contract";
 import { createDrizzleAdapter } from "./drizzle/createAdapter.js";
 import { MYSQL_URL, POSTGRES_URL, hasMysql, hasPostgres } from "./e2e-helpers.js";
-import { createDb, createWaddlerAdapter } from "./waddler/core.js";
+import { createDb } from "./waddler/core.js";
 
 const UserContract = defineContract({
   id: field<string>().required(),
