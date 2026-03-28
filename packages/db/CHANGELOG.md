@@ -1,5 +1,12 @@
 # @justwant/db
 
+## [0.4.2](https://github.com/elydelva/justwant/compare/db-v0.4.1...db-v0.4.2) (2026-03-28)
+
+
+### Bug Fixes
+
+* **sonar:** fix all 40 SonarQube MAJOR (medium) issues ([d902d86](https://github.com/elydelva/justwant/commit/d902d861e5157de270fa6147eedc9fb51b02594d))
+
 ## [0.4.1](https://github.com/elydelva/justwant/compare/db-v0.4.0...db-v0.4.1) (2026-03-28)
 
 

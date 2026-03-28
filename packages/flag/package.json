@@ -1,6 +1,6 @@
 {
   "name": "@justwant/flag",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Feature flags with typed rules, config overrides, rollout helpers",
   "type": "module",
   "license": "MIT",
@@ -9,7 +9,11 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/flag"
   },
-  "keywords": ["feature-flags", "rollout", "typescript"],
+  "keywords": [
+    "feature-flags",
+    "rollout",
+    "typescript"
+  ],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -36,7 +40,10 @@
     "test": "bun test",
     "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "dependencies": {
     "@justwant/bezier": "workspace:*",
     "@justwant/crypto": "workspace:*"
