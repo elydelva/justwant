@@ -48,6 +48,16 @@ export function testVectorStorageAdapter(options: TestVectorStorageOptions): Vec
     return idx;
   }
 
+  function matchesFilter(
+    metadata: Record<string, unknown>,
+    filter: Record<string, unknown>
+  ): boolean {
+    for (const [k, v] of Object.entries(filter)) {
+      if (metadata[k] !== v) return false;
+    }
+    return true;
+  }
+
   return {
     capability: EMBEDDING_CAPABILITY,
 
@@ -78,17 +88,7 @@ export function testVectorStorageAdapter(options: TestVectorStorageOptions): Vec
       const candidates: Array<{ id: string; score: number; metadata?: Record<string, unknown> }> =
         [];
       for (const stored of idx.values()) {
-        if (options?.filter) {
-          const meta = stored.metadata ?? {};
-          let match = true;
-          for (const [k, v] of Object.entries(options.filter)) {
-            if (meta[k] !== v) {
-              match = false;
-              break;
-            }
-          }
-          if (!match) continue;
-        }
+        if (options?.filter && !matchesFilter(stored.metadata ?? {}, options.filter)) continue;
         const score = cosineSimilarity(vector, stored.vector);
         candidates.push({
           id: stored.id,

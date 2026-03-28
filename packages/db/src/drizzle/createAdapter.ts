@@ -85,6 +85,30 @@ export function createDrizzleAdapter(
 
       const baseWhere = softDeleteCondition ? and(softDeleteCondition) : undefined;
 
+      async function doCreate(
+        values: Record<string, unknown>,
+        idValue: string | undefined
+      ): Promise<InferContract<typeof contract>> {
+        if (dialect === "mysql") {
+          await insert(table).values(values);
+          if (idValue == null) throw new Error("MySQL create requires id in data");
+          const rows = (await select()
+            .from(table)
+            .where(eq(idCol as never, idValue))
+            .limit(1)) as Record<string, unknown>[];
+          const row = rows[0];
+          if (!row) throw new Error("Insert did not return row");
+          return fromDbRow(row);
+        }
+        const result = (await insert(table).values(values).returning()) as Record<
+          string,
+          unknown
+        >[];
+        const row = result[0];
+        if (!row) throw new Error("Insert did not return row");
+        return fromDbRow(row);
+      }
+
       const dbAny = db as Record<string, unknown>;
       type DbMethod = (...args: unknown[]) => unknown;
       // biome-ignore lint/suspicious/noExplicitAny: Drizzle union workaround for method chaining
@@ -134,7 +158,7 @@ export function createDrizzleAdapter(
             const rows = fullCond
               ? ((await q.where(fullCond)) as Record<string, unknown>[])
               : ((await q) as Record<string, unknown>[]);
-            return rows.map((r) => fromDbRow(r));
+            return rows.map(fromDbRow);
           }),
 
         create: (data: CreateInput<typeof contract>) =>
@@ -142,26 +166,7 @@ export function createDrizzleAdapter(
             const values = toDbValues(data as Record<string, unknown>);
             const idColName = (idCol as { name?: string })?.name ?? "id";
             const idValue = values[idColName] as string | undefined;
-
-            if (dialect === "mysql") {
-              await insert(table).values(values);
-              if (idValue == null) throw new Error("MySQL create requires id in data");
-              const rows = (await select()
-                .from(table)
-                .where(eq(idCol as never, idValue))
-                .limit(1)) as Record<string, unknown>[];
-              const row = rows[0];
-              if (!row) throw new Error("Insert did not return row");
-              return fromDbRow(row);
-            }
-
-            const result = (await insert(table).values(values).returning()) as Record<
-              string,
-              unknown
-            >[];
-            const row = result[0];
-            if (!row) throw new Error("Insert did not return row");
-            return fromDbRow(row);
+            return doCreate(values, idValue);
           }),
 
         update: (id: string, data: Partial<InferContract<typeof contract>>) =>

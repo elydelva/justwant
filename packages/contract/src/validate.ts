@@ -60,6 +60,27 @@ export interface ValidateOptions {
   keys?: string[];
 }
 
+function validateField(
+  key: string,
+  field: FieldDef<unknown, boolean>,
+  value: unknown
+): { issues: ValidationIssue[]; validatedValue?: unknown; hasValidatedValue: boolean } {
+  if (!field._schema) return { issues: [], hasValidatedValue: false };
+  const {
+    valid,
+    value: validatedValue,
+    issues: fieldIssues,
+  } = validateWithSchema(field._schema, value);
+  if (!valid) {
+    const path = String(key);
+    const issues = fieldIssues?.length
+      ? fieldIssues.map((i) => ({ path: i.path || path, message: i.message }))
+      : [{ path, message: "Validation failed" }];
+    return { issues, hasValidatedValue: false };
+  }
+  return { issues: [], validatedValue, hasValidatedValue: true };
+}
+
 /**
  * Validates data against contract fields that have _schema.
  * Returns validated data or validation error.
@@ -78,25 +99,14 @@ export function validateContractData<T extends Record<string, unknown>>(
     const field = (contract as Record<string, unknown>)[key] as
       | FieldDef<unknown, boolean>
       | undefined;
-    if (!field?._schema) continue;
-    const value = data[key as keyof T];
+    if (!field) continue;
     const {
-      valid,
-      value: validatedValue,
       issues: fieldIssues,
-    } = validateWithSchema(field._schema, value);
-    if (!valid) {
-      const path = String(key);
-      if (fieldIssues?.length) {
-        for (const i of fieldIssues) {
-          issues.push({ path: i.path || path, message: i.message });
-        }
-      } else {
-        issues.push({ path, message: "Validation failed" });
-      }
-      continue;
-    }
-    if (validatedValue !== undefined) {
+      validatedValue,
+      hasValidatedValue,
+    } = validateField(String(key), field, data[key as keyof T]);
+    issues.push(...fieldIssues);
+    if (fieldIssues.length === 0 && hasValidatedValue) {
       result[key as string] = validatedValue;
     }
   }

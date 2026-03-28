@@ -34,6 +34,32 @@ function runWithErrorHandling<T>(fn: () => Promise<T>, onError: OnError, fallbac
   });
 }
 
+async function storeFetched<T>(
+  cache: CacheInstance,
+  opts: (SetOptions & { keyFn?: (item: T) => string }) | undefined,
+  keyFn: ((item: T) => string) | undefined,
+  fetched: T[],
+  missingKeys: string[],
+  result: Map<string, T>
+): Promise<void> {
+  if (keyFn) {
+    for (const item of fetched) {
+      const k = keyFn(item);
+      result.set(k, item);
+      await cache.set(k, item, opts);
+    }
+  } else {
+    for (let i = 0; i < missingKeys.length; i++) {
+      const k = missingKeys[i];
+      const item = fetched[i];
+      if (k !== undefined && item !== undefined) {
+        result.set(k, item);
+        await cache.set(k, item, opts);
+      }
+    }
+  }
+}
+
 export function createCache(options: CreateCacheOptions): CacheInstance {
   const { adapter, plugins = [], defaults = {}, onError = "silent" } = options;
 
@@ -320,23 +346,7 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       }
       if (missing.length > 0) {
         const fetched = await fetchMissing(missing);
-        const keyFn = opts?.keyFn;
-        if (keyFn) {
-          for (const item of fetched) {
-            const k = keyFn(item);
-            result.set(k, item);
-            await cache.set(k, item, opts);
-          }
-        } else {
-          for (let i = 0; i < missing.length; i++) {
-            const k = missing[i];
-            const item = fetched[i];
-            if (k !== undefined && item !== undefined) {
-              result.set(k, item);
-              await cache.set(k, item, opts);
-            }
-          }
-        }
+        await storeFetched(cache, opts, opts?.keyFn, fetched, missing, result);
       }
       return result;
     },
@@ -351,36 +361,23 @@ export function createCache(options: CreateCacheOptions): CacheInstance {
       nsOpts?: Partial<CacheDefaults> & { onError?: OnError }
     ): CacheInstance {
       const prefixedKey = (k: string) => `${prefix}:${k}`;
+      const adapterGetMany = adapter.getMany;
+      const adapterSetMany = adapter.setMany;
       const wrappedAdapter: CacheAdapter = {
         get: (k) => adapter.get(prefixedKey(k)),
         set: (k, v, o) => adapter.set(prefixedKey(k), v, o),
         delete: (k) => adapter.delete(prefixedKey(k)),
         has: (k) => adapter.has(prefixedKey(k)),
-        getMany: (() => {
-          const getMany = adapter.getMany;
-          return getMany
-            ? (keys: string[]) =>
-                getMany(keys.map(prefixedKey)).then((m) => {
-                  const out = new Map<string, string | null>();
-                  for (const k of keys) {
-                    out.set(k, m.get(prefixedKey(k)) ?? null);
-                  }
-                  return out;
-                })
-            : undefined;
-        })(),
-        setMany: (() => {
-          const setMany = adapter.setMany;
-          return setMany
-            ? (entries: Array<{ key: string; value: string; opts?: SetOptions }>) =>
-                setMany(
-                  entries.map((e) => ({
-                    ...e,
-                    key: prefixedKey(e.key),
-                  }))
-                )
-            : undefined;
-        })(),
+        getMany: adapterGetMany
+          ? async (keys: string[]) => {
+              const m = await adapterGetMany(keys.map(prefixedKey));
+              return new Map(keys.map((k) => [k, m.get(prefixedKey(k)) ?? null]));
+            }
+          : undefined,
+        setMany: adapterSetMany
+          ? (entries: Array<{ key: string; value: string; opts?: SetOptions }>) =>
+              adapterSetMany(entries.map((e) => ({ ...e, key: prefixedKey(e.key) })))
+          : undefined,
         deleteMany: (() => {
           const deleteMany = adapter.deleteMany;
           return deleteMany ? (keys: string[]) => deleteMany(keys.map(prefixedKey)) : undefined;

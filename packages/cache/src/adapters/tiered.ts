@@ -7,6 +7,50 @@ export interface TieredAdapterOptions {
   l2: CacheAdapter;
 }
 
+async function fillFromL1(
+  l1: CacheAdapter,
+  keys: string[],
+  result: Map<string, string | null>,
+  missing: string[]
+): Promise<void> {
+  const fromL1 = l1.getMany ? await l1.getMany(keys) : null;
+  if (fromL1) {
+    for (const k of keys) {
+      const v = fromL1.get(k);
+      result.set(k, v ?? null);
+      if (v === null || v === undefined) missing.push(k);
+    }
+  } else {
+    for (const k of keys) {
+      const v = await l1.get(k);
+      result.set(k, v);
+      if (v === null) missing.push(k);
+    }
+  }
+}
+
+async function fillFromL2(
+  l2: CacheAdapter,
+  l1: CacheAdapter,
+  missing: string[],
+  result: Map<string, string | null>
+): Promise<void> {
+  if (l2.getMany) {
+    const fromL2 = await l2.getMany(missing);
+    for (const k of missing) {
+      const v = fromL2.get(k) ?? null;
+      result.set(k, v);
+      if (v !== null) await l1.set(k, v);
+    }
+  } else {
+    for (const k of missing) {
+      const v = await l2.get(k);
+      result.set(k, v);
+      if (v !== null) await l1.set(k, v);
+    }
+  }
+}
+
 /**
  * Tiered cache: L1 (fast) + L2 (slower).
  * Read: L1 first, on miss read L2 and populate L1.
@@ -44,34 +88,10 @@ export function tieredAdapter(options: TieredAdapterOptions): CacheAdapter {
 
     async getMany(keys: string[]): Promise<Map<string, string | null>> {
       const result = new Map<string, string | null>();
-      const fromL1 = l1.getMany ? await l1.getMany(keys) : null;
       const missing: string[] = [];
-      if (fromL1) {
-        for (const k of keys) {
-          const v = fromL1.get(k);
-          result.set(k, v ?? null);
-          if (v === null || v === undefined) missing.push(k);
-        }
-      } else {
-        for (const k of keys) {
-          const v = await l1.get(k);
-          result.set(k, v);
-          if (v === null) missing.push(k);
-        }
-      }
-      if (missing.length > 0 && l2.getMany) {
-        const fromL2 = await l2.getMany(missing);
-        for (const k of missing) {
-          const v = fromL2.get(k) ?? null;
-          result.set(k, v);
-          if (v !== null) await l1.set(k, v);
-        }
-      } else if (missing.length > 0) {
-        for (const k of missing) {
-          const v = await l2.get(k);
-          result.set(k, v);
-          if (v !== null) await l1.set(k, v);
-        }
+      await fillFromL1(l1, keys, result, missing);
+      if (missing.length > 0) {
+        await fillFromL2(l2, l1, missing, result);
       }
       return result;
     },

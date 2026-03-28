@@ -25,7 +25,7 @@ function simpleHash(obj: unknown): string {
     let h = 0;
     for (let i = 0; i < str.length; i++) {
       h = (h << 5) - h + str.charCodeAt(i);
-      h |= 0;
+      h = Math.trunc(h);
     }
     return Math.abs(h).toString(36);
   } catch {

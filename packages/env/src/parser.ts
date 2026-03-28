@@ -1,6 +1,25 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+function parseLine(rawLine: string): { key: string; value: string } | null {
+  let line = rawLine.trim();
+  if (!line || line.startsWith("#")) return null;
+  if (line.startsWith("export ")) line = line.slice(7).trim();
+  const eqIndex = line.indexOf("=");
+  if (eqIndex <= 0) return null;
+  const key = line.slice(0, eqIndex).trim();
+  let value = line.slice(eqIndex + 1).trim();
+  if (value.startsWith('"')) {
+    value = parseDoubleQuoted(value);
+  } else if (value.startsWith("'")) {
+    value = parseSingleQuoted(value);
+  } else {
+    const hashIdx = value.indexOf("#");
+    if (hashIdx >= 0) value = value.slice(0, hashIdx).trim();
+  }
+  return { key, value };
+}
+
 /**
  * Parse .env file format: KEY=VALUE
  * Supports: comments (#), quoted values (single/double), multiline (backslash continuation)
@@ -15,43 +34,11 @@ export function parseEnvFile(content: string): Record<string, string> {
 
     // Line continuation: lines ending with \
     while (line.endsWith("\\") && i + 1 < lines.length) {
-      const next = lines[++i];
-      line = `${line.slice(0, -1).trimEnd()}\n${next ?? ""}`;
+      line = `${line.slice(0, -1)}\n${lines[++i] ?? ""}`;
     }
 
-    line = line.trim();
-    if (!line || line.startsWith("#")) {
-      i++;
-      continue;
-    }
-
-    // export KEY=value (bash compatibility)
-    if (line.startsWith("export ")) {
-      line = line.slice(7).trim();
-    }
-
-    const eqIndex = line.indexOf("=");
-    if (eqIndex <= 0) {
-      i++;
-      continue;
-    }
-
-    const key = line.slice(0, eqIndex).trim();
-    let value = line.slice(eqIndex + 1).trim();
-
-    if (value.startsWith('"')) {
-      value = parseDoubleQuoted(value);
-    } else if (value.startsWith("'")) {
-      value = parseSingleQuoted(value);
-    }
-
-    // Remove inline comment (unquoted values only)
-    const hashIdx = value.indexOf("#");
-    if (hashIdx >= 0 && !value.startsWith('"') && !value.startsWith("'")) {
-      value = value.slice(0, hashIdx).trim();
-    }
-
-    result[key] = value;
+    const parsed = parseLine(line);
+    if (parsed) result[parsed.key] = parsed.value;
     i++;
   }
 

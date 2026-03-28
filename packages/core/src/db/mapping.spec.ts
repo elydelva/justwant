@@ -5,7 +5,7 @@ const contract = {
   id: { _required: true, _columnType: "TEXT" },
   name: { _required: false, _columnType: "TEXT" },
   score: { _required: true, _columnType: "REAL" },
-  createdAt: { _required: false, _columnType: "TEXT" },
+  createdAt: { _required: false, _columnType: "TEXT", _kind: "date" },
 } as never;
 
 const mapping = {

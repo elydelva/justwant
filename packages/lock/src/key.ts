@@ -6,7 +6,7 @@
 export function serializeParams(params: string | Record<string, string>): string {
   if (typeof params === "string") return params;
   return Object.keys(params)
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .map((k) => `${k}:${params[k]}`)
     .join(":");
 }
