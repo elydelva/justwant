@@ -1,32 +1,32 @@
 name: Bug report
-description: Comportement inattendu ou régression
+description: Unexpected behavior or regression
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Merci de remplir ce formulaire. Supprime les sections qui ne s'appliquent pas.
+        Please fill in this form. Remove sections that don't apply.
 
   - type: textarea
     id: observed
     attributes:
-      label: Comportement observé
-      description: Décris ce qui se passe actuellement.
+      label: Observed behavior
+      description: Describe what is currently happening.
     validations:
       required: true
 
   - type: textarea
     id: expected
     attributes:
-      label: Comportement attendu
-      description: Décris ce qui devrait se passer.
+      label: Expected behavior
+      description: Describe what should happen instead.
     validations:
       required: true
 
   - type: textarea
     id: steps
     attributes:
-      label: Étapes pour reproduire
+      label: Steps to reproduce
       placeholder: |
         1.
         2.
@@ -37,11 +37,11 @@ body:
   - type: textarea
     id: env
     attributes:
-      label: Environnement
+      label: Environment
       placeholder: |
-        - OS :
-        - Version / commit :
-        - Commande exécutée :
+        - OS:
+        - Version / commit:
+        - Command run:
     validations:
       required: false
 
@@ -58,16 +58,16 @@ body:
     attributes:
       label: Impact
       options:
-        - Bloquant
-        - Majeur
-        - Mineur
+        - Blocking
+        - Major
+        - Minor
     validations:
       required: true
 
   - type: textarea
     id: context
     attributes:
-      label: Contexte additionnel
-      description: PR liée, ADR concerné, screenshot, etc.
+      label: Additional context
+      description: Related PR, ADR, screenshot, etc.
     validations:
       required: false

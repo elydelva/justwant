@@ -1,36 +1,36 @@
-## Résumé
+## Summary
 
-<!-- Une ou deux phrases décrivant le bug corrigé et l'approche. -->
+<!-- One or two sentences describing the bug fixed and the approach taken. -->
 
-Closes #<!-- numéro de l'issue bug -->
+Closes #<!-- issue number -->
 
-## Cause racine
+## Root cause
 
-<!-- Explication concise de la cause du bug. -->
+<!-- Concise explanation of what caused the bug. -->
 
-## Correction apportée
+## Fix
 
-<!-- Ce qui a été changé et pourquoi c'est la bonne approche. -->
+<!-- What was changed and why this is the right approach. -->
 
-## Reproduction avant / après
+## Before / after reproduction
 
-<!-- Optionnel mais utile : commande ou scénario montrant le bug disparu. -->
+<!-- Optional but useful: command or scenario showing the bug is gone. -->
 
-**Avant :**
+**Before:**
 ```
 ```
 
-**Après :**
+**After:**
 ```
 ```
 
 ## Checklist
 
-- [ ] Les tests passent (`bun test`)
-- [ ] Un test de non-régression a été ajouté (ou justification de son absence)
-- [ ] Le type check passe (`bun run typecheck`)
-- [ ] Le lint passe (`bun run lint`)
+- [ ] Tests pass (`bun test`)
+- [ ] A non-regression test was added (or justify its absence)
+- [ ] Type check passes (`bun run typecheck`)
+- [ ] Lint passes (`bun run lint`)
 
-## Notes de review
+## Review notes
 
-<!-- Effets de bord potentiels, cas limites, etc. -->
+<!-- Potential side effects, edge cases, etc. -->
