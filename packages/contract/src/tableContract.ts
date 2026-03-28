@@ -18,7 +18,7 @@ export type DefineContractOptions = {
 };
 
 function camelToSnake(str: string): string {
-  return str.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+  return str.replaceAll(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 }
 
 function buildMapping<T extends TableFields>(

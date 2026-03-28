@@ -119,7 +119,7 @@ export function imageTransformPlugin(options?: ImageTransformPluginOptions): Sto
       instance = applyFormat(instance, format, quality);
 
       const output = await instance.toBuffer();
-      const ext = format ? `.${format}` : (params.path.match(/\.[^.]+$/) ?? [""])[0];
+      const ext = format ? `.${format}` : (/\.[^.]+$/.exec(params.path) ?? [""])[0];
       const newPath = `${params.path.replace(/\.[^.]+$/, "")}${ext}`;
 
       return next({

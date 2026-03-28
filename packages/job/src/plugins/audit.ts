@@ -24,7 +24,7 @@ function simpleHash(obj: unknown): string {
     const str = JSON.stringify(obj ?? {});
     let h = 0;
     for (let i = 0; i < str.length; i++) {
-      h = (h << 5) - h + str.charCodeAt(i);
+      h = (h << 5) - h + (str.codePointAt(i) ?? 0);
       h = Math.trunc(h);
     }
     return Math.abs(h).toString(36);

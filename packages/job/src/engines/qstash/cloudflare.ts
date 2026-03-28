@@ -22,7 +22,7 @@ export function qstashCloudflareHandler(
   return async function handler(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const pathParts = url.pathname.replace(/^\/+/, "").split("/");
-    const jobId = pathParts[pathParts.length - 1];
+    const jobId = pathParts.at(-1);
     if (!jobId) {
       return new Response(JSON.stringify({ error: "Missing jobId" }), {
         status: 400,

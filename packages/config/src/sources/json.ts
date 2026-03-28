@@ -47,8 +47,7 @@ export function defineJsonSource(options: DefineJsonSourceOptions = {}): ConfigS
     get(lookup: SourceLookup): unknown {
       if (!("path" in lookup)) return undefined;
       const obj = getData();
-      const value = get(obj, lookup.path);
-      return value !== undefined ? value : undefined;
+      return get(obj, lookup.path);
     },
   };
 }

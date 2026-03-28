@@ -78,7 +78,7 @@ export function defineS3Source(config: DefineS3SourceConfig): StorageSource {
       const result = await client.send(command);
       return {
         path: params.path,
-        etag: result.ETag?.replace(/"/g, ""),
+        etag: result.ETag?.replaceAll('"', ""),
         size: buffer.length,
       };
     },

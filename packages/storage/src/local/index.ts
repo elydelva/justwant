@@ -21,7 +21,7 @@ export interface DefineLocalSourceConfig {
 }
 
 function normalizePath(p: string): string {
-  const normalized = p.replace(/\\/g, "/").replace(/\/+/g, "/");
+  const normalized = p.replaceAll("\\", "/").replace(/\/+/g, "/");
   if (normalized.includes("..")) {
     throw new Error("Path must not contain '..'");
   }
