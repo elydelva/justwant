@@ -74,9 +74,7 @@
     "test:e2e": "bash -c 'eval \"$(./scripts/ensure-supabase.sh 2>/dev/null)\" 2>/dev/null || true; bun test --config=bunfig.e2e.toml src/e2e.spec.ts'",
     "docker:build-vercel-blob": "bash scripts/build-vercel-blob-server.sh"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "peerDependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
     "@aws-sdk/s3-request-presigner": "^3.0.0",

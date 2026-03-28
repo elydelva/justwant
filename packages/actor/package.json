@@ -9,12 +9,7 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/actor"
   },
-  "keywords": [
-    "actor",
-    "identity",
-    "typescript",
-    "utility"
-  ],
+  "keywords": ["actor", "identity", "typescript", "utility"],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -36,10 +31,7 @@
     "test": "bun test",
     "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "publishConfig": {
     "access": "public"
   },

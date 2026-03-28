@@ -39,9 +39,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "dependencies": {
     "@standard-schema/spec": "^1.1.0"
   },
