@@ -4,13 +4,7 @@
 
 import { InvalidStorageError, UniverseNotFoundError } from "./errors.js";
 import { EMBEDDING_CAPABILITY } from "./types.js";
-import type {
-  CreateEmbeddingServiceOptions,
-  EmbeddingEngine,
-  SimilarOptions,
-  Universe,
-  VectorStorage,
-} from "./types.js";
+import type { CreateEmbeddingServiceOptions, SimilarOptions, Universe } from "./types.js";
 
 export interface EmbeddingService {
   /** Produce a vector from text. Delegates to engine. */

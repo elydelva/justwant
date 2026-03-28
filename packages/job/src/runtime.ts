@@ -3,7 +3,7 @@
  */
 
 import { EngineIncompatibleError } from "./errors.js";
-import type { EngineCapabilities, JobEngineContract } from "./types.js";
+import type { JobEngineContract } from "./types.js";
 
 export type RuntimeEnv =
   | "node"

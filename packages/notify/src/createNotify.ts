@@ -13,7 +13,6 @@ import type {
   ChannelMessage,
   CreateNotifyOptions,
   NotifyInstance,
-  NotifyPlugin,
   OnError,
   SendOptions,
   Template,

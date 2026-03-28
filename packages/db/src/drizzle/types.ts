@@ -3,7 +3,7 @@
  * Supports pg, mysql, sqlite via the same contract.
  */
 
-import type { AnyContract, InferContract } from "@justwant/contract";
+import type { AnyContract } from "@justwant/contract";
 import type { MappedTable, MappedTableInternal } from "@justwant/db";
 import type { Table } from "drizzle-orm";
 import type { MappingFor } from "./mapping.js";

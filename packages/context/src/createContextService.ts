@@ -5,7 +5,7 @@
  */
 
 import { createRequestContext } from "./createRequestContext.js";
-import type { ContextApi, ContextOptions, RequestContext, SlotDef } from "./types/index.js";
+import type { ContextApi, ContextOptions, RequestContext } from "./types/index.js";
 
 export function createContextService(options: ContextOptions): ContextApi {
   const { slots } = options;

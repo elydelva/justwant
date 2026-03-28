@@ -2,7 +2,7 @@
  * Warehouse adapter core - batch insert, query, aggregate.
  */
 
-import type { InferContract, TableContract, TableFields } from "@justwant/contract";
+import type { InferContract } from "@justwant/contract";
 import { parseExistResult, toRows } from "@justwant/core/db";
 import { appendOrderBy } from "./buildOrderBy.js";
 import { appendWhere } from "./buildWhere.js";
@@ -168,7 +168,7 @@ export function createWarehouseFromSql(
               dialect,
               sqlDefault
             );
-            const colList = colOrder.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(", ");
+            const colList = colOrder.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(", ");
             const types =
               dialect === "clickhouse"
                 ? resolveClickhouseTypes(

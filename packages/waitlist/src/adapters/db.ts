@@ -4,7 +4,7 @@
  */
 
 import { parseActorKey, toRepo } from "@justwant/actor";
-import type { FindManyOptions, WaitlistEntry, WaitlistRepository } from "../types.js";
+import type { WaitlistEntry, WaitlistRepository } from "../types.js";
 
 /** Table interface — compatible with @justwant/db MappedTable. */
 export interface WaitlistTable {

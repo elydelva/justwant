@@ -2,8 +2,6 @@ import type {
   CacheAdapter,
   CacheDefaults,
   CacheInstance,
-  CacheInternal,
-  CachePlugin,
   CreateCacheOptions,
   OnError,
   SetOptions,
