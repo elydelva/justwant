@@ -1,6 +1,8 @@
 name: Format Release PR
 
 on:
+  push:
+    branches: ["release-please--**"]
   pull_request:
     branches: [main]
     types: [opened, synchronize]
@@ -8,14 +10,14 @@ on:
 jobs:
   format:
     name: Biome format
-    if: startsWith(github.head_ref, 'release-please--')
+    if: startsWith(github.head_ref, 'release-please--') || startsWith(github.ref_name, 'release-please--')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.head_ref || github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: oven-sh/setup-bun@v2
@@ -28,8 +30,24 @@ jobs:
       - name: Format with Biome
         run: bun run check
 
+      - name: Check for formatting changes
+        id: diff
+        run: |
+          if git diff --exit-code; then
+            echo "clean=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "clean=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Commit formatting fixes
+        if: steps.diff.outputs.clean == 'false'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: apply Biome formatting to release PR"
           commit_options: "--no-verify"
+
+      - name: Fail if formatting was not clean
+        if: steps.diff.outputs.clean == 'false'
+        run: |
+          echo "::error::Biome found and fixed formatting issues. The release PR branch was not clean before this run."
+          exit 1
