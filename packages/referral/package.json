@@ -1,6 +1,6 @@
 {
   "name": "@justwant/referral",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Referral and affiliation system. Parrainage, codes parrain, stats. Standalone package with defineReferralOffer + createReferralService.",
   "type": "module",
   "license": "MIT",
@@ -9,7 +9,13 @@
     "url": "git+https://github.com/elydelva/justwant.git",
     "directory": "packages/referral"
   },
-  "keywords": ["referral", "affiliation", "parrainage", "invite", "typescript"],
+  "keywords": [
+    "referral",
+    "affiliation",
+    "parrainage",
+    "invite",
+    "typescript"
+  ],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -32,7 +38,10 @@
     "test:e2e": "bun test --config=bunfig.e2e.toml src/e2e.spec.ts",
     "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },

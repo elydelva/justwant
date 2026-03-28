@@ -1,6 +1,6 @@
 {
   "name": "@justwant/crypto",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Simple crypto for apps: passwords, tokens, JWT, encrypt, sign. Audited deps (argon2, jose, @noble).",
   "type": "module",
   "license": "MIT",
@@ -78,7 +78,10 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },

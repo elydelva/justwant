@@ -1,6 +1,6 @@
 {
   "name": "@justwant/membership",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Member–group liaison via defineMember, defineGroup, createMembershipService. No roles, no within. Member type declared in group.",
   "type": "module",
   "license": "MIT",
@@ -9,7 +9,12 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/membership"
   },
-  "keywords": ["membership", "group", "member", "typescript"],
+  "keywords": [
+    "membership",
+    "group",
+    "member",
+    "typescript"
+  ],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -36,7 +41,10 @@
     "test": "bun test",
     "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
