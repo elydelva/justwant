@@ -1,6 +1,6 @@
 {
   "name": "@justwant/actor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Canonical Actor type and utilities. defineActor, actorKey, toRepo. No storage, agnostic.",
   "type": "module",
   "license": "MIT",

@@ -1,6 +1,6 @@
 {
   "name": "@justwant/contract",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Contract definitions for defineContract, fields, conforms, validate. Schema-less, type-safe.",
   "type": "module",
   "license": "MIT",

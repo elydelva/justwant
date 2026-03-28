@@ -1,6 +1,6 @@
 {
   "name": "@justwant/id",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "ID generation: sortable (by time) and short (URL-safe). Simple names, tool-agnostic. Subpath imports only.",
   "type": "module",
   "license": "MIT",

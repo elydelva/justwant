@@ -1,6 +1,6 @@
 {
   "name": "@justwant/job",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Unified job service. Engine composition (BullMQ, QStash, pg, node-cron). defineJob, plugins, framework middlewares.",
   "type": "module",
   "license": "MIT",

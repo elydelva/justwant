@@ -1,6 +1,6 @@
 {
   "name": "@justwant/context",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Modular context with explicit propagation. Typed slots, lazy/on-demand/eager resolution, per-instance cache. No AsyncLocalStorage. Node, Edge, Bun, Deno.",
   "type": "module",
   "license": "MIT",

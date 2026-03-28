@@ -1,6 +1,6 @@
 {
   "name": "@justwant/user",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "User entity and identity via defineUser and createUserService.",
   "type": "module",
   "license": "MIT",

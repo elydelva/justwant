@@ -1,6 +1,6 @@
 {
   "name": "@justwant/warehouse",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "DAL for data warehouses (OLAP). Batch insert, query, aggregate. ClickHouse, DuckDB.",
   "type": "module",
   "license": "MIT",

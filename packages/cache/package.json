@@ -1,6 +1,6 @@
 {
   "name": "@justwant/cache",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Unified key-value cache with interchangeable adapters. TTL, tag invalidation, namespacing, plugins.",
   "type": "module",
   "license": "MIT",

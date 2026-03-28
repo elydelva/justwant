@@ -1,6 +1,6 @@
 {
   "name": "@justwant/referral",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Referral and affiliation system. Parrainage, codes parrain, stats. Standalone package with defineReferralOffer + createReferralService.",
   "type": "module",
   "license": "MIT",

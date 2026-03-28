@@ -1,6 +1,6 @@
 {
   "name": "@justwant/bezier",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Cubic Bézier curves for easing. Core minimal, presets in subpaths (classic, feature, animation).",
   "type": "module",
   "license": "MIT",

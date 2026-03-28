@@ -1,6 +1,6 @@
 {
   "name": "@justwant/cookie",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Typed cookie parse/serialize. Root = typed API. /primitive = parseCookies, serializeCookie.",
   "type": "module",
   "license": "MIT",
