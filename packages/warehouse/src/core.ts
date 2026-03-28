@@ -228,14 +228,13 @@ export function createWarehouseFromSql(
             const selectEntries = Object.entries(options.select);
             const selectExprs = selectEntries.map(([alias, expr]) => `${expr} AS ${alias}`);
             const groupByCols = groupBy.map((k) => mapping[k as string]?.name).filter(Boolean);
+            const quotedGroupCols = groupByCols.map((c) => `"${c}"`);
             const selectClause =
               groupByCols.length > 0
-                ? [...groupByCols.map((c) => `"${c}"`), ...selectExprs].join(", ")
+                ? [...quotedGroupCols, ...selectExprs].join(", ")
                 : selectExprs.join(", ");
             const groupByClause =
-              groupByCols.length > 0
-                ? ` GROUP BY ${groupByCols.map((c) => `"${c}"`).join(", ")}`
-                : "";
+              groupByCols.length > 0 ? ` GROUP BY ${quotedGroupCols.join(", ")}` : "";
 
             const query: WaddlerQuery = sql`SELECT ${sql.raw(selectClause)} FROM ${tableId}`;
             const append = query.append;
