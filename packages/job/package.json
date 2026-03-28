@@ -9,7 +9,14 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/job"
   },
-  "keywords": ["job", "cron", "scheduler", "bullmq", "qstash", "typescript"],
+  "keywords": [
+    "job",
+    "cron",
+    "scheduler",
+    "bullmq",
+    "qstash",
+    "typescript"
+  ],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -107,7 +114,10 @@
     "test:e2e:full": "docker compose up -d && sleep 5 && bun test",
     "test:e2e:down": "docker compose down"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "dependencies": {
     "@justwant/contract": "workspace:*",
     "@justwant/lock": "workspace:*"

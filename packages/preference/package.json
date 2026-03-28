@@ -9,7 +9,11 @@
     "url": "https://github.com/elydelva/justwant",
     "directory": "packages/preference"
   },
-  "keywords": ["preference", "settings", "typescript"],
+  "keywords": [
+    "preference",
+    "settings",
+    "typescript"
+  ],
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -37,7 +41,11 @@
     "test:e2e": "bun test --config=bunfig.e2e.toml src/e2e.spec.ts",
     "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist", "README.md", "CHANGELOG.md"],
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "publishConfig": {
     "access": "public"
   },

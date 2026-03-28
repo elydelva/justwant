@@ -77,7 +77,11 @@
     "sandbox:validate": "tsx sandbox/run-validate.ts",
     "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist", "README.md", "TESTING.md"],
+  "files": [
+    "dist",
+    "README.md",
+    "TESTING.md"
+  ],
   "publishConfig": {
     "access": "public"
   },

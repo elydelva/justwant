@@ -1,5 +1,19 @@
 # @justwant/warehouse
 
+## [0.3.0](https://github.com/elydelva/justwant/compare/warehouse-v0.2.0...warehouse-v0.3.0) (2026-03-28)
+
+
+### Features
+
+* **config:** enhance configuration management with multi-source support and validation ([98d70bd](https://github.com/elydelva/justwant/commit/98d70bd3a1345bae2e5c6de5ad73ccfd0ea0100d))
+* **core:** introduce @justwant/core and eliminate SQL utility duplication across db and warehouse ([8d4d596](https://github.com/elydelva/justwant/commit/8d4d596b7a69203173ebec4148ce63d6ae8912fa))
+* update README files across multiple packages to include license badges, installation instructions, and enhanced usage examples. Improve documentation clarity and structure for better user guidance. ([c2846a5](https://github.com/elydelva/justwant/commit/c2846a509d74a3a5fdd01470f2da32704e0cc050))
+
+
+### Dependencies
+
+* **db,warehouse:** add @justwant/core as dependency ([712d0b4](https://github.com/elydelva/justwant/commit/712d0b45bb88f1763e196c11d25669733da2f248))
+
 ## 0.2.0
 
 ### Minor Changes
