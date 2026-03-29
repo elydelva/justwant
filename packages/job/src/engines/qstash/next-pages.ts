@@ -40,7 +40,7 @@ export function qstashNextPagesHandler(
       return;
     }
 
-    const jobId = req.query?.jobId as string | undefined;
+    const jobId = req.query?.jobId;
     if (!jobId) {
       res.status(400).json({ error: "Missing jobId" });
       return;

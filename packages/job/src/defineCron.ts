@@ -25,4 +25,4 @@ export function defineCron<T = unknown>(config: DefineCronConfig<T>): CronDefini
   };
 }
 
-export type { CronDefinition };
+export type { CronDefinition } from "./types.js";

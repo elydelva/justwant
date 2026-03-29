@@ -145,7 +145,7 @@ export async function runMigrations(options: RunMigrationsOptions): Promise<void
   });
 
   if (options.dialect === "pgvector") {
-    const db = options.db as PgRunOptions["db"];
+    const db = options.db;
     if (result.extension) {
       await db.query(result.extension);
     }
@@ -161,7 +161,7 @@ export async function runMigrations(options: RunMigrationsOptions): Promise<void
   }
 
   if (options.dialect === "sqlite-vec") {
-    const db = options.db as SqliteRunOptions["db"];
+    const db = options.db;
     if (!db.exec) {
       throw new Error("sqlite-vec runMigrations requires db.exec()");
     }

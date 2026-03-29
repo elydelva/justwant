@@ -36,4 +36,4 @@ export function defineQueue<T = unknown>(config: DefineQueueConfig<T>): QueueDef
   };
 }
 
-export type { QueueDefinition };
+export type { QueueDefinition } from "./types.js";

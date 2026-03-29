@@ -7,7 +7,7 @@ import type { AnyContract, TableContract } from "@justwant/contract";
 import type { WaddlerSql } from "@justwant/core/db";
 import type { MappedTable, MappedTableInternal } from "@justwant/db";
 
-export type { WaddlerSql };
+export type { WaddlerSql } from "@justwant/core/db";
 export type { WaddlerQuery } from "@justwant/core/db";
 
 /** String-based mapping: contract key → column name. */

@@ -4,7 +4,7 @@
 
 import type { JobEngineContract } from "../types.js";
 
-export type { JobEngineContract };
+export type { JobEngineContract } from "../types.js";
 export type { EngineCapabilities } from "../types.js";
 
 /**

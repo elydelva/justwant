@@ -163,7 +163,7 @@ function resolveRawValue(
 function validateVar(
   internalKey: string,
   schema: EnvSchema[string],
-  prefix: string | string[] | undefined,
+  prefix: ClientPrefix | undefined,
   merged: Record<string, string>
 ): { rawValue: string; validatedValue?: unknown; issues: { key: string; message: string }[] } {
   const rawValue = resolveRawValue(internalKey, prefix, merged);

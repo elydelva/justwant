@@ -6,7 +6,7 @@
 import type { InferContract, TableContract, TableFields } from "@justwant/contract";
 import type { WaddlerSql } from "@justwant/core/db";
 
-export type { WaddlerSql };
+export type { WaddlerSql } from "@justwant/core/db";
 export type { WaddlerQuery, StringMapping } from "@justwant/core/db";
 
 export type WarehouseDialect = "clickhouse" | "duckdb";

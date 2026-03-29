@@ -85,10 +85,10 @@ export function createEmbeddingService(options: CreateEmbeddingServiceOptions): 
       let vector: number[];
       if (opts.text !== undefined) {
         vector = await engine.embed(opts.text);
-      } else if (opts.vector !== undefined) {
-        vector = opts.vector;
-      } else {
+      } else if (opts.vector === undefined) {
         throw new Error("similar() requires either text or vector");
+      } else {
+        vector = opts.vector;
       }
 
       return storage.query(universeId, vector, {

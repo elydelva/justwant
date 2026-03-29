@@ -108,7 +108,7 @@ export function createWaitlistService(options: CreateWaitlistServiceOptions): Wa
       if (listDef?.schema) {
         metadata = validateMetadata(listDef.schema, rawMetadata, key) as Record<string, unknown>;
       } else if (typeof rawMetadata === "object" && rawMetadata !== null) {
-        metadata = rawMetadata as Record<string, unknown>;
+        metadata = rawMetadata;
       } else {
         metadata = {};
       }
