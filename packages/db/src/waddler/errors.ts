@@ -2,10 +2,7 @@
  * Parse Waddler/database errors into normalized adapter errors.
  */
 
-import {
-  AdapterError,
-  AdapterUniqueViolationError,
-} from "@justwant/db/errors";
+import { AdapterError, AdapterUniqueViolationError } from "@justwant/db/errors";
 import { parseByCode, parseSqliteMessage, str } from "../utils.js";
 
 /**
@@ -15,7 +12,8 @@ import { parseByCode, parseSqliteMessage, str } from "../utils.js";
 export function parseWaddlerError(raw: unknown): AdapterError {
   const err = raw as Record<string, unknown>;
   const cause = err?.cause as Record<string, unknown> | undefined;
-  const message = typeof err?.message === "string" ? err.message : typeof raw === "string" ? raw : "Unknown error";
+  const fallback = typeof raw === "string" ? raw : "Unknown error";
+  const message = typeof err?.message === "string" ? err.message : fallback;
   const causeMsg = typeof cause?.message === "string" ? cause.message : "";
   const msgToCheck = causeMsg || message;
   const code = (err?.code ?? cause?.code) as string | undefined;

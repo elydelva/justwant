@@ -9,7 +9,10 @@ const SEP = ".";
 
 function b64urlEncode(bytes: Uint8Array): string {
   const b64 = btoa(String.fromCodePoint(...bytes));
-  return b64.replaceAll("+", "-").replaceAll("/", "_").replace(/={1,2}$/, "");
+  return b64
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/={1,2}$/, "");
 }
 
 function b64urlDecode(str: string): Uint8Array {

@@ -99,7 +99,12 @@ describe("parseWaddlerError", () => {
   });
 
   test("maps MySQL errno 1062 to AdapterUniqueViolationError", () => {
-    const err = parseWaddlerError({ message: "Duplicate entry", errno: 1062, table: "users", column: "email" });
+    const err = parseWaddlerError({
+      message: "Duplicate entry",
+      errno: 1062,
+      table: "users",
+      column: "email",
+    });
     expect(err).toBeInstanceOf(AdapterUniqueViolationError);
     expect(err.code).toBe("UNIQUE");
   });

@@ -17,7 +17,7 @@ describe("encrypt / decrypt", () => {
 
   test("returns null for tampered ciphertext", () => {
     const ct = encrypt("secret", KEY);
-    const tampered = ct.slice(0, -4) + "XXXX";
+    const tampered = `${ct.slice(0, -4)}XXXX`;
     expect(decrypt(tampered, KEY)).toBeNull();
   });
 
@@ -54,7 +54,8 @@ describe("encryptWithPassword / decryptWithPassword", () => {
     const salt = new Uint8Array(16).fill(42);
     const ct = encryptWithPassword("data", "pass", salt);
     // Salt portion is deterministic; full ciphertext differs due to random nonce
-    expect(ct.startsWith(ct.split(".")[0]!)).toBe(true);
+    const saltPart = ct.split(".")[0] ?? "";
+    expect(ct.startsWith(saltPart)).toBe(true);
     expect(decryptWithPassword(ct, "pass")).toBe("data");
   });
 

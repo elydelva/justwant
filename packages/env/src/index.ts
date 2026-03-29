@@ -2,7 +2,12 @@
  * @justwant/env — Typed, validated environment variables.
  * Node.js / Bun: full support (files, watch).
  */
-import { type CreateEnvOptions, type EnvSchema, type GroupSchema, createEnvWithDeps } from "./core.js";
+import {
+  type CreateEnvOptions,
+  type EnvSchema,
+  type GroupSchema,
+  createEnvWithDeps,
+} from "./core.js";
 import { getCwd, getNodeEnv } from "./shared.js";
 import { mergeSources } from "./utils.js";
 import { watchEnvFiles } from "./watcher.js";

@@ -35,7 +35,7 @@ describe("getNodeEnv", () => {
 
   test('returns "development" when NODE_ENV is unset', () => {
     const original = process.env.NODE_ENV;
-    delete process.env.NODE_ENV;
+    process.env.NODE_ENV = undefined as unknown as string;
     expect(getNodeEnv()).toBe("development");
     process.env.NODE_ENV = original;
   });

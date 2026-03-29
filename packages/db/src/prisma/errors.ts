@@ -21,7 +21,8 @@ import { str } from "../utils.js";
 
 function getMessage(err: unknown): string {
   const e = err as Record<string, unknown>;
-  return typeof e?.message === "string" ? e.message : typeof err === "string" ? err : "Unknown error";
+  const fallback = typeof err === "string" ? err : "Unknown error";
+  return typeof e?.message === "string" ? e.message : fallback;
 }
 
 function getCode(err: unknown): string | undefined {

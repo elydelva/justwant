@@ -3,7 +3,12 @@
  * No fs, no node:path. Use for Cloudflare Workers, Vercel Edge, Deno Deploy.
  * processEnv can be an object (e.g. ctx.env) when process.env is unavailable.
  */
-import { type CreateEnvOptions, type EnvSchema, type GroupSchema, createEnvWithDeps } from "./core.js";
+import {
+  type CreateEnvOptions,
+  type EnvSchema,
+  type GroupSchema,
+  createEnvWithDeps,
+} from "./core.js";
 import { getCwd, getNodeEnv } from "./shared.js";
 import { mergeSources } from "./utils-edge.js";
 
