@@ -371,10 +371,18 @@ describe("createCache", () => {
   test("plugin with get hook can override key passed to next", async () => {
     const store = new Map([["alias:k", JSON.stringify("aliased")]]);
     const adapter: import("./types.js").CacheAdapter = {
-      async get(k) { return store.get(k) ?? null; },
-      async set(k, v) { store.set(k, v); },
-      async delete(k) { store.delete(k); },
-      async has(k) { return store.has(k); },
+      async get(k) {
+        return store.get(k) ?? null;
+      },
+      async set(k, v) {
+        store.set(k, v);
+      },
+      async delete(k) {
+        store.delete(k);
+      },
+      async has(k) {
+        return store.has(k);
+      },
     };
     const plugin: import("./types.js").CachePlugin = {
       name: "alias",
@@ -392,10 +400,14 @@ describe("createCache", () => {
 
   test("onError=fallback returns fallback value without logging", async () => {
     const adapter: import("./types.js").CacheAdapter = {
-      async get() { throw new Error("boom"); },
+      async get() {
+        throw new Error("boom");
+      },
       async set() {},
       async delete() {},
-      async has() { throw new Error("boom"); },
+      async has() {
+        throw new Error("boom");
+      },
     };
     const cache = createCache({ adapter, onError: "fallback" });
     expect(await cache.get("k")).toBeNull();
@@ -406,7 +418,12 @@ describe("createCache", () => {
     let serializer: unknown;
     const plugin: import("./types.js").CachePlugin = {
       name: "ser",
-      init(ctx) { ctx.setSerializer({ serialize: (v) => JSON.stringify(v), deserialize: (v) => JSON.parse(v) }); },
+      init(ctx) {
+        ctx.setSerializer({
+          serialize: (v) => JSON.stringify(v),
+          deserialize: (v) => JSON.parse(v),
+        });
+      },
     };
     const cache = createCache({ adapter: memoryAdapter(), plugins: [plugin] });
     await cache.set("k", "v");
@@ -416,7 +433,9 @@ describe("createCache", () => {
   test("plugin setStats enables stats reporting", async () => {
     const plugin: import("./types.js").CachePlugin = {
       name: "stats",
-      init(ctx) { ctx.setStats(() => ({ hits: 1, misses: 0, sets: 0, deletes: 0, errors: 0 })); },
+      init(ctx) {
+        ctx.setStats(() => ({ hits: 1, misses: 0, sets: 0, deletes: 0, errors: 0 }));
+      },
     };
     const cache = createCache({ adapter: memoryAdapter(), plugins: [plugin] });
     expect(cache.stats?.().hits).toBe(1);
@@ -425,11 +444,18 @@ describe("createCache", () => {
   test("ttl delegates to adapter.ttl when present", async () => {
     let ttlCalled = false;
     const adapter: import("./types.js").CacheAdapter = {
-      async get() { return null; },
+      async get() {
+        return null;
+      },
       async set() {},
       async delete() {},
-      async has() { return false; },
-      async ttl() { ttlCalled = true; return 5000; },
+      async has() {
+        return false;
+      },
+      async ttl() {
+        ttlCalled = true;
+        return 5000;
+      },
     };
     const cache = createCache({ adapter });
     expect(await cache.ttl("k")).toBe(5000);
@@ -439,11 +465,17 @@ describe("createCache", () => {
   test("expire delegates to adapter.expire when present", async () => {
     let expireCalled = false;
     const adapter: import("./types.js").CacheAdapter = {
-      async get() { return null; },
+      async get() {
+        return null;
+      },
       async set() {},
       async delete() {},
-      async has() { return false; },
-      async expire() { expireCalled = true; },
+      async has() {
+        return false;
+      },
+      async expire() {
+        expireCalled = true;
+      },
     };
     const cache = createCache({ adapter });
     await cache.expire("k", 5000);
@@ -453,12 +485,20 @@ describe("createCache", () => {
   test("namespace ttl/expire delegates through prefixed adapter", async () => {
     const ttlMap = new Map<string, number>();
     const adapter: import("./types.js").CacheAdapter = {
-      async get(k) { return null; },
+      async get(k) {
+        return null;
+      },
       async set() {},
       async delete() {},
-      async has() { return false; },
-      async ttl(k) { return ttlMap.get(k) ?? -1; },
-      async expire(k, ttl) { ttlMap.set(k, Number(ttl)); },
+      async has() {
+        return false;
+      },
+      async ttl(k) {
+        return ttlMap.get(k) ?? -1;
+      },
+      async expire(k, ttl) {
+        ttlMap.set(k, Number(ttl));
+      },
     };
     const cache = createCache({ adapter });
     const ns = cache.namespace("users");

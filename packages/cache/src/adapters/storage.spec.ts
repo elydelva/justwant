@@ -5,12 +5,24 @@ function makeStorage(): Storage & { store: Map<string, string> } {
   const store = new Map<string, string>();
   return {
     store,
-    get length() { return store.size; },
-    key(i) { return [...store.keys()][i] ?? null; },
-    getItem(k) { return store.get(k) ?? null; },
-    setItem(k, v) { store.set(k, v); },
-    removeItem(k) { store.delete(k); },
-    clear() { store.clear(); },
+    get length() {
+      return store.size;
+    },
+    key(i) {
+      return [...store.keys()][i] ?? null;
+    },
+    getItem(k) {
+      return store.get(k) ?? null;
+    },
+    setItem(k, v) {
+      store.set(k, v);
+    },
+    removeItem(k) {
+      store.delete(k);
+    },
+    clear() {
+      store.clear();
+    },
   };
 }
 
@@ -81,5 +93,4 @@ describe("storageAdapter", () => {
     await adapter.invalidateTag?.("t1");
     expect(await adapter.has("k")).toBe(false);
   });
-
 });
