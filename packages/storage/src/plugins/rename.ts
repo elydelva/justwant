@@ -14,7 +14,8 @@ function sanitizePath(path: string): string {
   return path
     .replaceAll(/[<>:"|?*]/g, "_")
     .replaceAll(/\/+/g, "/")
-    .replaceAll(/^\/+|\/+$/g, "");
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "");
 }
 
 function getExtension(path: string): string {
@@ -27,7 +28,8 @@ function slugify(name: string): string {
   return name
     .toLowerCase()
     .replaceAll(/[^a-z0-9]+/g, "-")
-    .replaceAll(/^-+|-+$/g, "");
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
 }
 
 async function toBuffer(

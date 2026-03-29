@@ -29,7 +29,7 @@ function get(obj: unknown, path: string): unknown {
 function loadData(options: DefineJsonSourceOptions): Record<string, unknown> {
   if (options.data) return options.data;
   if (options.path) {
-    const cwd = options.cwd ?? (typeof process !== "undefined" ? process.cwd() : ".");
+    const cwd = options.cwd ?? (typeof process === "undefined" ? "." : process.cwd());
     const fullPath = resolve(cwd, options.path);
     const content = readFileSync(fullPath, "utf-8");
     return JSON.parse(content) as Record<string, unknown>;

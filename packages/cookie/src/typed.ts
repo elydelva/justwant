@@ -146,7 +146,7 @@ export function createCookieStore<T extends Record<string, TypedCookie<unknown>>
       const name = cookie.name;
       const rawValue = raw[name];
       const { value, remove } = cookie.parseWithMeta(rawValue);
-      result[key as keyof InferCookieStore<T>] = value as InferCookieStore<T>[keyof T];
+      result[key] = value as InferCookieStore<T>[typeof key];
       if (remove && opts?.applyRemove && adapter) {
         toRemove.push(name);
       }

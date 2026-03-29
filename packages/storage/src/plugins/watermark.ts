@@ -21,22 +21,22 @@ function isImagePath(path: string): boolean {
   return IMAGE_EXTENSIONS.has(ext);
 }
 
-function buildCloudflareParams(opts: Record<string, unknown>): string {
+function buildCloudflareParams(opts: NonNullable<WatermarkPluginOptions["cloudflare"]>): string {
   const params = new URLSearchParams();
-  if (opts.fit) params.set("fit", String(opts.fit));
-  if (opts.width) params.set("width", String(opts.width));
-  if (opts.height) params.set("height", String(opts.height));
-  if (opts.quality) params.set("quality", String(opts.quality));
+  if (opts.fit) params.set("fit", opts.fit);
+  if (opts.width != null) params.set("width", String(opts.width));
+  if (opts.height != null) params.set("height", String(opts.height));
+  if (opts.quality != null) params.set("quality", String(opts.quality));
   const s = params.toString();
   return s ? `?${s}` : "";
 }
 
-function buildImgproxyParams(opts: Record<string, unknown>): string {
+function buildImgproxyParams(opts: NonNullable<WatermarkPluginOptions["imgproxy"]>): string {
   const parts: string[] = [];
-  if (opts.w) parts.push(`w:${String(opts.w)}`);
-  if (opts.h) parts.push(`h:${String(opts.h)}`);
-  if (opts.resize) parts.push(`rs:${String(opts.resize)}`);
-  if (opts.wm) parts.push(`wm:${String(opts.wm)}`);
+  if (opts.w != null) parts.push(`w:${opts.w}`);
+  if (opts.h != null) parts.push(`h:${opts.h}`);
+  if (opts.resize) parts.push(`rs:${opts.resize}`);
+  if (opts.wm) parts.push(`wm:${opts.wm}`);
   const s = parts.join("/");
   return s ? `/${s}` : "";
 }
@@ -62,10 +62,10 @@ export function watermarkPlugin(options: WatermarkPluginOptions): StoragePlugin 
         try {
           const parsed = new URL(url);
           if (provider === "cloudflare") {
-            const suffix = buildCloudflareParams(cloudflare as Record<string, unknown>);
+            const suffix = buildCloudflareParams(cloudflare);
             parsed.search = parsed.search ? `${parsed.search}&${suffix.slice(1)}` : suffix;
           } else if (provider === "imgproxy") {
-            const pathSuffix = buildImgproxyParams(imgproxy as Record<string, unknown>);
+            const pathSuffix = buildImgproxyParams(imgproxy);
             if (pathSuffix) {
               parsed.pathname = parsed.pathname.replace(/\/?$/, pathSuffix);
             }

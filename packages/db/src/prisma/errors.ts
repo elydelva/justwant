@@ -17,10 +17,11 @@ import {
   AdapterUniqueViolationError,
   AdapterUnsupportedError,
 } from "@justwant/db/errors";
+import { str } from "../utils.js";
 
 function getMessage(err: unknown): string {
   const e = err as Record<string, unknown>;
-  return typeof e?.message === "string" ? e.message : String(err ?? "Unknown error");
+  return typeof e?.message === "string" ? e.message : "Unknown error";
 }
 
 function getCode(err: unknown): string | undefined {
@@ -72,25 +73,25 @@ export function parsePrismaError(raw: unknown): AdapterError {
         const column = Array.isArray(target) ? target[0] : undefined;
         return new AdapterUniqueViolationError(message, {
           column: typeof column === "string" ? column : undefined,
-          constraint: String(meta?.target ?? ""),
+          constraint: str(meta?.target),
         });
       }
       case "P2003":
         return new AdapterForeignKeyViolationError(message, {
-          column: String(meta?.field_name ?? ""),
+          column: str(meta?.field_name),
         });
       case "P2011":
         return new AdapterNotNullViolationError(message, {
-          column: String(meta?.column ?? meta?.constraint ?? ""),
+          column: str(meta?.column) || str(meta?.constraint),
         });
       case "P2014":
       case "P2017":
         return new AdapterForeignKeyViolationError(message, {
-          column: String(meta?.relation_name ?? ""),
+          column: str(meta?.relation_name),
         });
       case "P2025":
         return new AdapterNotFoundError(message, {
-          table: String(meta?.modelName ?? ""),
+          table: str(meta?.modelName),
         });
       case "P1000":
       case "P1001":
@@ -107,16 +108,16 @@ export function parsePrismaError(raw: unknown): AdapterError {
         return new AdapterTimeoutError(message, { code });
       case "P2000":
         return new AdapterMappingError(message, {
-          column: String(meta?.column_name ?? ""),
+          column: str(meta?.column_name),
         });
       case "P2001":
         return new AdapterNotFoundError(message, {
-          table: String(meta?.model_name ?? ""),
+          table: str(meta?.model_name),
         });
       case "P2004":
       case "P2035":
         return new AdapterCheckViolationError(message, {
-          constraint: String(meta?.database_error ?? ""),
+          constraint: str(meta?.database_error),
         });
       case "P2005":
       case "P2006":
@@ -130,16 +131,16 @@ export function parsePrismaError(raw: unknown): AdapterError {
       case "P2023":
       case "P2033":
         return new AdapterMappingError(message, {
-          column: String(meta?.field_name ?? meta?.column ?? meta?.table ?? ""),
+          column: str(meta?.field_name) || str(meta?.column) || str(meta?.table),
         });
       case "P2015":
       case "P2018":
         return new AdapterNotFoundError(message, {
-          table: String(meta?.modelName ?? meta?.model_name ?? ""),
+          table: str(meta?.modelName) || str(meta?.model_name),
         });
       case "P2026":
         return new AdapterUnsupportedError(message, {
-          operation: String(meta?.feature ?? ""),
+          operation: str(meta?.feature),
         });
       case "P2028":
       case "P2034":
