@@ -37,7 +37,7 @@ export type {
   GroupSchema,
   InferEnv,
   InferGroupEnv,
-};
+} from "./core.js";
 
 export interface DefineEnvOptions<T extends EnvSchema> {
   vars: T;

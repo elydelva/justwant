@@ -5,7 +5,7 @@
 
 import type { Actor } from "@justwant/actor";
 
-export type { Actor };
+export type { Actor } from "@justwant/actor";
 
 /** Parrainage — persisted entity. */
 export interface Referral {

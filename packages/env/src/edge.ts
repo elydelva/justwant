@@ -28,7 +28,7 @@ function getNodeEnv(): string {
   return "development";
 }
 
-export type { CreateEnvOptions, CreateEnvResult, EnvSchema, GroupSchema, InferEnv, InferGroupEnv };
+export type { CreateEnvOptions, CreateEnvResult, EnvSchema, GroupSchema, InferEnv, InferGroupEnv } from "./core.js";
 
 export interface DefineEnvOptions<T extends EnvSchema> {
   vars: T;

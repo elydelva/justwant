@@ -5,7 +5,7 @@
 import type { Actor } from "@justwant/actor";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
-export type { Actor };
+export type { Actor } from "@justwant/actor";
 
 /** Schema for metadata validation (optional). */
 export type WaitlistMetadataSchema<T = unknown> = StandardSchemaV1<unknown, T>;
