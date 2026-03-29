@@ -3,27 +3,9 @@
  * No fs, no node:path. Use for Cloudflare Workers, Vercel Edge, Deno Deploy.
  * processEnv can be an object (e.g. ctx.env) when process.env is unavailable.
  */
-import {
-  type CreateEnvOptions,
-  type EnvSchema,
-  type GroupSchema,
-  createEnvWithDeps,
-} from "./core.js";
+import { type CreateEnvOptions, type EnvSchema, type GroupSchema, createEnvWithDeps } from "./core.js";
+import { getCwd, getNodeEnv } from "./shared.js";
 import { mergeSources } from "./utils-edge.js";
-
-function getCwd(): string {
-  if (typeof process !== "undefined" && typeof process.cwd === "function") {
-    return process.cwd();
-  }
-  return "";
-}
-
-function getNodeEnv(): string {
-  if (typeof process !== "undefined" && process.env?.NODE_ENV) {
-    return process.env.NODE_ENV;
-  }
-  return "development";
-}
 
 export type {
   CreateEnvOptions,
@@ -33,18 +15,8 @@ export type {
   InferEnv,
   InferGroupEnv,
 } from "./core.js";
-
-export interface DefineEnvOptions<T extends EnvSchema> {
-  vars: T;
-  clientPrefix?: string | string[];
-}
-
-export function defineEnv<T extends EnvSchema>(options: DefineEnvOptions<T>) {
-  return {
-    vars: options.vars,
-    clientPrefix: options.clientPrefix,
-  };
-}
+export { defineEnv } from "./shared.js";
+export type { DefineEnvOptions } from "./shared.js";
 
 export function createEnv<T extends EnvSchema, G extends GroupSchema | undefined = undefined>(
   options: CreateEnvOptions<T> & (G extends undefined ? object : { groups: G })

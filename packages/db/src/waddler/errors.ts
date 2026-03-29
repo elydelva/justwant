@@ -3,16 +3,10 @@
  */
 
 import {
-  AdapterCheckViolationError,
-  AdapterConnectionError,
   AdapterError,
-  AdapterForeignKeyViolationError,
-  AdapterNotNullViolationError,
-  AdapterTimeoutError,
-  AdapterTransactionError,
   AdapterUniqueViolationError,
 } from "@justwant/db/errors";
-import { str } from "../utils.js";
+import { parseByCode, parseSqliteMessage, str } from "../utils.js";
 
 /**
  * Maps raw database errors to normalized AdapterError subclasses.
@@ -35,52 +29,14 @@ export function parseWaddlerError(raw: unknown): AdapterError {
   }
 
   if (typeof code === "string") {
-    switch (code) {
-      case "23503":
-        return new AdapterForeignKeyViolationError(message, {
-          table: str(err?.table),
-          column: str(err?.column),
-        });
-      case "23505":
-        return new AdapterUniqueViolationError(message, {
-          table: str(err?.table),
-          column: str(err?.column),
-          constraint: str(err?.constraint),
-        });
-      case "23502":
-        return new AdapterNotNullViolationError(message, {
-          table: str(err?.table),
-          column: str(err?.column),
-        });
-      case "23514":
-        return new AdapterCheckViolationError(message, {
-          table: str(err?.table),
-          constraint: str(err?.constraint),
-        });
-      case "ECONNREFUSED":
-      case "ECONNRESET":
-        return new AdapterConnectionError(message, { code });
-      case "ETIMEDOUT":
-        return new AdapterTimeoutError(message, { code });
-      case "40P01":
-      case "40001":
-        return new AdapterTransactionError(message, { code });
-    }
+    const result = parseByCode(code, message, err);
+    if (result) return result;
   }
 
-  const msg = String(msgToCheck || message);
-  if (msg.includes("FOREIGN KEY constraint failed")) {
-    return new AdapterForeignKeyViolationError(msg);
-  }
-  if (msg.includes("UNIQUE constraint failed")) {
-    return new AdapterUniqueViolationError(msg);
-  }
-  if (msg.includes("NOT NULL constraint failed")) {
-    return new AdapterNotNullViolationError(msg);
-  }
-  if (msg.includes("CHECK constraint failed")) {
-    return new AdapterCheckViolationError(msg);
-  }
+  const msg = msgToCheck || message;
+  const sqliteResult = parseSqliteMessage(msg);
+  if (sqliteResult) return sqliteResult;
+
   if (
     msg.includes("duplicate key") ||
     msg.includes("Duplicate entry") ||
