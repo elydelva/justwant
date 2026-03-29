@@ -129,6 +129,17 @@ describe("createCookieStore", () => {
     expect(writeCalls).toContain("x=");
   });
 
+  test("async schema validation falls back to default", () => {
+    const schema = {
+      "~standard": {
+        validate: (_v: unknown) => Promise.resolve({ value: "async" }),
+      },
+    };
+    const cookie = defineCookie("x", { schema, default: "d" });
+    // async validation is treated as failure → uses default
+    expect(cookie.parse("somevalue")).toBe("d");
+  });
+
   test("get with pruneUntracked deletes untracked cookies", () => {
     const theme = defineCookie("theme", (v) => v ?? "light");
     const writeCalls: { name: string; value: string }[] = [];

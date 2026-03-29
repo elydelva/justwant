@@ -55,4 +55,77 @@ describe("createCacheEntry", () => {
     expect(v2).toEqual({ id: "123" });
     expect(fetches).toBe(1);
   });
+
+  test("delete removes cached entry", async () => {
+    const cache = createCache({ adapter: memoryAdapter() });
+    const entry = createCacheEntry({ cache, key: (id) => `user:${id}`, schema: simpleSchema });
+    await entry.set("1", { id: "1" });
+    await entry.delete("1");
+    expect(await entry.get("1")).toBeNull();
+  });
+
+  test("has returns true for existing entry", async () => {
+    const cache = createCache({ adapter: memoryAdapter() });
+    const entry = createCacheEntry({ cache, key: (id) => `user:${id}`, schema: simpleSchema });
+    await entry.set("1", { id: "1" });
+    expect(await entry.has("1")).toBe(true);
+    expect(await entry.has("2")).toBe(false);
+  });
+
+  test("set throws when validation fails", async () => {
+    const cache = createCache({ adapter: memoryAdapter() });
+    const entry = createCacheEntry({
+      cache,
+      key: (id) => `user:${id}`,
+      schema: simpleSchema,
+    });
+    await expect(entry.set("123", "not-an-object" as unknown as { id: string })).rejects.toThrow(
+      "Cache entry validation failed"
+    );
+  });
+
+  test("get returns null when cached value fails schema", async () => {
+    const cache = createCache({ adapter: memoryAdapter() });
+    const entry = createCacheEntry({
+      cache,
+      key: (id) => `user:${id}`,
+      schema: simpleSchema,
+    });
+    // Bypass entry and put invalid value directly
+    await cache.set("user:123", "invalid-string");
+    expect(await entry.get("123")).toBeNull();
+  });
+
+  test("wrap re-fetches when cached value fails schema", async () => {
+    const cache = createCache({ adapter: memoryAdapter() });
+    const entry = createCacheEntry({
+      cache,
+      key: (id) => `user:${id}`,
+      schema: simpleSchema,
+    });
+    await cache.set("user:123", "bad");
+    let fetches = 0;
+    const result = await entry.wrap("123", async () => {
+      fetches++;
+      return { id: "123" };
+    });
+    expect(result).toEqual({ id: "123" });
+    expect(fetches).toBe(1);
+  });
+
+  test("get returns null when schema returns async result", async () => {
+    const asyncSchema = {
+      "~standard": {
+        validate: (_v: unknown) => Promise.resolve({ value: _v }),
+      },
+    } as { "~standard": { validate: (v: unknown) => unknown } };
+    const cache = createCache({ adapter: memoryAdapter() });
+    const entry = createCacheEntry({
+      cache,
+      key: (id) => `item:${id}`,
+      schema: asyncSchema,
+    });
+    await cache.set("item:1", "something");
+    expect(await entry.get("1")).toBeNull();
+  });
 });
