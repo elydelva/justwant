@@ -53,4 +53,11 @@ describe("parseWarehouseError", () => {
     });
     expect(err).toBeInstanceOf(WarehouseConnectionError);
   });
+
+  test('falls back to "Unknown error" for null input', () => {
+    const err = parseWarehouseError(null);
+    expect(err).toBeInstanceOf(WarehouseError);
+    expect(err.message).toBe("Unknown error");
+    expect(err.code).toBe("UNKNOWN");
+  });
 });

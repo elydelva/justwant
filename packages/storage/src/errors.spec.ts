@@ -50,4 +50,10 @@ describe("parseStorageError", () => {
     expect(err.message).toBe("string error");
     expect(err.code).toBe("UNKNOWN");
   });
+
+  test('falls back to "Unknown error" for null input', () => {
+    const err = parseStorageError(null);
+    expect(err.message).toBe("Unknown error");
+    expect(err.code).toBe("UNKNOWN");
+  });
 });

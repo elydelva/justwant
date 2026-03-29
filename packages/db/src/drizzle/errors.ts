@@ -11,7 +11,7 @@ import { parseByCode, parseSqliteMessage } from "../utils.js";
  */
 export function parseDbError(raw: unknown): AdapterError {
   const err = raw as Record<string, unknown>;
-  const message = typeof err?.message === "string" ? err.message : "Unknown error";
+  const message = typeof err?.message === "string" ? err.message : typeof raw === "string" ? raw : "Unknown error";
   const code = err?.code as string | undefined;
 
   if (typeof code === "string") {

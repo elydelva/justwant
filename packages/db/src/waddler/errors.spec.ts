@@ -97,4 +97,50 @@ describe("parseWaddlerError", () => {
     expect(err).toBeInstanceOf(AdapterError);
     expect(err.message).toBe("string error");
   });
+
+  test("maps MySQL errno 1062 to AdapterUniqueViolationError", () => {
+    const err = parseWaddlerError({ message: "Duplicate entry", errno: 1062, table: "users", column: "email" });
+    expect(err).toBeInstanceOf(AdapterUniqueViolationError);
+    expect(err.code).toBe("UNIQUE");
+  });
+
+  test("maps MySQL ER_DUP_ENTRY to AdapterUniqueViolationError", () => {
+    const err = parseWaddlerError({ message: "Duplicate entry", code: "ER_DUP_ENTRY" });
+    expect(err).toBeInstanceOf(AdapterUniqueViolationError);
+  });
+
+  test("maps cause table/column for MySQL duplicate entry", () => {
+    const err = parseWaddlerError({
+      message: "Wrapped",
+      errno: 1062,
+      cause: { table: "orders", column: "ref" },
+    });
+    expect(err).toBeInstanceOf(AdapterUniqueViolationError);
+  });
+
+  test("maps 'duplicate key' message to AdapterUniqueViolationError", () => {
+    const err = parseWaddlerError(new Error("duplicate key value violates unique constraint"));
+    expect(err).toBeInstanceOf(AdapterUniqueViolationError);
+  });
+
+  test("maps 'Duplicate entry' message to AdapterUniqueViolationError", () => {
+    const err = parseWaddlerError(new Error("Duplicate entry '42' for key 'PRIMARY'"));
+    expect(err).toBeInstanceOf(AdapterUniqueViolationError);
+  });
+
+  test("maps 'UNIQUE constraint' message to AdapterUniqueViolationError", () => {
+    const err = parseWaddlerError(new Error("UNIQUE constraint failed: users.email"));
+    expect(err).toBeInstanceOf(AdapterUniqueViolationError);
+  });
+
+  test("falls back to cause message when top-level has no message", () => {
+    const err = parseWaddlerError({ cause: { message: "FOREIGN KEY constraint failed" } });
+    expect(err).toBeInstanceOf(AdapterForeignKeyViolationError);
+  });
+
+  test("returns Unknown error for null-like input", () => {
+    const err = parseWaddlerError(null);
+    expect(err).toBeInstanceOf(AdapterError);
+    expect(err.message).toBe("Unknown error");
+  });
 });
