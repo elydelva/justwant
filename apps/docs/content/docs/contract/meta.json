@@ -1,0 +1,15 @@
+{
+  "title": "Contract",
+  "icon": "Table",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Guides---",
+    "fields",
+    "validation",
+    "---Reference---",
+    "api"
+  ]
+}

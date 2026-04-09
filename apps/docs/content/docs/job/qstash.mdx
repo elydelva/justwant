@@ -54,6 +54,7 @@ QStash delivers jobs by POSTing to `{baseUrl}/{routePrefix}/{jobId}`. You must e
 <CodeBlockTabsList>
   <CodeBlockTabsTrigger value="next">Next.js App Router</CodeBlockTabsTrigger>
   <CodeBlockTabsTrigger value="hono">Hono</CodeBlockTabsTrigger>
+  <CodeBlockTabsTrigger value="express">Express</CodeBlockTabsTrigger>
   <CodeBlockTabsTrigger value="next-pages">Next.js Pages Router</CodeBlockTabsTrigger>
   <CodeBlockTabsTrigger value="cloudflare">Cloudflare Workers</CodeBlockTabsTrigger>
 </CodeBlockTabsList>
@@ -84,6 +85,27 @@ const app = new Hono();
 app.post("/job/:jobId", qstashMiddleware(jobs));
 
 export default app;
+```
+
+</CodeBlockTab>
+<CodeBlockTab value="express">
+
+```ts title="src/routes/job.ts"
+import express from "express";
+import { qstashMiddleware } from "@justwant/job/engines/qstash/express";
+import { jobs } from "./jobs";
+
+const router = express.Router();
+
+router.post("/job/:jobId", qstashMiddleware(jobs));
+
+export default router;
+```
+
+Pass `{ verify: false }` to disable signature verification during local development:
+
+```ts
+router.post("/job/:jobId", qstashMiddleware(jobs, { verify: false }));
 ```
 
 </CodeBlockTab>

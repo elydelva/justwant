@@ -18,17 +18,17 @@ bun add @justwant/cache ioredis
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@justwant/cache";
-import { createMemoryAdapter } from "@justwant/cache/adapters/memory";
-import { createRedisAdapter } from "@justwant/cache/adapters/redis";
-import { createTieredAdapter } from "@justwant/cache/adapters/tiered";
+import { memoryAdapter } from "@justwant/cache/adapters/memory";
+import { redisAdapter } from "@justwant/cache/adapters/redis";
+import { tieredAdapter } from "@justwant/cache/adapters/tiered";
 import Redis from "ioredis";
 
-const redis = new Redis(process.env.REDIS_URL!);
+const redisClient = new Redis(process.env.REDIS_URL!);
 
 export const cache = createCache({
-  adapter: createTieredAdapter({
-    l1: createMemoryAdapter({ maxSize: 1000 }),
-    l2: createRedisAdapter({ client: redis }),
+  adapter: tieredAdapter({
+    l1: memoryAdapter(),
+    l2: redisAdapter({ redis: redisClient }),
   }),
 });
 ```
@@ -36,20 +36,18 @@ export const cache = createCache({
 ## Options
 
 ```ts
-createTieredAdapter({
-  l1: CacheAdapter;               // Fast local layer (required)
-  l2: CacheAdapter;               // Durable remote layer (required)
-  promote?: boolean;              // Promote L2 hits to L1 (default: true)
-  writeThrough?: boolean;         // Write to both layers on set (default: true)
+tieredAdapter({
+  l1: CacheAdapter;  // Fast local layer (required)
+  l2: CacheAdapter;  // Durable remote layer (required)
 })
 ```
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `l1` | — | L1 adapter (memory) |
-| `l2` | — | L2 adapter (Redis, Upstash…) |
-| `promote` | `true` | Promote L2 hits to L1 on read |
-| `writeThrough` | `true` | Write to both L1 and L2 on `set` |
+| Option | Description |
+|--------|-------------|
+| `l1` | L1 adapter (fast, e.g. memory) |
+| `l2` | L2 adapter (durable, e.g. Redis or Upstash) |
+
+L2 hits are always promoted to L1 and writes always go to both layers.
 
 ## Read path
 
@@ -59,4 +57,4 @@ createTieredAdapter({
 
 ## Write path
 
-With `writeThrough: true` (default), every `set` writes to both L1 and L2. With `writeThrough: false`, only L2 is written — L1 is populated lazily on the next read.
+Every `set` writes to both L1 and L2 simultaneously.

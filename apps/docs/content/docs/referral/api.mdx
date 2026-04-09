@@ -65,7 +65,7 @@ getRecipients(
 ): Promise<Referral[]>
 ```
 
-Lists all referrals made by `referrer` for `offer`.
+Lists all referrals made by `referrer` for `offer`. When `opts` is omitted or a field is not provided, the defaults are `limit: 50` and `orderBy: "desc"` (unless overridden by `defaults.orderBy` in `CreateReferralServiceOptions`).
 
 #### getReferral
 

@@ -99,7 +99,7 @@ import { imageTransformPlugin } from "@justwant/storage/plugins/imageTransform";
 
 plugins: [
   imageTransformPlugin({
-    width: 1200,
+    maxWidth: 1200,
     format: "webp",
     quality: 85,
   }),
@@ -110,21 +110,33 @@ Requires `sharp` to be installed: `bun add sharp`.
 
 ## Multi-bucket plugin
 
-Routes uploads to different buckets based on custom logic.
+Routes uploads to different buckets based on content-type patterns or file extensions.
 
 ```ts
 import { multiBucketPlugin } from "@justwant/storage/plugins/multiBucket";
 
 plugins: [
   multiBucketPlugin({
-    buckets: [imagesBucket, documentsBucket],
-    route: (params) => {
-      if (params.options?.contentType?.startsWith("image/")) return imagesBucket;
-      return documentsBucket;
+    routing: {
+      "image/*":           imagesBucket,   // MIME wildcard — any image/* content-type
+      "application/pdf":   documentsBucket, // exact MIME type
+      "*.mp4":             videosBucket,    // file extension glob
     },
+    defaultBucket: documentsBucket, // used when no pattern matches (optional)
   }),
 ]
 ```
+
+### Pattern syntax
+
+| Pattern | Matches |
+|---------|---------|
+| `"image/*"` | Any content-type starting with `image/` |
+| `"application/pdf"` | Exact content-type match |
+| `"*.jpg"` | Files whose path ends with `.jpg` (case-insensitive) |
+| `"jpg"` | Exact extension or exact content-type match |
+
+Patterns are evaluated in insertion order — the first match wins. If no pattern matches and no `defaultBucket` is provided, an error is thrown.
 
 ## Composing plugins
 

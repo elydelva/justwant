@@ -1,0 +1,49 @@
+---
+title: Introduction
+description: OLAP Data Access Layer for ClickHouse and DuckDB. Contract-driven, append-only, batch insert and typed aggregations.
+icon: BarChart3
+---
+
+## What is @justwant/warehouse?
+
+`@justwant/warehouse` is a **contract-first OLAP Data Access Layer (DAL)** for TypeScript applications. It provides a uniform table interface for analytical workloads — `insert`, `query`, `aggregate`, `createTable`, `exist`, `drop` — against both **ClickHouse** and **DuckDB**.
+
+**Use it when** you need to:
+- Write analytics data from your application to ClickHouse or DuckDB
+- Query and aggregate event streams, metrics, or log tables with full type safety
+- Swap between ClickHouse (production) and DuckDB (local / testing) without changing application code
+- Enforce a consistent data shape through `@justwant/contract` definitions
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Contract-first** | Define the table shape once with `@justwant/contract`; the warehouse enforces it |
+| **Append-only** | Designed for OLAP: `insert` batches rows, no update or delete |
+| **Typed queries** | `query()` returns fully-typed rows inferred from the contract |
+| **Typed aggregations** | `aggregate()` supports `groupBy`, `select` expressions, and `where` filters |
+| **DDL helpers** | `createTable`, `exist`, `drop` manage the table lifecycle |
+| **Dialect-aware** | ClickHouse and DuckDB DDL and mutation execution handled transparently |
+| **Error normalization** | Driver errors are mapped to `WarehouseError` subclasses |
+
+## Dialects
+
+| Dialect | Import | Use case |
+|---------|--------|----------|
+| ClickHouse | `@justwant/warehouse/clickhouse` | Production-scale analytics |
+| DuckDB | `@justwant/warehouse/duckdb` | Local development, in-process analytics, testing |
+
+## How it works
+
+1. **Define a contract** — the canonical shape of your table (from `@justwant/contract`).
+2. **Create an adapter** — `createDuckDbAdapter(config)` or `createClickHouseAdapter(config)`.
+3. **Create a warehouse** — `createWarehouse(adapter)`.
+4. **Map a table** — `warehouse.table(contract)`.
+5. **Use the table** — call `table.insert(rows)`, `table.query(options)`, `table.aggregate(options)`.
+
+## Next steps
+
+- [Installation](/docs/warehouse/installation) — Install and set up a dialect
+- [Basic Usage](/docs/warehouse/basic-usage) — Insert, query, and aggregate data
+- [Dialects](/docs/warehouse/dialects) — ClickHouse vs DuckDB differences and driver setup
+- [API Reference](/docs/warehouse/api) — Full API reference

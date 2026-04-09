@@ -1,0 +1,130 @@
+---
+title: Installation
+description: Install @justwant/config and set up your first config service.
+icon: Download
+---
+
+## Step 1: Install the package
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/config
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/config
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/config
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/config
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+If you plan to validate config values, install a Standard Schema-compatible library alongside it:
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/config zod
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/config zod
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/config zod
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/config zod
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Step 2: Create the config service
+
+Create a shared config instance in a module (e.g. `lib/config.ts`). This example reads from environment variables:
+
+```ts title="lib/config.ts"
+import {
+  createConfigService,
+  defineEnvironment,
+  defineValue,
+  defineEnvSource,
+} from "@justwant/config";
+
+const env = defineEnvSource();
+
+export const config = createConfigService({
+  environments: [
+    defineEnvironment({
+      name: "default",
+      sources: {
+        databaseUrl: defineValue({ from: env, key: "DATABASE_URL" }),
+        port: defineValue({ from: env, key: "PORT" }),
+        appSecret: defineValue({ from: env, key: "APP_SECRET" }),
+      },
+    }),
+  ],
+});
+```
+
+## Step 3: Read values
+
+Import the config instance anywhere in your application:
+
+```ts title="server.ts"
+import { config } from "@/lib/config";
+
+const port = await config.get<number>("port");
+const dbUrl = await config.get<string>("databaseUrl");
+
+console.log(`Starting on port ${port}`);
+```
+
+## Next steps
+
+- [Basic Usage](/docs/config/basic-usage) — defineValue, defineEnvironment, createConfigService
+- [Sources](/docs/config/sources) — Use env vars, JSON files, or a database
+- [API Reference](/docs/config/api) — Full type and function reference

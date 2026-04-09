@@ -1,0 +1,298 @@
+---
+title: API Reference
+description: Complete type and function reference for @justwant/config.
+icon: BookOpen
+---
+
+## Functions
+
+### defineValue
+
+```ts
+function defineValue(def: ValueDef): ValueDef
+```
+
+Identity function that returns its argument. Used for explicit, type-safe value declarations.
+
+```ts
+import { defineValue, defineEnvSource } from "@justwant/config";
+
+const env = defineEnvSource();
+
+defineValue({ from: env, key: "DATABASE_URL" });
+defineValue({ from: jsonSource, path: "database.url" });
+defineValue({ from: jsonSource, path: "auth", field: "secret" });
+```
+
+---
+
+### defineEnvironment
+
+```ts
+function defineEnvironment(options: DefineEnvironmentOptions): EnvironmentDef
+```
+
+Creates a named environment definition that groups a sources map and an optional validation schema.
+
+```ts
+import { defineEnvironment, defineValue, defineEnvSource } from "@justwant/config";
+import { z } from "zod";
+
+const env = defineEnvSource();
+
+const production = defineEnvironment({
+  name: "production",
+  sources: {
+    databaseUrl: defineValue({ from: env, key: "DATABASE_URL" }),
+    port: defineValue({ from: env, key: "PORT" }),
+  },
+  schema: {
+    port: z.coerce.number().min(1).max(65535),
+  },
+});
+```
+
+#### DefineEnvironmentOptions
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `string` | Unique identifier for this environment |
+| `sources` | `SourcesMap` | Map of logical keys to `ValueDef` or `ValueDef[]` |
+| `schema` | `Record<string, StandardSchemaV1>` | Optional per-key validation schemas |
+
+---
+
+### createConfigService
+
+```ts
+function createConfigService(options: CreateConfigServiceOptions): ConfigApi
+```
+
+Creates the runtime config service. Selects the active environment and returns a `ConfigApi`.
+
+```ts
+import { createConfigService } from "@justwant/config";
+
+const config = createConfigService({
+  environments: [production, development],
+  defaultEnvironment: "production",
+  validation: { onError: "throw" },
+});
+```
+
+#### CreateConfigServiceOptions
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `environments` | `readonly EnvironmentDef[]` | — | One or more environment definitions |
+| `defaultEnvironment` | `string` | First environment's name | Name of the active environment |
+| `validation.onError` | `"throw" \| "warn" \| false` | `"throw"` | Behavior when schema validation fails |
+
+Throws `Error` synchronously if no environment is configured.
+
+---
+
+### defineEnvSource
+
+```ts
+function defineEnvSource(options?: DefineEnvSourceOptions): ConfigSource
+```
+
+Creates a source that reads from `process.env` (or a custom env-like object).
+
+#### DefineEnvSourceOptions
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `prefix` | `string` | `""` | Prepended to every key before env lookup |
+| `env` | `Record<string, string \| undefined>` | `process.env` | Custom env object |
+
+---
+
+### defineJsonSource
+
+```ts
+function defineJsonSource(options?: DefineJsonSourceOptions): ConfigSource
+```
+
+Creates a source that reads from a JSON file or inline object using dot-notation paths.
+
+#### DefineJsonSourceOptions
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `path` | `string` | — | Path to a JSON file |
+| `data` | `Record<string, unknown>` | — | Inline data object (takes precedence over `path`) |
+| `cwd` | `string` | `process.cwd()` | Base directory for resolving `path` |
+
+---
+
+### defineDatabaseSource
+
+```ts
+function defineDatabaseSource(options: DefineDatabaseSourceOptions): ConfigSource
+```
+
+Creates a source that reads from a database through a `ConfigRepo`.
+
+#### DefineDatabaseSourceOptions
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `repo` | `ConfigRepo` | Repository implementing `findOne({ key }): Promise<ConfigEntry \| null>` |
+
+---
+
+## Interfaces
+
+### ConfigApi
+
+The runtime config API returned by `createConfigService`.
+
+```ts
+interface ConfigApi {
+  get<T = unknown>(key: string): Promise<T>;
+  get<T = unknown>(key: string, fallback: T): Promise<T>;
+  has(key: string): Promise<boolean>;
+}
+```
+
+#### ConfigApi.get
+
+```ts
+config.get<T>(key: string): Promise<T>
+config.get<T>(key: string, fallback: T): Promise<T>
+```
+
+Resolves the value for `key` through the active environment's waterfall. Returns `fallback` (or `undefined`) when no source provides a value.
+
+If a schema is configured for `key`, the value is validated before being returned. On validation failure, behavior depends on `validation.onError`:
+- `"throw"` — throws `ConfigValidationError`
+- `"warn"` — logs a warning and returns `fallback`
+- `false` — skips validation entirely
+
+#### ConfigApi.has
+
+```ts
+config.has(key: string): Promise<boolean>
+```
+
+Returns `true` if any source in the active environment resolves `key` to a defined value.
+
+---
+
+### ConfigSource
+
+```ts
+interface ConfigSource {
+  get(lookup: SourceLookup): unknown;
+}
+```
+
+Implement this interface to create a custom source. `get` may return a value synchronously or as a `Promise`.
+
+---
+
+### ConfigRepo
+
+```ts
+interface ConfigRepo {
+  findOne(where: { key: string }): Promise<ConfigEntry | null>;
+}
+
+interface ConfigEntry {
+  key: string;
+  value: unknown;
+}
+```
+
+---
+
+## Types
+
+### ValueDef
+
+```ts
+type ValueDef =
+  | { from: ConfigSource; key: string }
+  | { from: ConfigSource; path: string; field?: string };
+```
+
+Describes how to look up a single value from a source.
+
+- `{ from, key }` — used with key-based sources (`defineEnvSource`, `defineDatabaseSource`)
+- `{ from, path }` — used with path-based sources (`defineJsonSource`); supports dot notation
+- `{ from, path, field }` — path + optional field, for sources that distinguish the two
+
+### SourcesMap
+
+```ts
+type SourcesMap = Record<string, ValueDef | ValueDef[]>;
+```
+
+Maps logical config keys to one or more value definitions. When an array is provided, values are resolved in order (waterfall).
+
+### EnvironmentDef
+
+```ts
+interface EnvironmentDef {
+  readonly name: string;
+  readonly sources: SourcesMap;
+  readonly schema?: Record<string, StandardSchemaV1<unknown, unknown>>;
+}
+```
+
+### SourceLookup
+
+```ts
+type SourceLookup =
+  | { key: string }
+  | { path: string }
+  | { path: string; field?: string };
+```
+
+Passed to `ConfigSource.get`. Each source interprets the variant it supports; it should return `undefined` for unsupported variants.
+
+---
+
+## Errors
+
+### ConfigError
+
+Base error class for all `@justwant/config` errors.
+
+```ts
+class ConfigError extends Error {
+  name: "ConfigError";
+}
+```
+
+### ConfigValidationError
+
+Thrown when schema validation fails and `validation.onError` is `"throw"`.
+
+```ts
+class ConfigValidationError extends ConfigError {
+  name: "ConfigValidationError";
+  readonly issues: { key: string; message: string }[];
+}
+```
+
+```ts
+import { ConfigValidationError } from "@justwant/config";
+
+try {
+  const port = await config.get<number>("port");
+} catch (err) {
+  if (err instanceof ConfigValidationError) {
+    for (const issue of err.issues) {
+      console.error(`${issue.key}: ${issue.message}`);
+    }
+  }
+}
+```
+
+## Next steps
+
+- [Basic Usage](/docs/config/basic-usage) — Practical examples
+- [Sources](/docs/config/sources) — Available source types

@@ -18,31 +18,31 @@ bun add @justwant/cache ioredis
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@justwant/cache";
-import { createRedisAdapter } from "@justwant/cache/adapters/redis";
+import { redisAdapter } from "@justwant/cache/adapters/redis";
 import Redis from "ioredis";
 
-const redis = new Redis(process.env.REDIS_URL!);
+const redisClient = new Redis(process.env.REDIS_URL!);
 
 export const cache = createCache({
-  adapter: createRedisAdapter({ client: redis }),
+  adapter: redisAdapter({ redis: redisClient }),
 });
 ```
 
 ## Options
 
 ```ts
-createRedisAdapter({
-  client: Redis;          // ioredis client instance (required)
-  prefix?: string;        // Key prefix applied to all entries
-  serializer?: CacheSerializer; // Custom serializer (default: JSON)
+redisAdapter({
+  redis: RedisClient;     // ioredis (or compatible) client instance (required)
+  keyPrefix?: string;     // Key prefix applied to all entries
+  tagPrefix?: string;     // Prefix for tag set keys (default: "tag:")
 })
 ```
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `client` | `Redis` | ioredis client instance |
-| `prefix` | `string` | Prefix applied to every Redis key |
-| `serializer` | `CacheSerializer` | Custom serialize/deserialize logic |
+| `redis` | `RedisClient` | ioredis (or compatible) client instance |
+| `keyPrefix` | `string` | Prefix applied to every Redis key |
+| `tagPrefix` | `string` | Prefix for tag set keys (default: `"tag:"`) |
 
 ## Environment variable
 
@@ -59,5 +59,5 @@ Pass an ioredis `Cluster` instance to use Redis Cluster:
 import { Cluster } from "ioredis";
 
 const cluster = new Cluster([{ host: "127.0.0.1", port: 6379 }]);
-const adapter = createRedisAdapter({ client: cluster });
+const adapter = redisAdapter({ redis: cluster });
 ```

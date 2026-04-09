@@ -234,10 +234,10 @@ Create a shared cache instance in a module (e.g. `lib/cache.ts`).
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@justwant/cache";
-import { createMemoryAdapter } from "@justwant/cache/adapters/memory";
+import { memoryAdapter } from "@justwant/cache/adapters/memory";
 
 export const cache = createCache({
-  adapter: createMemoryAdapter(),
+  adapter: memoryAdapter(),
 });
 ```
 
@@ -246,13 +246,13 @@ export const cache = createCache({
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@justwant/cache";
-import { createRedisAdapter } from "@justwant/cache/adapters/redis";
+import { redisAdapter } from "@justwant/cache/adapters/redis";
 import Redis from "ioredis";
 
-const redis = new Redis(process.env.REDIS_URL!);
+const redisClient = new Redis(process.env.REDIS_URL!);
 
 export const cache = createCache({
-  adapter: createRedisAdapter({ client: redis }),
+  adapter: redisAdapter({ redis: redisClient }),
 });
 ```
 
@@ -261,16 +261,16 @@ export const cache = createCache({
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@justwant/cache";
-import { createUpstashAdapter } from "@justwant/cache/adapters/upstash";
+import { upstashAdapter } from "@justwant/cache/adapters/upstash";
 import { Redis } from "@upstash/redis";
 
-const redis = new Redis({
+const redisClient = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
 export const cache = createCache({
-  adapter: createUpstashAdapter({ client: redis }),
+  adapter: upstashAdapter({ redis: redisClient }),
 });
 ```
 
@@ -279,12 +279,12 @@ export const cache = createCache({
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@justwant/cache";
-import { createCfKvAdapter } from "@justwant/cache/adapters/cf-kv";
+import { cfKvAdapter } from "@justwant/cache/adapters/cf-kv";
 
 // In a Cloudflare Worker — KV_NAMESPACE is bound in wrangler.toml
 export function createWorkerCache(env: Env) {
   return createCache({
-    adapter: createCfKvAdapter({ namespace: env.KV_NAMESPACE }),
+    adapter: cfKvAdapter({ kv: env.KV_NAMESPACE }),
   });
 }
 ```
@@ -294,11 +294,11 @@ export function createWorkerCache(env: Env) {
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@justwant/cache";
-import { createVercelKvAdapter } from "@justwant/cache/adapters/vercel-kv";
+import { vercelKvAdapter } from "@justwant/cache/adapters/vercel-kv";
 import { kv } from "@vercel/kv";
 
 export const cache = createCache({
-  adapter: createVercelKvAdapter({ client: kv }),
+  adapter: vercelKvAdapter({ kv }),
 });
 ```
 

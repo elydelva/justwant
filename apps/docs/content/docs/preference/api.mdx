@@ -1,0 +1,239 @@
+---
+title: API Reference
+description: Complete reference for all @justwant/preference exports.
+icon: BookOpen
+---
+
+## definePreference
+
+```ts
+function definePreference<N extends string, T = unknown>(
+  config: DefinePreferenceConfig<N, T>
+): PreferenceDef<N, T>
+```
+
+Declares a preference. Returns a `PreferenceDef` that is also callable: `pref(actorId)` returns `{ type: N; id: actorId }`.
+
+### DefinePreferenceConfig
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | `N` (string literal) | Yes | Preference name. Used as the key in `list()` results. |
+| `key` | `string` | No | Storage key. Defaults to `name`. |
+| `schema` | `StandardSchemaV1` | No | Validator run by `set` before writing. |
+| `default` | `T` | No | Value returned when no stored entry exists. |
+
+### PreferenceDef
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `N` | Preference name. |
+| `key` | `string` | Storage key. |
+| `schema` | `StandardSchemaV1 \| undefined` | Validator, if any. |
+| `default` | `T \| undefined` | Default value, if any. |
+
+---
+
+## createPreferenceService
+
+```ts
+function createPreferenceService(
+  options: CreatePreferenceServiceOptions
+): PreferenceService
+```
+
+Creates the runtime service.
+
+### CreatePreferenceServiceOptions
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `preferences` | `PreferenceDef[]` | All preferences the service manages. |
+| `repo` | `PreferenceRepository` | Storage adapter. |
+
+---
+
+## PreferenceService
+
+### list
+
+```ts
+list(actor: Actor): Promise<Record<string, unknown>>
+```
+
+Returns every registered preference for the actor. For each preference, uses the stored value if one exists, otherwise falls back to the preference's `default`. Keys in the returned object are the preference `name` values.
+
+```ts
+const all = await prefs.list({ type: "user", id: "u-1" });
+// { theme: "dark", pageSize: 20, emailNotifications: true }
+```
+
+### get
+
+```ts
+get<T>(actor: Actor, pref: PreferenceDef<string, T>): Promise<T | undefined>
+```
+
+Returns the stored value for a single preference, or its `default` if no entry exists. Returns `undefined` if neither a stored value nor a default is available.
+
+Throws `Error` if `pref` is not registered in the service.
+
+### set
+
+```ts
+set<T>(actor: Actor, pref: PreferenceDef<string, T>, value: T): Promise<PreferenceEntry>
+```
+
+Writes a value. If `pref.schema` is defined, validates `value` before writing and throws `PreferenceValidationError` on failure. Upserts: creates a new entry or updates the existing one.
+
+Throws `Error` if `pref` is not registered in the service.
+
+### setMany
+
+```ts
+setMany(actor: Actor, entries: PreferenceSetEntry[]): Promise<void>
+```
+
+Calls `set` sequentially for each entry. Validation runs for each preference individually.
+
+```ts
+await prefs.setMany(actor, [
+  { pref: theme, value: "dark" },
+  { pref: pageSize, value: 50 },
+]);
+```
+
+### reset
+
+```ts
+reset(actor: Actor, pref: PreferenceDef): Promise<void>
+```
+
+Deletes the stored entry. Subsequent reads return the preference's `default` (or `undefined` if none). No-ops if no entry exists.
+
+Throws `Error` if `pref` is not registered in the service.
+
+---
+
+## Adapters
+
+### createMemoryPreferenceAdapter
+
+```ts
+function createMemoryPreferenceAdapter(): PreferenceRepository
+```
+
+Returns an in-memory `PreferenceRepository`. Suitable for tests and development. Not persistent across restarts.
+
+### createPreferenceDbAdapter
+
+```ts
+function createPreferenceDbAdapter(
+  options: CreatePreferenceDbAdapterOptions
+): PreferenceRepository
+```
+
+Returns a `PreferenceRepository` backed by a `PreferenceTable`.
+
+#### CreatePreferenceDbAdapterOptions
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `table` | `PreferenceTable` | Table object compatible with `@justwant/db` `MappedTable`. |
+
+---
+
+## Types
+
+### Actor
+
+Re-exported from `@justwant/actor`. Represents the subject whose preferences are being managed.
+
+```ts
+type Actor = { type: string; id: string; orgId?: string };
+```
+
+### PreferenceEntry
+
+The persisted row returned by `set` and stored in the repository.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique entry identifier. |
+| `preferenceKey` | `string` | The preference's storage key. |
+| `actorType` | `string` | The actor's type. |
+| `actorId` | `string` | The actor's identifier. |
+| `actorOrgId` | `string \| undefined` | Optional organisation scope. |
+| `value` | `unknown` | The stored value. |
+| `createdAt` | `Date` | Creation timestamp. |
+| `updatedAt` | `Date` | Last update timestamp. |
+
+### PreferenceRepository
+
+Interface that adapters must implement.
+
+```ts
+interface PreferenceRepository {
+  create(data: CreateInput<PreferenceEntry>): Promise<PreferenceEntry>;
+  findOne(where: Partial<PreferenceEntry>): Promise<PreferenceEntry | null>;
+  findMany(where: Partial<PreferenceEntry>, opts?: FindManyOptions): Promise<PreferenceEntry[]>;
+  update(id: string, data: Partial<PreferenceEntry>): Promise<PreferenceEntry>;
+  delete(id: string): Promise<void>;
+}
+```
+
+### FindManyOptions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `orderBy` | `{ field: keyof PreferenceEntry; direction: "asc" \| "desc" }` | Sort order. |
+| `limit` | `number` | Maximum rows to return. |
+| `offset` | `number` | Rows to skip before returning results. |
+
+---
+
+## Errors
+
+### PreferenceError
+
+Base class for all preference errors.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `string` | Machine-readable error code. |
+| `metadata` | `Record<string, unknown> \| undefined` | Additional context. |
+
+### PreferenceValidationError
+
+Thrown by `set` when the value does not satisfy the preference's schema.
+
+- `code`: `"PREFERENCE_VALIDATION_ERROR"`
+- `metadata.key`: the preference storage key
+- `metadata.issues`: array of validation issue objects
+
+```ts
+import { PreferenceValidationError } from "@justwant/preference";
+
+try {
+  await prefs.set(actor, pageSize, -1);
+} catch (err) {
+  if (err instanceof PreferenceValidationError) {
+    console.error(err.code);     // "PREFERENCE_VALIDATION_ERROR"
+    console.error(err.metadata); // { key: "pageSize", issues: [...] }
+  }
+}
+```
+
+### PreferenceNotFoundError
+
+Available for use in custom repository implementations when a preference key cannot be found.
+
+- `code`: `"PREFERENCE_NOT_FOUND"`
+- `key`: the preference storage key that was not found
+
+```ts
+import { PreferenceNotFoundError } from "@justwant/preference";
+
+throw new PreferenceNotFoundError("theme");
+// message: "Preference not found: theme"
+```

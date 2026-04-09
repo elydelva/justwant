@@ -1,0 +1,377 @@
+---
+title: API Reference
+description: Full type and function reference for @justwant/embedding.
+icon: BookOpen
+---
+
+## createEmbeddingService
+
+```ts
+function createEmbeddingService(options: CreateEmbeddingServiceOptions): EmbeddingService
+```
+
+Creates an embedding service. Validates that the storage has `capability: "similarity-search"` and that `query` is implemented. Throws `InvalidStorageError` if either check fails.
+
+### CreateEmbeddingServiceOptions
+
+```ts
+interface CreateEmbeddingServiceOptions {
+  engine: EmbeddingEngine;
+  storage: VectorStorage;
+  universes: Universe[];
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `engine` | `EmbeddingEngine` | Text-to-vector engine |
+| `storage` | `VectorStorage` | Vector storage backend |
+| `universes` | `Universe[]` | Registered universes. All `upsertFrom`, `similar`, and `delete` calls must reference an id from this list |
+
+---
+
+## EmbeddingService
+
+The object returned by `createEmbeddingService`.
+
+```ts
+interface EmbeddingService {
+  embed(text: string, options?: { model?: string }): Promise<number[]>;
+  upsertFrom<T>(universeId: string, item: T): Promise<void>;
+  similar(universeId: string, options: SimilarOptions): Promise<SimilarResult[]>;
+  delete(universeId: string, ids: string[]): Promise<void>;
+}
+
+type SimilarResult = { id: string; score: number; metadata?: Record<string, unknown> };
+```
+
+### embed
+
+```ts
+embed(text: string, options?: { model?: string }): Promise<number[]>
+```
+
+Delegates to `engine.embed`. Returns a vector as a `number[]`. The optional `model` override is passed to engines that support per-call model selection.
+
+### upsertFrom
+
+```ts
+upsertFrom<T>(universeId: string, item: T): Promise<void>
+```
+
+1. Looks up the universe by `universeId`. Throws `UniverseNotFoundError` if not found.
+2. Extracts the id from `item[embeddable.idField]`. Throws `TypeError` if the value is not a string.
+3. Calls `embeddable.toText(item)` to produce text.
+4. Calls `engine.embed(text)` to produce a vector.
+5. Extracts metadata from fields listed in `embeddable.metadataFields`.
+6. Calls `storage.upsert(universeId, [{ id, vector, metadata }])`.
+
+### similar
+
+```ts
+similar(universeId: string, options: SimilarOptions): Promise<SimilarResult[]>
+```
+
+Looks up the universe, resolves a query vector (by embedding `options.text` or using `options.vector` directly), then calls `storage.query`. Returns results sorted by descending score.
+
+Throws if neither `text` nor `vector` is provided.
+
+### delete
+
+```ts
+delete(universeId: string, ids: string[]): Promise<void>
+```
+
+Looks up the universe. If `storage.delete` is present, calls it. Otherwise, this is a no-op.
+
+---
+
+## defineEmbeddable
+
+```ts
+function defineEmbeddable<T>(options: DefineEmbeddableOptions<T>): Embeddable<T>
+```
+
+### DefineEmbeddableOptions
+
+```ts
+interface DefineEmbeddableOptions<T> {
+  idField: string;
+  toText: (item: T) => string;
+  metadataFields?: readonly string[];
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `idField` | `string` | Property name on `T` that holds the unique string id |
+| `toText` | `(item: T) => string` | Reduces an item to a single string for embedding |
+| `metadataFields` | `readonly string[]` | Optional list of property names to store as metadata alongside the vector |
+
+### Embeddable
+
+```ts
+interface Embeddable<T = unknown> {
+  idField: string;
+  toText: (item: T) => string;
+  metadataFields?: readonly string[];
+}
+```
+
+---
+
+## defineUniverse
+
+```ts
+function defineUniverse<T>(options: DefineUniverseOptions<T>): Universe<T>
+```
+
+### DefineUniverseOptions
+
+```ts
+interface DefineUniverseOptions<T> {
+  id: string;
+  dimension: number;
+  embeddable: Embeddable<T>;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Logical index id — used as the first argument to all service methods |
+| `dimension` | `number` | Expected vector dimension. Must match the engine and storage configuration |
+| `embeddable` | `Embeddable<T>` | Embeddable definition produced by `defineEmbeddable` |
+
+### Universe
+
+```ts
+interface Universe<T = unknown> {
+  id: string;
+  dimension: number;
+  embeddable: Embeddable<T>;
+}
+```
+
+---
+
+## SimilarOptions
+
+```ts
+interface SimilarOptions {
+  text?: string;
+  vector?: number[];
+  topK?: number;
+  filter?: Record<string, unknown>;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `text` | `string` | Text to embed and search by. Mutually exclusive with `vector` |
+| `vector` | `number[]` | Pre-computed query vector. Mutually exclusive with `text` |
+| `topK` | `number` | Number of results to return. Defaults to `10` |
+| `filter` | `Record<string, unknown>` | Metadata filter — only returns results where all filter keys match stored metadata |
+
+---
+
+## EmbeddingEngine
+
+Interface that all engines implement.
+
+```ts
+interface EmbeddingEngine {
+  embed(text: string, options?: { model?: string }): Promise<number[]>;
+  embedMany?(texts: string[]): Promise<number[][]>;
+}
+```
+
+| Method | Description |
+|--------|-------------|
+| `embed` | Required. Produces a single vector from text |
+| `embedMany` | Optional. Batch embedding — produces one vector per input text |
+
+---
+
+## VectorStorage
+
+Interface that all storage adapters implement.
+
+```ts
+interface VectorStorage {
+  readonly capability: "similarity-search";
+
+  upsert(
+    indexId: string,
+    vectors: Array<{ id: string; vector: number[]; metadata?: Record<string, unknown> }>
+  ): Promise<void>;
+
+  query(
+    indexId: string,
+    vector: number[],
+    options?: {
+      topK?: number;
+      filter?: Record<string, unknown>;
+      includeMetadata?: boolean;
+    }
+  ): Promise<Array<{ id: string; score: number; metadata?: Record<string, unknown> }>>;
+
+  delete?(indexId: string, ids: string[]): Promise<void>;
+}
+```
+
+| Method | Required | Description |
+|--------|----------|-------------|
+| `capability` | Yes | Must be `"similarity-search"` |
+| `upsert` | Yes | Store or overwrite vectors |
+| `query` | Yes | k-NN search, returns results sorted by descending score |
+| `delete` | No | Remove vectors by id |
+
+---
+
+## Errors
+
+### EmbeddingError
+
+Base class for all errors thrown by `@justwant/embedding`.
+
+```ts
+class EmbeddingError extends Error {
+  name: "EmbeddingError";
+}
+```
+
+### UniverseNotFoundError
+
+Thrown by `upsertFrom`, `similar`, and `delete` when the provided `universeId` is not in the registered universes list.
+
+```ts
+class UniverseNotFoundError extends EmbeddingError {
+  name: "UniverseNotFoundError";
+  // message: "Universe not found: <universeId>"
+}
+```
+
+### InvalidStorageError
+
+Thrown by `createEmbeddingService` when the storage does not have `capability: "similarity-search"` or does not implement `query`.
+
+```ts
+class InvalidStorageError extends EmbeddingError {
+  name: "InvalidStorageError";
+  // message: "Invalid storage: <reason>"
+}
+```
+
+### Error handling example
+
+```ts
+import { EmbeddingError, UniverseNotFoundError } from "@justwant/embedding";
+
+try {
+  await embedding.similar("unknown-universe", { text: "hello" });
+} catch (err) {
+  if (err instanceof UniverseNotFoundError) {
+    console.error("Universe not registered:", err.message);
+  } else if (err instanceof EmbeddingError) {
+    console.error("Embedding error:", err.message);
+  } else {
+    throw err;
+  }
+}
+```
+
+---
+
+## Engine factory functions
+
+### openAiEmbeddingEngine
+
+```ts
+import { openAiEmbeddingEngine } from "@justwant/embedding/engines/openai";
+
+function openAiEmbeddingEngine(options: OpenAiEmbeddingEngineOptions): EmbeddingEngine
+
+interface OpenAiEmbeddingEngineOptions {
+  client: { embeddings: OpenAiEmbeddingsClient };
+  model: string;
+  dimension?: number;
+}
+```
+
+### cloudflareAiEmbeddingEngine
+
+```ts
+import { cloudflareAiEmbeddingEngine } from "@justwant/embedding/engines/cloudflare-ai";
+
+function cloudflareAiEmbeddingEngine(options: CloudflareAiEmbeddingEngineOptions): EmbeddingEngine
+
+interface CloudflareAiEmbeddingEngineOptions {
+  ai: CloudflareAiBinding;
+  model?: string;       // default: "@cf/baai/bge-base-en-v1.5"
+  dimension: number;
+}
+```
+
+### testEmbeddingEngine
+
+```ts
+import { testEmbeddingEngine } from "@justwant/embedding/engines/memory";
+
+function testEmbeddingEngine(options: { dimension: number }): EmbeddingEngine
+```
+
+---
+
+## Storage factory functions
+
+### pgvectorStorageAdapter
+
+```ts
+import { pgvectorStorageAdapter } from "@justwant/embedding/storages/pgvector";
+
+function pgvectorStorageAdapter(options: PgvectorStorageAdapterOptions): VectorStorage
+
+interface PgvectorStorageAdapterOptions {
+  db: PgVectorClient;
+  tableName: string;
+  dimension: number;
+  indexIdColumn?: string;          // default: "index_id"
+  formatVector?: (v: number[]) => string;
+}
+```
+
+### sqliteVectorStorageAdapter
+
+```ts
+import { sqliteVectorStorageAdapter } from "@justwant/embedding/storages/sqlite-vec";
+
+function sqliteVectorStorageAdapter(options: SqliteVectorStorageAdapterOptions): VectorStorage
+
+interface SqliteVectorStorageAdapterOptions {
+  db: SqliteDatabase;
+  tableName: string;
+  dimension: number;
+  indexIdColumn?: string;          // default: "index_id"
+}
+```
+
+### vectorizeStorageAdapter
+
+```ts
+import { vectorizeStorageAdapter } from "@justwant/embedding/storages/vectorize";
+
+function vectorizeStorageAdapter(options: VectorizeStorageAdapterOptions): VectorStorage
+
+interface VectorizeStorageAdapterOptions {
+  vectorize: VectorizeIndex;
+  dimension: number;
+}
+```
+
+### testVectorStorageAdapter
+
+```ts
+import { testVectorStorageAdapter } from "@justwant/embedding/storages/memory";
+
+function testVectorStorageAdapter(options: { dimension: number }): VectorStorage
+```

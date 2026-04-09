@@ -10,7 +10,7 @@ Plugins are middleware functions that wrap the adapter's operations. They are ap
 
 ```ts
 const cache = createCache({
-  adapter: createMemoryAdapter(),
+  adapter: memoryAdapter(),
   plugins: [namespacePlugin({ prefix: "app" }), statsPlugin()],
 });
 ```
@@ -26,7 +26,7 @@ const cache = createCache({
 | Stale | `/plugins/stale` | Stale-while-revalidate |
 | Dedupe | `/plugins/dedupe` | Deduplicate concurrent `wrap` calls |
 | Prefetch | `/plugins/prefetch` | Prefetch related keys on cache hit |
-| Audit | `/plugins/audit` | Log cache operations to `@justwant/audit` |
+| Audit | `/plugins/audit` | Callback hooks for logging, metrics, or compliance |
 
 ## Namespace plugin
 
@@ -34,7 +34,7 @@ const cache = createCache({
 import { namespacePlugin } from "@justwant/cache/plugins/namespace";
 
 const cache = createCache({
-  adapter: createMemoryAdapter(),
+  adapter: memoryAdapter(),
   plugins: [namespacePlugin({ prefix: "v1", separator: ":" })],
 });
 ```
@@ -46,7 +46,7 @@ import { serializePlugin } from "@justwant/cache/plugins/serialize";
 import { superjsonSerializer } from "@justwant/cache/serializers/superjson";
 
 const cache = createCache({
-  adapter: createRedisAdapter({ client: redis }),
+  adapter: redisAdapter({ redis: redisClient }),
   plugins: [serializePlugin({ serializer: superjsonSerializer() })],
 });
 ```
@@ -64,7 +64,7 @@ import { deriveKey } from "@justwant/crypto/derive-key";
 const key = await deriveKey(process.env.CACHE_SECRET!, "cache", "salt", 32);
 
 const cache = createCache({
-  adapter: createRedisAdapter({ client: redis }),
+  adapter: redisAdapter({ redis: redisClient }),
   plugins: [encryptPlugin({ key })],
 });
 ```
@@ -77,7 +77,7 @@ Exposes a `cache.stats()` method that returns hit/miss counts:
 import { statsPlugin } from "@justwant/cache/plugins/stats";
 
 const cache = createCache({
-  adapter: createMemoryAdapter(),
+  adapter: memoryAdapter(),
   plugins: [statsPlugin()],
 });
 
@@ -93,7 +93,7 @@ Returns a stale (expired) value while triggering a background revalidation:
 import { stalePlugin } from "@justwant/cache/plugins/stale";
 
 const cache = createCache({
-  adapter: createRedisAdapter({ client: redis }),
+  adapter: redisAdapter({ redis: redisClient }),
   plugins: [stalePlugin({ staleTtl: "1m" })],
 });
 ```
@@ -106,7 +106,54 @@ Collapses concurrent `wrap` calls for the same key into a single fetch:
 import { dedupePlugin } from "@justwant/cache/plugins/dedupe";
 
 const cache = createCache({
-  adapter: createRedisAdapter({ client: redis }),
+  adapter: redisAdapter({ redis: redisClient }),
   plugins: [dedupePlugin()],
 });
 ```
+
+## Prefetch plugin
+
+Warms the cache for related keys whenever a key is read. Supply a `keyFn` that returns the related keys to prefetch for a given key:
+
+```ts
+import { prefetchPlugin } from "@justwant/cache/plugins/prefetch";
+
+const cache = createCache({
+  adapter: redisAdapter({ redis: redisClient }),
+  plugins: [
+    prefetchPlugin({
+      keyFn: (key) => [`${key}:meta`, `${key}:tags`],
+      maxKeys: 5, // max related keys to prefetch per get (default: 10)
+    }),
+  ],
+});
+```
+
+The prefetched keys are fetched in the background — they do not block the current `get` call and their results are silently discarded if they fail.
+
+## Audit plugin
+
+Fires callbacks on every cache operation. Use for logging, metrics, or compliance tracing:
+
+```ts
+import { auditPlugin } from "@justwant/cache/plugins/audit";
+
+const cache = createCache({
+  adapter: memoryAdapter(),
+  plugins: [
+    auditPlugin({
+      onGet: (key, hit) => console.log(`GET ${key} — ${hit ? "HIT" : "MISS"}`),
+      onSet: (key) => console.log(`SET ${key}`),
+      onDelete: (key) => console.log(`DELETE ${key}`),
+    }),
+  ],
+});
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `onGet` | `(key, hit) => void` | Called after every `get`; `hit` is `true` if the value was found |
+| `onSet` | `(key) => void` | Called after every `set` |
+| `onDelete` | `(key) => void` | Called after every `delete` |
+
+Callbacks may be async — errors are not suppressed, so handle them inside the callback if needed.

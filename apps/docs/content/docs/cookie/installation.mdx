@@ -1,0 +1,152 @@
+---
+title: Installation
+description: Install @justwant/cookie and set up your first typed cookie.
+icon: Download
+---
+
+## Step 1: Install the package
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/cookie
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/cookie
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/cookie
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/cookie
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Step 2: Define your first cookie
+
+Define a typed cookie with a name and optional schema. The cookie definition is reusable across your codebase.
+
+```ts title="lib/cookies.ts"
+import { defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+export const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+  onMismatch: "fallback",
+});
+```
+
+## Step 3: Choose an adapter
+
+Pick the adapter that matches your environment and wire it up:
+
+<CodeBlockTabs defaultValue="nextjs">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="nextjs">Next.js</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="browser">Browser</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="fetch">Fetch (Request/Response)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="header">Header (generic)</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="nextjs">
+
+```ts title="app/actions.ts"
+import { cookies } from "next/headers";
+import { NextJSAdapter, createCookieStore } from "@justwant/cookie";
+import { themeCookie } from "@/lib/cookies";
+
+export async function getTheme() {
+  const cookieStore = await cookies();
+  const adapter = NextJSAdapter(cookieStore);
+  const store = createCookieStore({ theme: themeCookie }, { adapter });
+  return store.get();
+}
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="browser">
+
+```ts title="lib/cookies-browser.ts"
+import { DocumentAdapter, createCookieStore } from "@justwant/cookie";
+import { themeCookie } from "@/lib/cookies";
+
+const adapter = DocumentAdapter();
+export const store = createCookieStore({ theme: themeCookie }, { adapter });
+
+// Read
+const { theme } = store.get(); // "light" | "dark"
+
+// Write
+store.set("theme", "dark");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="fetch">
+
+```ts title="middleware.ts"
+import { RequestResponseAdapter, createCookieStore } from "@justwant/cookie";
+import { themeCookie } from "@/lib/cookies";
+
+export function middleware(request: Request): Response {
+  const response = new Response();
+  const adapter = RequestResponseAdapter(request, response);
+  const store = createCookieStore({ theme: themeCookie }, { adapter });
+
+  const { theme } = store.get();
+  console.log("Current theme:", theme);
+
+  return response;
+}
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="header">
+
+```ts title="server.ts"
+import { HeaderAdapter, createCookieStore } from "@justwant/cookie";
+import { themeCookie } from "@/lib/cookies";
+
+function handler(req: { headers: { cookie?: string } }) {
+  const responseHeaders: string[] = [];
+  const adapter = HeaderAdapter({
+    getCookie: () => req.headers.cookie ?? "",
+    appendSetCookie: (value) => responseHeaders.push(value),
+  });
+  const store = createCookieStore({ theme: themeCookie }, { adapter });
+
+  const { theme } = store.get();
+  store.set("theme", "dark");
+
+  return { theme, setCookieHeaders: responseHeaders };
+}
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Next steps
+
+- [Basic Usage](/docs/cookie/basic-usage) — defineCookie, setCookie, deleteCookie, createCookieStore
+- [Adapters](/docs/cookie/adapters) — All available adapters in detail
+- [API Reference](/docs/cookie/api) — Full API documentation

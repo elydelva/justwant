@@ -30,12 +30,12 @@ Create the cache inside your Worker using the bound namespace:
 
 ```ts title="src/index.ts"
 import { createCache } from "@justwant/cache";
-import { createCfKvAdapter } from "@justwant/cache/adapters/cf-kv";
+import { cfKvAdapter } from "@justwant/cache/adapters/cf-kv";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const cache = createCache({
-      adapter: createCfKvAdapter({ namespace: env.CACHE }),
+      adapter: cfKvAdapter({ kv: env.CACHE }),
     });
 
     const value = await cache.wrap("key", () => fetchData(), { ttl: "5m" });
@@ -47,9 +47,9 @@ export default {
 ## Options
 
 ```ts
-createCfKvAdapter({
-  namespace: KVNamespace;  // Cloudflare KV namespace binding (required)
-  prefix?: string;         // Key prefix applied to all entries
+cfKvAdapter({
+  kv: CloudflareKVNamespace;  // Cloudflare KV namespace binding (required)
+  keyPrefix?: string;         // Key prefix applied to all entries
 })
 ```
 

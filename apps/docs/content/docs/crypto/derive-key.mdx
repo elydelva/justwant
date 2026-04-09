@@ -10,7 +10,7 @@ The `/derive-key` module provides HKDF-SHA256 key derivation. Use it to derive m
 
 Internally it uses `@noble/hashes/hkdf` with SHA-256.
 
-**Note**: The key derivation in `/encrypt` uses PBKDF2 (via `@noble/hashes/pbkdf2`) which is slower by design for password-based inputs. `deriveKey` from this module uses HKDF which is fast and suitable for secret-to-key derivation (not passwords).
+**Note**: `encryptWithPassword()` in `/encrypt` also uses HKDF-SHA256 (the same `deriveKey` function) — not PBKDF2. Both modules derive keys with HKDF, which is fast and suitable when the input is already a secret or a sufficiently random password. If you need intentionally slow password-based key stretching (e.g. for user-chosen low-entropy passwords), use the `/password` module (Argon2id) to hash the password first.
 
 ## Import
 

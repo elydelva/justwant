@@ -1,0 +1,66 @@
+---
+title: Introduction
+description: Typed, per-actor user preferences with schema validation and a swappable adapter pattern.
+icon: SlidersHorizontal
+---
+
+## What is @justwant/preference?
+
+`@justwant/preference` is a **headless preference engine** for TypeScript applications. It stores arbitrary per-actor settings — theme, locale, notification toggles, page size, and anything else — backed by a `PreferenceRepository` you provide.
+
+Every preference is declared once with `definePreference`, carrying its name, optional storage key, optional Standard Schema validator, and an optional default value. At runtime, a `PreferenceService` reads and writes those values via a thin repository interface, so you can swap storage backends without touching application code.
+
+**Use it when** you need to:
+- Persist user-controlled settings across sessions
+- Validate preference values against a schema at write time
+- Fall back to a safe default when no stored value exists
+- Batch-update multiple preferences in a single call
+- Reset a preference back to its default by deleting the stored row
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **`definePreference()`** | Portable definition — name, storage key, schema, default |
+| **`createPreferenceService()`** | Full API: `list`, `get`, `set`, `setMany`, `reset` |
+| **Schema validation** | Any [Standard Schema](https://github.com/standard-schema/standard-schema) validator (Zod, Valibot, ArkType…) |
+| **Default values** | Returned by `get` and `list` when no stored entry exists |
+| **Actor-scoped** | Values are keyed to an `Actor` from `@justwant/actor` |
+| **Adapters** | In-memory adapter included; `createPreferenceDbAdapter` for `@justwant/db` |
+| **Error hierarchy** | `PreferenceError` → `PreferenceValidationError` / `PreferenceNotFoundError` |
+
+## How it works
+
+1. Declare each preference once with `definePreference`.
+2. Create a service with `createPreferenceService({ preferences, repo })`.
+3. Read all preferences for an actor with `service.list(actor)`.
+4. Read one preference with `service.get(actor, pref)`.
+5. Write a value with `service.set(actor, pref, value)` — validation runs automatically.
+6. Reset to default with `service.reset(actor, pref)`.
+
+```ts
+import {
+  definePreference,
+  createPreferenceService,
+  createMemoryPreferenceAdapter,
+} from "@justwant/preference";
+
+const theme = definePreference({ name: "theme", default: "light" });
+
+const prefs = createPreferenceService({
+  preferences: [theme],
+  repo: createMemoryPreferenceAdapter(),
+});
+
+const actor = { type: "user", id: "u-1" };
+
+await prefs.set(actor, theme, "dark");
+const value = await prefs.get(actor, theme); // "dark"
+```
+
+## Next steps
+
+- [Installation](/docs/preference/installation)
+- [Basic Usage](/docs/preference/basic-usage)
+- [Adapters](/docs/preference/adapters)
+- [API Reference](/docs/preference/api)

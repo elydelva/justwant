@@ -10,13 +10,19 @@ Adapters implement the `CacheAdapter` interface. The core has no knowledge of an
 
 ```ts
 interface CacheAdapter {
-  get(key: string): Promise<CacheEntry | null>;
-  set(key: string, entry: CacheEntry): Promise<void>;
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, opts?: SetOptions): Promise<void>;
   delete(key: string): Promise<void>;
   has(key: string): Promise<boolean>;
-  clear(): Promise<void>;
+  getMany?(keys: string[]): Promise<Map<string, string | null>>;
+  setMany?(entries: Array<{ key: string; value: string; opts?: SetOptions }>): Promise<void>;
+  deleteMany?(keys: string[]): Promise<void>;
+  ttl?(key: string): Promise<number | null>;
+  expire?(key: string, ttl: TTL): Promise<void>;
+  persist?(key: string): Promise<void>;
   invalidateTag?(tag: string): Promise<void>;
-  keys?(prefix?: string): Promise<string[]>;
+  invalidateTags?(tags: string[]): Promise<void>;
+  getTagKeys?(tag: string): Promise<string[]>;
 }
 ```
 
@@ -44,14 +50,13 @@ interface CacheAdapter {
 Implement `CacheAdapter` to integrate any storage backend:
 
 ```ts
-import type { CacheAdapter, CacheEntry } from "@justwant/cache";
+import type { CacheAdapter } from "@justwant/cache";
 
 const myAdapter: CacheAdapter = {
   async get(key) { /* ... */ },
-  async set(key, entry) { /* ... */ },
+  async set(key, value, opts) { /* ... */ },
   async delete(key) { /* ... */ },
   async has(key) { /* ... */ },
-  async clear() { /* ... */ },
 };
 
 const cache = createCache({ adapter: myAdapter });

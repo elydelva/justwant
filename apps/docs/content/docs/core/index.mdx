@@ -1,0 +1,45 @@
+---
+title: Core
+description: Internal shared utilities for the @justwant ecosystem.
+icon: Package
+---
+
+## What is @justwant/core?
+
+`@justwant/core` is an **internal package** — it is not published for direct use in application code. It provides low-level shared utilities consumed by other `@justwant` packages, specifically `@justwant/db` and `@justwant/warehouse`.
+
+You do not need to install or import this package directly. If you are building an application, use the higher-level packages instead.
+
+## What it contains
+
+### `@justwant/core/db`
+
+SQL query-building utilities for Waddler-compatible SQL clients.
+
+| Export | Description |
+|--------|-------------|
+| `WaddlerSql` / `WaddlerQuery` | Interfaces for the Waddler SQL client and query object |
+| `StringMapping` / `ContractStringMapping` | Types mapping contract keys to column names |
+| `mapRowToContract` | Maps a DB row to a contract shape (null → undefined, ISO string → Date) |
+| `mapContractToRow` | Maps a contract row to DB column values for insert (Date → ISO string) |
+| `appendWhere` | Appends a parameterized `WHERE` clause to a Waddler query |
+| `appendOrderBy` | Appends an `ORDER BY` clause to a Waddler query |
+| `escapeIdentifier` | Escapes a SQL identifier with double quotes |
+| `escapeStringLiteral` | Escapes a SQL string literal with single quotes |
+| `toRows` | Normalizes a Waddler query result to a row array |
+| `parseExistResult` | Parses an `EXISTS`-style query result to a boolean |
+
+## For package authors
+
+If you are implementing a new `@justwant` adapter that targets a SQL backend, you can depend on `@justwant/core` and import from `@justwant/core/db` to reuse these primitives.
+
+```ts
+import {
+  mapRowToContract,
+  mapContractToRow,
+  appendWhere,
+  appendOrderBy,
+} from "@justwant/core/db";
+```
+
+All other consumers should use `@justwant/db` or `@justwant/warehouse` directly.

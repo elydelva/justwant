@@ -28,12 +28,16 @@ function createCache(options: CreateCacheOptions): CacheInstance
 | `pull` | `(key) → T \| null` | Get and delete |
 | `setNx` | `(key, value, opts?) → boolean` | Set if not exists |
 | `wrap` | `(key, fn, opts?) → T` | Cache-aside |
-| `getMany` | `(keys) → (T \| null)[]` | Batch get |
+| `getMany` | `(keys) → Map<string, T \| null>` | Batch get |
 | `setMany` | `(entries) → void` | Batch set |
 | `deleteMany` | `(keys) → void` | Batch delete |
-| `wrapMany` | `(keys, fetchMissing, opts?) → T[]` | Batch cache-aside |
+| `wrapMany` | `(keys, fetchMissing, opts?) → Map<string, T>` | Batch cache-aside |
+| `ttl` | `(key) → number \| null` | Get remaining TTL in ms |
+| `expire` | `(key, ttl) → void` | Update TTL for existing key |
+| `persist` | `(key) → void` | Remove TTL (make key permanent) |
 | `invalidateTag` | `(tag) → void` | Invalidate by tag |
 | `invalidateTags` | `(tags) → void` | Invalidate multiple tags |
+| `getTagKeys` | `(tag) → string[]` | Get all keys associated with a tag |
 | `namespace` | `(prefix, opts?) → CacheInstance` | Create sub-cache |
 | `stats?` | `() → CacheStats` | Stats (if statsPlugin) |
 
@@ -49,20 +53,27 @@ Converts a TTL string or number to milliseconds.
 
 ```ts
 interface CacheAdapter {
-  get(key: string): Promise<CacheEntry | null>;
-  set(key: string, entry: CacheEntry): Promise<void>;
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, opts?: SetOptions): Promise<void>;
   delete(key: string): Promise<void>;
   has(key: string): Promise<boolean>;
-  clear(): Promise<void>;
+  getMany?(keys: string[]): Promise<Map<string, string | null>>;
+  setMany?(entries: Array<{ key: string; value: string; opts?: SetOptions }>): Promise<void>;
+  deleteMany?(keys: string[]): Promise<void>;
+  ttl?(key: string): Promise<number | null>;
+  expire?(key: string, ttl: TTL): Promise<void>;
+  persist?(key: string): Promise<void>;
   invalidateTag?(tag: string): Promise<void>;
-  keys?(prefix?: string): Promise<string[]>;
+  invalidateTags?(tags: string[]): Promise<void>;
+  getTagKeys?(tag: string): Promise<string[]>;
 }
 ```
 
 ## TTL type
 
 ```ts
-type TTL = string | number;
-// string: "5m", "1h30m", "30s", "500ms", "7d"
-// number: milliseconds
+type TTL = string | number | Date;
+// string: "30s", "5m", "1h", "7d"
+// number: milliseconds from now
+// Date: absolute expiry time
 ```

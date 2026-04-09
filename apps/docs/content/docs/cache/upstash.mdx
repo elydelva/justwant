@@ -18,25 +18,26 @@ bun add @justwant/cache @upstash/redis
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@justwant/cache";
-import { createUpstashAdapter } from "@justwant/cache/adapters/upstash";
+import { upstashAdapter } from "@justwant/cache/adapters/upstash";
 import { Redis } from "@upstash/redis";
 
-const redis = new Redis({
+const redisClient = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
 export const cache = createCache({
-  adapter: createUpstashAdapter({ client: redis }),
+  adapter: upstashAdapter({ redis: redisClient }),
 });
 ```
 
 ## Options
 
 ```ts
-createUpstashAdapter({
-  client: Redis;          // @upstash/redis client (required)
-  prefix?: string;        // Key prefix applied to all entries
+upstashAdapter({
+  redis: UpstashRedisClient;  // @upstash/redis client (required)
+  keyPrefix?: string;         // Key prefix applied to all entries
+  tagPrefix?: string;         // Prefix for tag set keys (default: "tag:")
 })
 ```
 

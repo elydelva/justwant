@@ -22,24 +22,16 @@ No additional packages required.
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@justwant/cache";
-import { createMemoryAdapter } from "@justwant/cache/adapters/memory";
+import { memoryAdapter } from "@justwant/cache/adapters/memory";
 
 export const cache = createCache({
-  adapter: createMemoryAdapter(),
+  adapter: memoryAdapter(),
 });
 ```
 
 ## Options
 
-```ts
-createMemoryAdapter({
-  maxSize?: number;   // Maximum number of entries (LRU eviction)
-})
-```
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `maxSize` | `number` | Limit entries. Oldest entries evicted when limit is reached. |
+`memoryAdapter()` takes no options.
 
 ## Behavior
 

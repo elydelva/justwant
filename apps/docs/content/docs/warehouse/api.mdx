@@ -1,0 +1,311 @@
+---
+title: API Reference
+description: Full API reference for @justwant/warehouse — createWarehouse, WarehouseMappedTable, adapters, options, and errors.
+icon: BookOpen
+---
+
+## `createWarehouse(config)`
+
+Creates a `Warehouse` instance from a driver adapter config.
+
+```ts
+import { createWarehouse } from "@justwant/warehouse";
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+
+const warehouse = createWarehouse(createDuckDbAdapter({ path: ":memory:" }));
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `config` | `WarehouseConnectionConfig` | Returned by a driver factory (`createDuckDbAdapter`, `createClickHouseAdapter`) |
+
+Returns: `Warehouse`
+
+---
+
+## `Warehouse`
+
+The top-level warehouse object.
+
+```ts
+interface Warehouse {
+  readonly sql: WaddlerSql;
+  readonly dialect: WarehouseDialect;
+  readonly driver?: unknown;
+
+  table<T extends TableFields>(contract: TableContract<T>): WarehouseMappedTable<T>;
+  createTable(contract: TableContract<TableFields>): Promise<void>;
+  close?(): Promise<void>;
+}
+```
+
+### `.table(contract)`
+
+Maps a `@justwant/contract` table contract to a `WarehouseMappedTable`. The returned object exposes all table operations.
+
+```ts
+const eventsTable = warehouse.table(eventsContract);
+```
+
+### `.createTable(contract)`
+
+Issues a bare `CREATE TABLE` (without `IF NOT EXISTS`) for the given contract. Prefer `table.createTable()` on the mapped table, which uses `IF NOT EXISTS` by default.
+
+### `.close()`
+
+Releases the underlying driver connection. Optional — call during application shutdown.
+
+```ts
+await warehouse.close?.();
+```
+
+---
+
+## `WarehouseMappedTable<T>`
+
+Returned by `warehouse.table(contract)`. All methods are async.
+
+```ts
+interface WarehouseMappedTable<T extends TableFields> {
+  readonly contract: TableContract<T>;
+  createTable(): Promise<void>;
+  exist(): Promise<boolean>;
+  drop(): Promise<void>;
+  insert(rows: InferContract<TableContract<T>>[]): Promise<void>;
+  query(options?: QueryOptions<TableContract<T>>): Promise<InferContract<TableContract<T>>[]>;
+  aggregate<A>(options: AggregateOptions<T, A>): Promise<A[]>;
+}
+```
+
+### `.createTable()`
+
+Creates the table using `CREATE TABLE IF NOT EXISTS`. Safe to call on an existing table.
+
+```ts
+await eventsTable.createTable();
+```
+
+### `.exist()`
+
+Returns `true` if the table exists in the database, `false` otherwise.
+
+```ts
+const exists = await eventsTable.exist(); // boolean
+```
+
+### `.drop()`
+
+Drops the table with `DROP TABLE`.
+
+```ts
+await eventsTable.drop();
+```
+
+### `.insert(rows)`
+
+Batch-inserts an array of rows. Inserting an empty array is a no-op.
+
+```ts
+await eventsTable.insert([
+  { userId: "u_1", eventName: "page_view", value: null, createdAt: "2024-01-01T00:00:00Z" },
+  { userId: "u_2", eventName: "purchase", value: 49.99, createdAt: "2024-01-01T00:01:00Z" },
+]);
+```
+
+Row types are fully inferred from the contract.
+
+### `.query(options?)`
+
+Returns an array of typed rows. All options are optional.
+
+```ts
+const rows = await eventsTable.query({
+  where: { eventName: "purchase" },
+  orderBy: { createdAt: "desc" },
+  limit: 20,
+  offset: 0,
+});
+```
+
+### `.aggregate<A>(options)`
+
+Runs a `SELECT … FROM … [WHERE …] [GROUP BY …]` aggregation query. Returns an array typed to `A`.
+
+```ts
+const result = await eventsTable.aggregate<{ eventName: string; count: number }>({
+  groupBy: ["eventName"],
+  select: { count: "COUNT(*)" },
+});
+```
+
+---
+
+## `QueryOptions<T>`
+
+Options for `.query()`.
+
+```ts
+interface QueryOptions<T> {
+  where?: Partial<InferContract<T>>;
+  orderBy?: Record<string, "asc" | "desc">;
+  limit?: number;
+  offset?: number;
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `where` | `Partial<InferContract<T>>` | Equality filters. Fields with `undefined` values are ignored |
+| `orderBy` | `Record<string, "asc" \| "desc">` | Sort columns and direction |
+| `limit` | `number` | Maximum number of rows to return |
+| `offset` | `number` | Number of rows to skip before returning results |
+
+---
+
+## `AggregateOptions<T, A>`
+
+Options for `.aggregate()`.
+
+```ts
+interface AggregateOptions<T extends TableFields, A> {
+  groupBy?: (keyof T)[];
+  select: Record<string, string>;
+  where?: Partial<InferContract<T>>;
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `select` | `Record<string, string>` | Map of alias to SQL expression, e.g. `{ total: 'SUM("value")' }` |
+| `groupBy` | `(keyof T)[]` | Contract field keys to group by |
+| `where` | `Partial<InferContract<T>>` | Equality filters applied before grouping |
+
+---
+
+## `WarehouseConnectionConfig`
+
+Returned by driver factories. You can also construct it manually for custom setups.
+
+```ts
+interface WarehouseConnectionConfig {
+  sql: WaddlerSql;
+  dialect: WarehouseDialect;
+  driver?: unknown;
+  close?: () => Promise<void>;
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sql` | `WaddlerSql` | Waddler SQL client instance |
+| `dialect` | `WarehouseDialect` | `"clickhouse"` or `"duckdb"` |
+| `driver` | `unknown` | Raw underlying driver (optional) |
+| `close` | `() => Promise<void>` | Teardown function called by `warehouse.close()` |
+
+---
+
+## `createDuckDbAdapter(config)`
+
+Creates a `WarehouseConnectionConfig` for DuckDB.
+
+```ts
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+
+const config = createDuckDbAdapter({ path: ":memory:" });
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `path` | `string` | `":memory:"` | `:memory:` or a file path |
+| `client` | `unknown` | — | Existing DuckDB client |
+
+---
+
+## `createClickHouseAdapter(config)`
+
+Creates a `WarehouseConnectionConfig` for ClickHouse.
+
+```ts
+import { createClickHouseAdapter } from "@justwant/warehouse/clickhouse";
+
+const config = createClickHouseAdapter({ connection: "http://localhost:8123" });
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `connection` | `string` | `"http://localhost:8123"` | ClickHouse server URL |
+| `client` | `unknown` | — | Existing `@clickhouse/client` instance |
+
+---
+
+## `WarehouseDialect`
+
+```ts
+type WarehouseDialect = "clickhouse" | "duckdb";
+```
+
+---
+
+## Errors
+
+All errors thrown by warehouse operations extend `WarehouseError`.
+
+### `WarehouseError`
+
+Base class for all warehouse errors.
+
+```ts
+class WarehouseError extends Error {
+  readonly code: string;
+  readonly metadata?: Record<string, unknown>;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `string` | Short error code (e.g. `"CONNECTION"`, `"TIMEOUT"`, `"UNKNOWN"`) |
+| `metadata` | `Record<string, unknown>` | Optional additional context |
+
+### `WarehouseConnectionError`
+
+Thrown when the driver cannot reach the database (e.g. `ECONNREFUSED`, `ECONNRESET`).
+
+```ts
+import { WarehouseConnectionError } from "@justwant/warehouse";
+
+try {
+  await eventsTable.insert([...]);
+} catch (err) {
+  if (err instanceof WarehouseConnectionError) {
+    console.error("Cannot connect to warehouse:", err.message);
+  }
+}
+```
+
+`code` is always `"CONNECTION"`.
+
+### `WarehouseTimeoutError`
+
+Thrown when the connection times out (`ETIMEDOUT`).
+
+```ts
+import { WarehouseTimeoutError } from "@justwant/warehouse";
+
+try {
+  await eventsTable.query();
+} catch (err) {
+  if (err instanceof WarehouseTimeoutError) {
+    console.error("Warehouse query timed out:", err.message);
+  }
+}
+```
+
+`code` is always `"TIMEOUT"`.
+
+### Error hierarchy
+
+```
+WarehouseError (code: "UNKNOWN")
+├── WarehouseConnectionError (code: "CONNECTION")
+└── WarehouseTimeoutError (code: "TIMEOUT")
+```

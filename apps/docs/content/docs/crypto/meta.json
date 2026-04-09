@@ -13,6 +13,7 @@
     "encrypt",
     "hash",
     "derive-key",
+    "rotating-encryption",
     "---Reference---",
     "api"
   ]

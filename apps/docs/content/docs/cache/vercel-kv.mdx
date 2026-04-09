@@ -18,20 +18,20 @@ bun add @justwant/cache @vercel/kv
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@justwant/cache";
-import { createVercelKvAdapter } from "@justwant/cache/adapters/vercel-kv";
+import { vercelKvAdapter } from "@justwant/cache/adapters/vercel-kv";
 import { kv } from "@vercel/kv";
 
 export const cache = createCache({
-  adapter: createVercelKvAdapter({ client: kv }),
+  adapter: vercelKvAdapter({ kv }),
 });
 ```
 
 ## Options
 
 ```ts
-createVercelKvAdapter({
-  client: VercelKV;  // @vercel/kv client (required)
-  prefix?: string;   // Key prefix applied to all entries
+vercelKvAdapter({
+  kv: VercelKVClient;  // @vercel/kv client (required)
+  keyPrefix?: string;  // Key prefix applied to all entries
 })
 ```
 

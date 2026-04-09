@@ -1,0 +1,175 @@
+---
+title: Basic Usage
+description: defineValue, defineEnvironment, createConfigService, and reading config values.
+icon: Play
+---
+
+## defineValue
+
+`defineValue` declares how a single logical config key is resolved from a source. It accepts a `ValueDef` and returns it unchanged — its purpose is type safety and explicit declaration.
+
+A `ValueDef` links a source to a lookup descriptor:
+
+```ts
+import { defineValue, defineEnvSource } from "@justwant/config";
+
+const env = defineEnvSource();
+
+// Look up the key "DATABASE_URL" in process.env
+const databaseUrl = defineValue({ from: env, key: "DATABASE_URL" });
+
+// Look up a nested path in a JSON/object source
+const host = defineValue({ from: jsonSource, path: "database.host" });
+
+// Look up a path + optional field (for sources that support it)
+const secret = defineValue({ from: jsonSource, path: "auth", field: "secret" });
+```
+
+## Waterfall resolution
+
+Assign an **array** of `ValueDef` objects to a key. Sources are tried in order; the first non-undefined value wins:
+
+```ts
+import {
+  defineValue,
+  defineEnvSource,
+  defineJsonSource,
+} from "@justwant/config";
+
+const env = defineEnvSource();
+const json = defineJsonSource({ path: "config.json" });
+
+// env wins if APP_DATABASE_URL is set; falls back to JSON otherwise
+const databaseUrl = [
+  defineValue({ from: env, key: "APP_DATABASE_URL" }),
+  defineValue({ from: json, path: "database.url" }),
+];
+```
+
+## defineEnvironment
+
+`defineEnvironment` groups a sources map under a name. The sources map is a plain object where each key is a logical config key and each value is a `ValueDef` or `ValueDef[]`.
+
+```ts
+import { defineEnvironment, defineValue, defineEnvSource } from "@justwant/config";
+
+const env = defineEnvSource({ prefix: "APP_" });
+
+const production = defineEnvironment({
+  name: "production",
+  sources: {
+    databaseUrl: defineValue({ from: env, key: "DATABASE_URL" }),
+    port: defineValue({ from: env, key: "PORT" }),
+  },
+});
+```
+
+### Optional schema validation
+
+Pass a `schema` map to validate and transform values. Any Standard Schema-compatible library works (Zod, Valibot, ArkType, etc.):
+
+```ts
+import { z } from "zod";
+import { defineEnvironment, defineValue, defineEnvSource } from "@justwant/config";
+
+const env = defineEnvSource();
+
+const production = defineEnvironment({
+  name: "production",
+  sources: {
+    port: defineValue({ from: env, key: "PORT" }),
+  },
+  schema: {
+    port: z.coerce.number().min(1).max(65535),
+  },
+});
+```
+
+## createConfigService
+
+`createConfigService` takes one or more `EnvironmentDef` objects and returns a `ConfigApi`.
+
+```ts
+import { createConfigService } from "@justwant/config";
+
+export const config = createConfigService({
+  environments: [production, development],
+  defaultEnvironment: "production",    // optional — defaults to the first environment
+  validation: { onError: "throw" },    // optional — "throw" | "warn" | false
+});
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `environments` | `EnvironmentDef[]` | — | One or more environment definitions |
+| `defaultEnvironment` | `string` | First environment | Name of the active environment |
+| `validation.onError` | `"throw" \| "warn" \| false` | `"throw"` | What to do when schema validation fails |
+
+## get
+
+`get<T>(key)` resolves a config key and returns its value typed as `T`. Returns `undefined` (typed as `T`) if no source provides a value.
+
+```ts
+const dbUrl = await config.get<string>("databaseUrl");
+const port = await config.get<number>("port");
+```
+
+Provide a fallback as the second argument — returned when no source resolves the key:
+
+```ts
+const port = await config.get<number>("port", 3000);
+```
+
+## has
+
+`has(key)` returns `true` if at least one source resolves the key to a defined value:
+
+```ts
+const configured = await config.has("databaseUrl");
+// → true if DATABASE_URL is set
+```
+
+## Multiple environments
+
+Define different source strategies per environment and select the active one at startup:
+
+```ts title="lib/config.ts"
+import {
+  createConfigService,
+  defineEnvironment,
+  defineValue,
+  defineEnvSource,
+  defineJsonSource,
+} from "@justwant/config";
+
+const env = defineEnvSource();
+const localJson = defineJsonSource({ path: "config.local.json" });
+
+const production = defineEnvironment({
+  name: "production",
+  sources: {
+    databaseUrl: defineValue({ from: env, key: "DATABASE_URL" }),
+  },
+});
+
+const development = defineEnvironment({
+  name: "development",
+  sources: {
+    // Waterfall: env var first, JSON file as fallback
+    databaseUrl: [
+      defineValue({ from: env, key: "DATABASE_URL" }),
+      defineValue({ from: localJson, path: "databaseUrl" }),
+    ],
+  },
+});
+
+export const config = createConfigService({
+  environments: [production, development],
+  defaultEnvironment: process.env.NODE_ENV === "production" ? "production" : "development",
+});
+```
+
+## Next steps
+
+- [Sources](/docs/config/sources) — Available source types with examples
+- [API Reference](/docs/config/api) — Full type and function reference

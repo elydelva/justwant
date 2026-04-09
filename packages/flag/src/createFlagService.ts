@@ -3,7 +3,7 @@
  * Orchestrates repo for evaluate, getLatest, listConfigHistory, setConfigOverride, rollbackLastConfig.
  */
 
-import { FlagValidationError } from "./errors.js";
+import { FlagValidationError, RuleNotFoundError } from "./errors.js";
 import { evaluate as evaluateStandalone, resolveRuleId } from "./evaluate.js";
 import type {
   ConfigOverride,
@@ -48,6 +48,9 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
 
   async function getLatest(rule: RuleRef): Promise<ConfigOverride | null> {
     const ruleId = resolveRuleId(rule);
+    if (typeof rule === "string" && !ruleMap.has(ruleId)) {
+      throw new RuleNotFoundError(ruleId);
+    }
     const ruleDef = typeof rule === "string" ? ruleMap.get(ruleId) : rule;
 
     for (;;) {
@@ -108,6 +111,20 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
           configByRuleId[rule.name] = merged;
         }
       }
+      for (const rule of flag.rules) {
+        if (rule.context) {
+          const { valid, issues } = validateConfig(
+            rule.context as { "~standard"?: { validate: (v: unknown) => unknown } },
+            context
+          );
+          if (!valid) {
+            throw new FlagValidationError(
+              `Context validation failed for rule ${rule.name}: ${(issues ?? []).map((i) => i.message).join(", ")}`,
+              { ruleId: rule.name, issues }
+            );
+          }
+        }
+      }
       return evaluateStandalone(flag, { context, configByRuleId });
     },
 
@@ -129,6 +146,9 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
 
     async setConfigOverride(rule: RuleRef, config: unknown): Promise<ConfigOverride> {
       const ruleId = resolveRuleId(rule);
+      if (typeof rule === "string" && !ruleMap.has(ruleId)) {
+        throw new RuleNotFoundError(ruleId);
+      }
       const ruleDef = typeof rule === "string" ? ruleMap.get(ruleId) : rule;
 
       if (ruleDef?.config) {

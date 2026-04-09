@@ -1,0 +1,13 @@
+{
+  "title": "Cookie",
+  "icon": "Cookie",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Reference---",
+    "adapters",
+    "api"
+  ]
+}

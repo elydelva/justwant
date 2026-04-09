@@ -1,0 +1,180 @@
+---
+title: Basic Usage
+description: Define typed cookies, read and write values, and manage multiple cookies with a store.
+icon: Play
+---
+
+## defineCookie
+
+`defineCookie` creates a reusable typed cookie definition. Pass a name and an options object to attach a schema, default value, and mismatch behavior.
+
+```ts title="lib/cookies.ts"
+import { defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+// A simple string cookie (no schema)
+export const sessionCookie = defineCookie("session");
+
+// A typed cookie with schema validation
+export const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+  onMismatch: "fallback",
+});
+
+// A cookie holding a JSON object
+export const preferenceCookie = defineCookie("prefs", {
+  schema: z.object({
+    locale: z.string(),
+    timezone: z.string(),
+  }),
+  default: { locale: "en", timezone: "UTC" },
+  onMismatch: "remove",
+});
+```
+
+### Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `schema` | `CookieSchema<T>` | Standard Schema (Zod, Valibot, etc.) used to validate the raw cookie string |
+| `default` | `T` | Fallback value used when the cookie is absent or validation fails |
+| `onMismatch` | `"fallback" \| "remove"` | What to do when validation fails — use the default or use the default and delete the cookie |
+| `parser` | `(value: string \| undefined) => T` | Custom parser function, alternative to `schema` |
+
+### onMismatch behavior
+
+| Value | Behavior |
+|-------|----------|
+| `"fallback"` | Return `default` when the cookie value fails validation |
+| `"remove"` | Return `default` **and** delete the cookie from the adapter |
+
+When `default` is provided and `onMismatch` is not set, it defaults to `"fallback"`.
+
+## parseCookies
+
+Parse a raw `Cookie` header string into a plain object. Useful for server-side code that works with raw HTTP headers.
+
+```ts
+import { parseCookies } from "@justwant/cookie";
+
+const cookies = parseCookies("theme=dark; session=abc123");
+// { theme: "dark", session: "abc123" }
+```
+
+Values are URL-decoded automatically. If decoding fails, the raw string is returned.
+
+## setCookie and deleteCookie (primitive)
+
+The primitive `setCookie` and `deleteCookie` functions serialize cookie strings directly. Use these when you only need the `Set-Cookie` header value without an adapter.
+
+```ts
+import { setCookie, deleteCookie } from "@justwant/cookie";
+
+// Serialize a Set-Cookie header value
+const header = setCookie("theme", "dark", {
+  path: "/",
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax",
+  maxAge: 60 * 60 * 24 * 30, // 30 days
+});
+// "theme=dark; Path=/; HttpOnly; Secure; SameSite=lax; Max-Age=2592000"
+
+// Serialize a deletion (sets Max-Age=0)
+const deleteHeader = deleteCookie("theme", { path: "/" });
+// "theme=; Path=/; Max-Age=0"
+```
+
+## createCookieStore
+
+`createCookieStore` bundles multiple typed cookies into a single store. When an adapter is provided, `get()` and `set()` read from and write to the adapter directly.
+
+```ts title="lib/cookie-store.ts"
+import { createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+});
+
+const localeCookie = defineCookie("locale", {
+  schema: z.string().min(2).max(5),
+  default: "en",
+});
+
+export const cookieDefinitions = { theme: themeCookie, locale: localeCookie };
+```
+
+```ts title="app/route.ts"
+import { NextJSAdapter, createCookieStore } from "@justwant/cookie";
+import { cookies } from "next/headers";
+import { cookieDefinitions } from "@/lib/cookie-store";
+
+export async function GET() {
+  const adapter = NextJSAdapter(await cookies());
+  const store = createCookieStore(cookieDefinitions, { adapter });
+
+  // Read all cookies — fully typed
+  const { theme, locale } = store.get();
+  // theme: "light" | "dark"
+  // locale: string
+
+  // Write a single cookie
+  store.set("theme", "dark", { path: "/", httpOnly: true });
+
+  return new Response(JSON.stringify({ theme, locale }));
+}
+```
+
+### Parsing from a header string
+
+When no adapter is provided, use `store.parse(header)` to parse from a raw `Cookie` header:
+
+```ts
+import { createCookieStore } from "@justwant/cookie";
+import { cookieDefinitions } from "@/lib/cookie-store";
+
+const store = createCookieStore(cookieDefinitions);
+
+// Parse from a raw header string
+const values = store.parse("theme=dark; locale=fr");
+// { theme: "dark", locale: "fr" }
+```
+
+### Serializing cookies
+
+Use `store.serialize(name, value, options)` to produce a `Set-Cookie` header string without an adapter:
+
+```ts
+const header = store.serialize("theme", "dark", { path: "/", secure: true });
+// "theme=dark; Path=/; Secure"
+```
+
+### Pruning untracked cookies
+
+Set `pruneUntracked: true` to automatically delete cookies not in the store schema when `store.get()` is called. Requires an adapter.
+
+```ts
+const store = createCookieStore(cookieDefinitions, {
+  adapter,
+  pruneUntracked: true, // deletes using path: "/"
+  // or provide a scope:
+  // pruneUntracked: { path: "/", domain: "example.com" },
+});
+```
+
+## CookieOptions
+
+All write operations accept a `CookieOptions` object:
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `path` | `string` | Cookie path |
+| `domain` | `string` | Cookie domain |
+| `maxAge` | `number` | Max age in seconds |
+| `expires` | `Date` | Expiry date |
+| `httpOnly` | `boolean` | Restrict to HTTP only (no JS access) |
+| `secure` | `boolean` | HTTPS only |
+| `sameSite` | `"strict" \| "lax" \| "none"` | SameSite policy |

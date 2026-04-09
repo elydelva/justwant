@@ -6,7 +6,7 @@ icon: Timer
 
 ## Format
 
-TTL values can be expressed as either a **string** (human-readable shorthand) or a **number** (milliseconds).
+TTL values can be expressed as a **string** (human-readable shorthand), a **number** (milliseconds from now), or a **`Date`** (absolute expiry time).
 
 ### String format
 
@@ -16,20 +16,26 @@ await cache.set("key", value, { ttl: "5m" });
 
 | Unit | Suffix | Example |
 |------|--------|---------|
-| Milliseconds | `ms` | `"500ms"` |
 | Seconds | `s` | `"30s"` |
 | Minutes | `m` | `"5m"` |
 | Hours | `h` | `"1h"` |
 | Days | `d` | `"7d"` |
 
-Combinations are supported: `"1h30m"`, `"2d12h"`.
-
 ### Number format
 
-Pass the duration in **milliseconds**:
+Pass the duration in **milliseconds** from now:
 
 ```ts
 await cache.set("key", value, { ttl: 60_000 }); // 1 minute
+```
+
+### Date format
+
+Pass a `Date` to set an **absolute expiry time**:
+
+```ts
+const expiresAt = new Date("2025-12-31T23:59:59Z");
+await cache.set("key", value, { ttl: expiresAt });
 ```
 
 ## parseTtl
@@ -50,7 +56,7 @@ Set a default TTL at cache creation time. Individual `set` / `wrap` calls overri
 
 ```ts
 const cache = createCache({
-  adapter: createMemoryAdapter(),
+  adapter: memoryAdapter(),
   defaults: { ttl: "1h" },
 });
 

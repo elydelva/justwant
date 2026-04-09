@@ -121,7 +121,7 @@ Low-level factory. Use `createDb` with a driver factory for the common case.
 ```ts
 interface Db extends BaseAdapter {
   readonly sql: WaddlerSql;
-  readonly driver: unknown;
+  readonly driver?: unknown;
   createTable(contract: ContractWithTableName): Promise<void>;
   table(contract: ContractWithTableName, options?): WaddlerMappedTable;
   close?(): void | Promise<void>;

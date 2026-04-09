@@ -40,7 +40,7 @@ const plaintext = decrypt(ciphertext, key);
 
 ### `encryptWithPassword(plaintext, password, salt?)`
 
-Encrypts a string with a password. Derives the key using PBKDF2 internally. The random salt is included in the output.
+Encrypts a string with a password. Derives the key using HKDF-SHA256 internally (the same `deriveKey` function from `/derive-key`). The random salt is included in the output.
 
 ```ts
 const ciphertext = encryptWithPassword("sensitive data", "my-password");

@@ -57,6 +57,11 @@ const referral = createReferralService({
 Implement `ReferralPlugin` for custom hooks:
 
 ```ts
+interface ReferralPluginContext {
+  /** Reserved for future use — not currently implemented. */
+  setContext?(key: string, value: unknown): void;
+}
+
 interface ReferralPlugin {
   init?(context: ReferralPluginContext): void;
   beforeRefer?(

@@ -1,0 +1,159 @@
+---
+title: Validation
+description: Validate data against a contract with validateContractData, and verify structural conformity with conformsTo and assertTableConforms.
+icon: CheckCircle
+---
+
+## Two kinds of checking
+
+`@justwant/contract` provides two distinct checking mechanisms:
+
+| Mechanism | What it checks | When |
+|-----------|---------------|------|
+| **Data validation** | Field values match their schemas (UUID format, email, etc.) | At runtime, on user input or data ingress |
+| **Conformity checking** | A table implementation has all required fields of a contract | At compile time or runtime, when wiring adapters |
+
+## Data validation
+
+### validateContractData
+
+```ts
+import { validateContractData } from "@justwant/contract/validate";
+
+const result = validateContractData(data, contract.fields);
+
+if (result.ok) {
+  // result.value is the validated (and potentially transformed) data
+  console.log(result.value);
+} else {
+  // result.issues is an array of { path: string; message: string }
+  for (const issue of result.issues) {
+    console.error(`${issue.path}: ${issue.message}`);
+  }
+}
+```
+
+`validateContractData` only validates fields that have a `_schema` attached — i.e. semantic builders (`uuid`, `email`, `url`, etc.) or fields with `.schema(s)` applied. Primitive builders (`string`, `number`, `integer`, etc.) without a custom schema are passed through unchanged.
+
+### Partial validation
+
+Pass `{ keys: [...] }` to validate only a subset of fields. Useful for partial update payloads:
+
+```ts
+const result = validateContractData(
+  { email: "not-an-email" },
+  userContract.fields,
+  { keys: ["email"] }
+);
+```
+
+Keys present in `keys` but absent from `data` are silently skipped — they do not produce a validation error.
+
+### ContractValidationError
+
+Use `ContractValidationError` when you want to throw instead of returning a result:
+
+```ts
+import { validateContractData, ContractValidationError } from "@justwant/contract/validate";
+
+function validateOrThrow<T extends Record<string, unknown>>(
+  data: T,
+  contract: AnyContract
+): T {
+  const result = validateContractData(data, contract);
+  if (!result.ok) {
+    throw new ContractValidationError(result.issues);
+  }
+  return result.value;
+}
+```
+
+`ContractValidationError` formats all issues into its message: `"email: Invalid email; id: Invalid UUID"`.
+
+### Full example
+
+```ts title="api/createUser.ts"
+import { defineContract } from "@justwant/contract";
+import { uuid, email, string, date } from "@justwant/contract/fields";
+import { validateContractData, ContractValidationError } from "@justwant/contract/validate";
+import type { InferContract } from "@justwant/contract";
+
+const userContract = defineContract("users", {
+  id:    uuid().primaryKey().required(),
+  email: email().required(),
+  name:  string().required(),
+  createdAt: date().required(),
+});
+
+type User = InferContract<typeof userContract>;
+
+async function createUser(input: unknown): Promise<User> {
+  const result = validateContractData(
+    input as Record<string, unknown>,
+    userContract.fields
+  );
+
+  if (!result.ok) {
+    throw new ContractValidationError(result.issues);
+  }
+
+  // result.value is typed as the original input type, validated
+  return result.value as User;
+}
+```
+
+## Conformity checking
+
+Conformity checks verify that a table implementation (e.g. a `MappedTable` from `@justwant/db`) contains all the fields required by a contract. This is useful when you write a library that accepts any table and needs to guarantee a minimum interface.
+
+### conformsTo (compile-time)
+
+`conformsTo` is a compile-time assertion. If the table's contract does not satisfy the expected contract, TypeScript reports a type error. There is no runtime behavior.
+
+```ts
+import { conformsTo } from "@justwant/contract/conforms";
+import { usersTable } from "@/tables/users";
+import { userContract } from "@/contracts/user";
+
+// Compile error if usersTable.contract is missing required fields from userContract:
+conformsTo(usersTable, userContract);
+```
+
+### assertTableConforms (runtime)
+
+`assertTableConforms` performs the same check at runtime and throws `ContractConformityError` if any required field is missing or incorrectly marked as optional.
+
+```ts
+import { assertTableConforms } from "@justwant/contract/conforms";
+import { ContractConformityError } from "@justwant/contract/conforms";
+
+try {
+  assertTableConforms(someTable, userContract);
+} catch (err) {
+  if (err instanceof ContractConformityError) {
+    console.error("Missing fields:", err.missing);
+  }
+}
+```
+
+### tableConforms (runtime + cast)
+
+`tableConforms` combines the runtime check with a type cast. It returns the table typed as `ConformableTable & { contract: T["fields"] }`, giving you type-safe access to contract fields after the check.
+
+```ts
+import { tableConforms } from "@justwant/contract/conforms";
+
+const typedTable = tableConforms(someTable, userContract);
+// typedTable.contract is now typed as the fields of userContract
+```
+
+## ValidationIssue type
+
+```ts
+interface ValidationIssue {
+  path: string;   // field key, or empty string for root-level issues
+  message: string;
+}
+```
+
+Issues returned by `validateContractData` and stored on `ContractValidationError` always follow this shape.

@@ -1,0 +1,305 @@
+---
+title: Storages
+description: Available vector storage backends — pgvector, sqlite-vec, Cloudflare Vectorize, and an in-memory test adapter.
+icon: Database
+---
+
+A `VectorStorage` stores vectors and provides k-nearest-neighbor search. All storages expose `capability: "similarity-search"` and implement the same interface:
+
+```ts
+interface VectorStorage {
+  readonly capability: "similarity-search";
+  upsert(indexId, vectors): Promise<void>;
+  query(indexId, vector, options?): Promise<Array<{ id, score, metadata? }>>;
+  delete?(indexId, ids): Promise<void>;
+}
+```
+
+`createEmbeddingService` validates `capability` at creation time and throws `InvalidStorageError` if it is missing or incorrect.
+
+---
+
+## pgvector
+
+Uses [pgvector](https://github.com/pgvector/pgvector) — the PostgreSQL extension for vector similarity search. The adapter accepts any `pg`-compatible client (`Client`, `Pool`, `PoolClient`).
+
+### Installation
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add pg pgvector
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install pg pgvector
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add pg pgvector
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add pg pgvector
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+### Table schema
+
+Create the table before using the adapter. The `pgvector` extension must be enabled.
+
+```sql title="migrations/001_embeddings.sql"
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE embeddings (
+  id         TEXT        NOT NULL,
+  index_id   TEXT        NOT NULL,
+  embedding  vector(1536) NOT NULL,
+  metadata   JSONB,
+  PRIMARY KEY (id, index_id)
+);
+
+-- Optional: index for faster ANN search
+CREATE INDEX ON embeddings USING hnsw (embedding vector_cosine_ops);
+```
+
+Adjust the dimension (`1536`) to match your engine.
+
+### Usage
+
+```ts
+import { pgvectorStorageAdapter } from "@justwant/embedding/storages/pgvector";
+import { Pool } from "pg";
+
+const storage = pgvectorStorageAdapter({
+  db: new Pool({ connectionString: process.env.DATABASE_URL }),
+  tableName: "embeddings",
+  dimension: 1536,
+});
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `db` | `PgVectorClient` | Yes | `pg` Client, Pool, or any object with a `query()` method |
+| `tableName` | `string` | Yes | Table name |
+| `dimension` | `number` | Yes | Vector dimension — validated on upsert |
+| `indexIdColumn` | `string` | No | Column for the universe id. Default: `"index_id"` |
+| `formatVector` | `(v: number[]) => string` | No | Custom vector serialization. Default uses `pgvector/pg` if available |
+
+### Notes
+
+- Scores are computed as `1 - cosine_distance` (range 0–1, higher is more similar).
+- Metadata filtering is performed in PostgreSQL using exact metadata matches.
+- The adapter uses `ON CONFLICT (id, index_id) DO UPDATE` — calling `upsertFrom` twice with the same id overwrites the vector and metadata.
+
+---
+
+## sqlite-vec
+
+Uses [sqlite-vec](https://github.com/asg017/sqlite-vec) — a SQLite extension for vector search via `vec0` virtual tables.
+
+### Installation
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+### Table schema
+
+Create the `vec0` virtual table and load the extension before using the adapter.
+
+```ts title="lib/db.ts"
+import Database from "better-sqlite3";
+import * as sqliteVec from "sqlite-vec";
+
+export const db = new Database("app.db");
+sqliteVec.load(db);
+
+// Create the vec0 table for each universe
+db.exec(`
+  CREATE VIRTUAL TABLE IF NOT EXISTS vec_articles USING vec0(
+    id TEXT PRIMARY KEY,
+    index_id TEXT PARTITION KEY,
+    embedding FLOAT[1536],
+    +metadata TEXT
+  )
+`);
+```
+
+Adjust the dimension (`1536`) and table name to match your setup.
+
+### Usage
+
+```ts
+import { sqliteVectorStorageAdapter } from "@justwant/embedding/storages/sqlite-vec";
+
+const storage = sqliteVectorStorageAdapter({
+  db,
+  tableName: "vec_articles",
+  dimension: 1536,
+});
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `db` | `SqliteDatabase` | Yes | better-sqlite3 (or compatible) database instance with sqlite-vec loaded |
+| `tableName` | `string` | Yes | `vec0` virtual table name |
+| `dimension` | `number` | Yes | Vector dimension — validated on upsert |
+| `indexIdColumn` | `string` | No | Column for the universe id. Default: `"index_id"` |
+
+### Notes
+
+- Vectors are stored as `Float32Array`.
+- Scores are computed as `1 - distance` (cosine distance).
+- Metadata is stored as a JSON string in the `+metadata` auxiliary column.
+- Metadata filtering is performed in application code after the `MATCH` query; for large datasets, prefer pgvector with indexed metadata.
+
+---
+
+## Cloudflare Vectorize
+
+Uses [Cloudflare Vectorize](https://developers.cloudflare.com/vectorize/) — the managed vector database available in Cloudflare Workers via a binding.
+
+No additional npm dependencies — the binding is provided by the Workers runtime.
+
+### wrangler.toml
+
+```toml title="wrangler.toml"
+[[vectorize]]
+binding = "VECTORIZE_ARTICLES"
+index_name = "articles"
+```
+
+Create the index with Wrangler before deploying:
+
+```bash
+bunx wrangler vectorize create articles --dimensions=768 --metric=cosine
+```
+
+### Usage
+
+```ts
+import { vectorizeStorageAdapter } from "@justwant/embedding/storages/vectorize";
+
+const storage = vectorizeStorageAdapter({
+  vectorize: env.VECTORIZE_ARTICLES,
+  dimension: 768,
+});
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `vectorize` | `VectorizeIndex` | Yes | Vectorize index binding (`env.VECTORIZE_*`) |
+| `dimension` | `number` | Yes | Vector dimension — validated on upsert |
+
+### Notes
+
+- Vectorize has one index per binding — the `universeId` is not passed to the API (it is ignored). Use one binding per universe.
+- Metadata values must be `string`, `number`, or `boolean`. Complex values (arrays, objects) are automatically serialized to JSON strings.
+- `deleteByIds` is called if present on the binding; otherwise `delete` is a no-op.
+
+---
+
+## In-memory (test only)
+
+`testVectorStorageAdapter` is an in-memory vector store for unit tests. It computes cosine similarity in process. It is **not suitable for production** — data is not persisted between runs.
+
+```ts
+import { testVectorStorageAdapter } from "@justwant/embedding/storages/memory";
+
+const storage = testVectorStorageAdapter({ dimension: 1536 });
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `dimension` | `number` | Yes | Expected vector dimension — validated on upsert |
+
+---
+
+## Custom storage
+
+Implement `VectorStorage` to integrate any other backend:
+
+```ts
+import type { VectorStorage } from "@justwant/embedding";
+import { EMBEDDING_CAPABILITY } from "@justwant/embedding";
+
+export function myCustomStorage(): VectorStorage {
+  return {
+    capability: EMBEDDING_CAPABILITY,
+
+    async upsert(indexId, vectors) {
+      // store vectors
+    },
+
+    async query(indexId, vector, options) {
+      // return Array<{ id, score, metadata? }>
+    },
+
+    async delete(indexId, ids) {
+      // optional — remove vectors by id
+    },
+  };
+}
+```
+
+Pass the result to `createEmbeddingService({ storage: myCustomStorage(), ... })`.

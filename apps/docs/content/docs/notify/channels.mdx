@@ -12,21 +12,25 @@ The `canalId` used in `notify.send({ canalId })` must match a key in the `canals
 
 ## Available channels
 
+These channels are provided out-of-the-box with ready-made helper functions:
+
 | Channel | Kind | Import | Provider |
 |---------|------|--------|---------|
 | Email | `"email"` | `@justwant/notify/channels/email/resend` | Resend |
 | SMS | `"sms"` | `@justwant/notify/channels/sms/twilio` | Twilio |
 | Console | `"console"` | `@justwant/notify/channels/console` | Stdout |
 
+`webhook` and `slack` are **not** provided out-of-the-box. The types (`WebhookMessage`, `SlackMessage`, `WebhookCanal`, `SlackCanal`) and template factory keys exist, but there are no `createWebhookCanal()` or `createSlackCanal()` helpers. You must implement your own canal using `createCanal()` — see [Custom canal](#custom-canal) below.
+
 ## Channel kinds and message types
 
-| Kind | Message type | Key fields |
-|------|-------------|------------|
-| `email` | `EmailMessage` | `to`, `subject`, `html` |
-| `sms` | `SmsMessage` | `to`, `body` |
-| `console` | `ConsoleMessage` | `level`, `text` |
-| `webhook` | `WebhookMessage` | `url`, `body` |
-| `slack` | `SlackMessage` | `text`, `blocks` |
+| Kind | Message type | Key fields | Out-of-the-box |
+|------|-------------|------------|----------------|
+| `email` | `EmailMessage` | `to`, `subject`, `html` | Yes |
+| `sms` | `SmsMessage` | `to`, `body` | Yes |
+| `console` | `ConsoleMessage` | `level`, `text` | Yes |
+| `webhook` | `WebhookMessage` | `url`, `body` | No — implement via `createCanal()` |
+| `slack` | `SlackMessage` | `text`, `blocks` | No — implement via `createCanal()` |
 
 ## Registering multiple canals
 
@@ -49,12 +53,15 @@ await notify.send({ templateId: "welcome", canalId: "sms", args });
 
 ## Custom canal
 
-You can implement your own canal using `createCanal` from the main entry:
+Since `webhook` and `slack` have no built-in helpers, implement them with `createCanal()` from the main entry. Pass `kind` and an `adapter` object that implements `send(message)`.
+
+**Webhook example:**
 
 ```ts
 import { createCanal } from "@justwant/notify";
+import type { WebhookCanal } from "@justwant/notify";
 
-const myWebhookCanal = createCanal({
+const webhookCanal: WebhookCanal = createCanal({
   kind: "webhook",
   adapter: {
     async send(message) {
@@ -64,6 +71,39 @@ const myWebhookCanal = createCanal({
         body: JSON.stringify(message.body),
       });
     },
+  },
+}) as WebhookCanal;
+```
+
+**Slack example:**
+
+```ts
+import { createCanal } from "@justwant/notify";
+import type { SlackCanal } from "@justwant/notify";
+
+const slackCanal: SlackCanal = createCanal({
+  kind: "slack",
+  adapter: {
+    async send(message) {
+      await fetch("https://hooks.slack.com/services/YOUR/WEBHOOK/URL", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: message.text, blocks: message.blocks }),
+      });
+    },
+  },
+}) as SlackCanal;
+```
+
+Register these canals the same way as any other:
+
+```ts
+const notify = createNotify({
+  templates: [...],
+  canals: {
+    email: emailCanal,
+    webhook: webhookCanal,
+    slack: slackCanal,
   },
 });
 ```

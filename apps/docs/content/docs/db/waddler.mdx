@@ -164,6 +164,14 @@ db.defineTable("users", userContract, mapping, {
 });
 ```
 
+## Transactions
+
+<Callout type="warn">
+  The Waddler adapter does **not** implement `transaction()`. The method is declared as optional in the `Db` interface but is never assigned by `createWaddlerAdapter`, so calling `db.transaction()` will throw a `TypeError: db.transaction is not a function` at runtime.
+
+  If you need transaction support, use the [Drizzle](/docs/db/drizzle) or [Prisma](/docs/db/prisma) adapters, both of which implement `transaction()`.
+</Callout>
+
 ## Available sub-drivers
 
 | Import | Driver | Database |

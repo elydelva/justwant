@@ -39,7 +39,7 @@ acquire(owner: LockOwner, lockable: Lockable, count?: number): Promise<boolean>
 Tries to acquire `count` units (default `1`). Returns `true` on success, `false` if `count` exceeds available capacity.
 
 - If the owner already holds units for this lockable, the count is incremented.
-- Expired lock records are cleaned up on acquire.
+- Expired records are **excluded from the capacity count** but are not proactively deleted. The one exception: if the acquiring owner has their own expired record, that record is deleted and replaced with a fresh one. Other owners' expired records remain in the database — they simply do not consume capacity.
 
 ```ts
 // Acquire 1 unit (default)

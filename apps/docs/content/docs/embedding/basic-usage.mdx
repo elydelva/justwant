@@ -1,0 +1,215 @@
+---
+title: Basic Usage
+description: defineEmbeddable, defineUniverse, upsertFrom, similar, and delete.
+icon: Play
+---
+
+## defineEmbeddable
+
+`defineEmbeddable<T>` declares how an object type is reduced to embeddable text. It controls what text gets sent to the embedding engine and which fields are stored as metadata alongside the vector.
+
+```ts
+import { defineEmbeddable } from "@justwant/embedding";
+
+type Article = {
+  id: string;
+  title: string;
+  body: string;
+  authorId: string;
+  publishedAt: string;
+};
+
+const articleEmbeddable = defineEmbeddable<Article>({
+  // Field on the item that holds the unique id
+  idField: "id",
+  // Reduce the item to a single string for embedding
+  toText: (article) => `${article.title}\n\n${article.body}`,
+  // Optional: fields to persist as metadata in the vector index
+  metadataFields: ["title", "authorId", "publishedAt"],
+});
+```
+
+The `toText` function should return a meaningful textual representation. Richer text generally produces better similarity results.
+
+## defineUniverse
+
+`defineUniverse<T>` creates a named logical index for a specific object type. The `id` is used to route `upsertFrom`, `similar`, and `delete` calls to the correct index in storage.
+
+```ts
+import { defineUniverse } from "@justwant/embedding";
+
+const articles = defineUniverse<Article>({
+  id: "articles",       // logical index id — used in all service calls
+  dimension: 1536,      // must match the engine and storage configuration
+  embeddable: articleEmbeddable,
+});
+```
+
+You can define multiple universes for different object types and pass them all to `createEmbeddingService`.
+
+```ts
+const users = defineUniverse<User>({
+  id: "users",
+  dimension: 1536,
+  embeddable: userEmbeddable,
+});
+```
+
+## createEmbeddingService
+
+Wire everything together with `createEmbeddingService`. It validates that the storage has the `"similarity-search"` capability at creation time.
+
+```ts title="lib/embedding.ts"
+import { createEmbeddingService } from "@justwant/embedding";
+
+export const embedding = createEmbeddingService({
+  engine,    // EmbeddingEngine — text → vector
+  storage,   // VectorStorage — upsert / query / delete
+  universes: [articles, users],
+});
+```
+
+## upsertFrom
+
+`upsertFrom(universeId, item)` embeds an item and stores it:
+
+1. Calls `embeddable.toText(item)` to produce text.
+2. Calls `engine.embed(text)` to produce a vector.
+3. Calls `storage.upsert(universeId, [{ id, vector, metadata }])`.
+
+```ts
+await embedding.upsertFrom("articles", {
+  id: "article-1",
+  title: "Getting started with vector search",
+  body: "Vector search enables semantic similarity...",
+  authorId: "user-42",
+  publishedAt: "2024-01-15",
+});
+```
+
+Calling `upsertFrom` again with the same `id` will overwrite the stored vector (upsert semantics).
+
+## similar
+
+`similar(universeId, options)` runs a k-nearest-neighbor search. You can search by text (the service embeds it first) or by a pre-computed vector.
+
+### Search by text
+
+```ts
+const results = await embedding.similar("articles", {
+  text: "how to implement semantic search",
+  topK: 5,
+});
+
+// results: Array<{ id: string; score: number; metadata?: Record<string, unknown> }>
+for (const result of results) {
+  console.log(result.id, result.score, result.metadata?.title);
+}
+```
+
+### Search by vector
+
+Pass a pre-computed vector when you already have one, to avoid an extra embedding call:
+
+```ts
+const queryVector = await embedding.embed("how to implement semantic search");
+
+const results = await embedding.similar("articles", {
+  vector: queryVector,
+  topK: 10,
+});
+```
+
+### Filter by metadata
+
+Narrow results by metadata fields that were included in `metadataFields`:
+
+```ts
+const results = await embedding.similar("articles", {
+  text: "vector databases",
+  topK: 5,
+  filter: { authorId: "user-42" },
+});
+```
+
+Metadata filter support depends on the storage backend. See [Storages](/docs/embedding/storages) for details.
+
+## delete
+
+`delete(universeId, ids)` removes vectors by id. If the storage does not implement `delete`, the call is a no-op.
+
+```ts
+await embedding.delete("articles", ["article-1", "article-2"]);
+```
+
+## embed
+
+`embed(text)` delegates directly to the engine. Use it when you need a vector outside of a universe context.
+
+```ts
+const vector = await embedding.embed("semantic search concepts");
+// → number[]
+```
+
+An optional `model` override is forwarded to engines that support per-call model selection:
+
+```ts
+const vector = await embedding.embed("text", { model: "text-embedding-3-large" });
+```
+
+## Full example
+
+```ts title="lib/embedding.ts"
+import { createEmbeddingService, defineEmbeddable, defineUniverse } from "@justwant/embedding";
+import { openAiEmbeddingEngine } from "@justwant/embedding/engines/openai";
+import { pgvectorStorageAdapter } from "@justwant/embedding/storages/pgvector";
+import OpenAI from "openai";
+import { Pool } from "pg";
+
+type Article = { id: string; title: string; body: string; authorId: string };
+
+const articleEmbeddable = defineEmbeddable<Article>({
+  idField: "id",
+  toText: (a) => `${a.title}\n\n${a.body}`,
+  metadataFields: ["title", "authorId"],
+});
+
+const articles = defineUniverse<Article>({
+  id: "articles",
+  dimension: 1536,
+  embeddable: articleEmbeddable,
+});
+
+export const embedding = createEmbeddingService({
+  engine: openAiEmbeddingEngine({
+    client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
+    model: "text-embedding-3-small",
+  }),
+  storage: pgvectorStorageAdapter({
+    db: new Pool({ connectionString: process.env.DATABASE_URL }),
+    tableName: "embeddings",
+    dimension: 1536,
+  }),
+  universes: [articles],
+});
+```
+
+```ts title="routes/search.ts"
+import { embedding } from "@/lib/embedding";
+
+// Upsert an article when it's created or updated
+await embedding.upsertFrom("articles", article);
+
+// Search for similar articles
+const results = await embedding.similar("articles", {
+  text: query,
+  topK: 10,
+  filter: { authorId: currentUser.id },
+});
+```
+
+## Next steps
+
+- [Engines](/docs/embedding/engines) — OpenAI, Cloudflare AI
+- [Storages](/docs/embedding/storages) — pgvector, sqlite-vec, Vectorize
+- [API Reference](/docs/embedding/api) — Full type reference

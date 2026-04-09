@@ -1,0 +1,130 @@
+---
+title: Basic Usage
+description: defineActor, actorKey, toRepo, fromRepo, and parseActorKey with real examples.
+icon: Play
+---
+
+## Define a simple actor
+
+A simple actor is identified by a single string id.
+
+```ts title="lib/actors.ts"
+import { defineActor } from "@justwant/actor";
+
+export const userActor = defineActor({ name: "user" });
+
+const user = userActor("user_123");
+// { type: "user", id: "user_123" }
+```
+
+## Define a scoped actor (within)
+
+When an actor always operates inside another entity, pass `within` with the container's type name. The factory then requires `(withinId, id)`.
+
+```ts title="lib/actors.ts"
+import { defineActor } from "@justwant/actor";
+
+export const memberActor = defineActor({ name: "member", within: "org" });
+
+const member = memberActor("org_789", "mbr_456");
+// {
+//   type: "member",
+//   id: "mbr_456",
+//   within: { type: "org", id: "org_789" }
+// }
+```
+
+## Compose with `from`
+
+`from` delegates to an existing `IdentityLike` definition — useful when two domains share the same identity.
+
+```ts title="lib/actors.ts"
+import { defineActor } from "@justwant/actor";
+
+const userActor = defineActor({ name: "user" });
+
+// "adminActor" reuses the "user" identity type
+const adminActor = defineActor({ from: userActor });
+
+const admin = adminActor("user_123");
+// { type: "user", id: "user_123" }
+```
+
+## Serialize with `actorKey`
+
+`actorKey` turns any `Actor` into a stable, human-readable string. Use it for cache keys, audit logs, or error messages.
+
+```ts title="lib/actorKey.ts"
+import { actorKey } from "@justwant/actor";
+import { userActor, memberActor } from "./actors";
+
+const user = userActor("user_123");
+actorKey(user);
+// "user:user_123"
+
+const member = memberActor("org_789", "mbr_456");
+actorKey(member);
+// "member:mbr_456:org:org_789"
+```
+
+## Persist with `toRepo`
+
+`toRepo` flattens an actor to a database-friendly object with named columns. When `within.type === "org"`, it also sets `actorOrgId` for backwards compatibility with the waitlist and lock packages.
+
+```ts title="lib/persistence.ts"
+import { toRepo } from "@justwant/actor";
+import { memberActor } from "./actors";
+
+const member = memberActor("org_789", "mbr_456");
+
+toRepo(member);
+// {
+//   actorType: "member",
+//   actorId: "mbr_456",
+//   actorWithinType: "org",
+//   actorWithinId: "org_789",
+//   actorOrgId: "org_789"   ← set automatically when withinType is "org"
+// }
+```
+
+## Reconstruct with `fromRepo`
+
+`fromRepo` rebuilds an `Actor` from a stored row. It prefers `actorWithinType`/`actorWithinId`; if those are absent, it falls back to `actorOrgId` and infers `within: { type: "org", ... }`.
+
+```ts
+import { fromRepo } from "@justwant/actor";
+
+const actor = fromRepo({
+  actorType: "member",
+  actorId: "mbr_456",
+  actorWithinType: "org",
+  actorWithinId: "org_789",
+});
+// { type: "member", id: "mbr_456", within: { type: "org", id: "org_789" } }
+
+// Legacy fallback via actorOrgId
+const legacy = fromRepo({
+  actorType: "member",
+  actorId: "mbr_456",
+  actorOrgId: "org_789",
+});
+// { type: "member", id: "mbr_456", within: { type: "org", id: "org_789" } }
+```
+
+## Parse a key string
+
+`parseActorKey` is the inverse of `actorKey`. It accepts 2-part (`type:id`) or 4-part (`type:id:withinType:withinId`) keys, and throws a descriptive error for anything else.
+
+```ts
+import { parseActorKey } from "@justwant/actor";
+
+parseActorKey("user:user_123");
+// { type: "user", id: "user_123" }
+
+parseActorKey("member:mbr_456:org:org_789");
+// { type: "member", id: "mbr_456", within: { type: "org", id: "org_789" } }
+```
+
+## Next steps
+
+- [API Reference](/docs/actor/api) — Every export, type, and option in detail

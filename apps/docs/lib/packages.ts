@@ -15,7 +15,18 @@ export type PackageKey =
   | "waitlist"
   | "referral"
   | "env"
-  | "id";
+  | "id"
+  | "meta"
+  | "actor"
+  | "feature"
+  | "bezier"
+  | "context"
+  | "config"
+  | "cookie"
+  | "contract"
+  | "preference"
+  | "embedding"
+  | "warehouse";
 
 export type PackageCategory =
   | "Foundation"
@@ -31,9 +42,51 @@ export const PACKAGES: {
   category: PackageCategory;
 }[] = [
   {
+    key: "meta",
+    label: "@justwant/meta",
+    description: "Foundation interfaces — Inspectable, Definable, RefLike",
+    category: "Foundation",
+  },
+  {
     key: "id",
     label: "@justwant/id",
     description: "Sortable and short ID generation",
+    category: "Foundation",
+  },
+  {
+    key: "actor",
+    label: "@justwant/actor",
+    description: "Canonical actor identity with scoping and serialization",
+    category: "Foundation",
+  },
+  {
+    key: "feature",
+    label: "@justwant/feature",
+    description: "Lightweight feature identity primitive",
+    category: "Foundation",
+  },
+  {
+    key: "bezier",
+    label: "@justwant/bezier",
+    description: "Cubic Bézier curves for easing and rollout diffusion",
+    category: "Foundation",
+  },
+  {
+    key: "context",
+    label: "@justwant/context",
+    description: "Explicit request context propagation with typed slots",
+    category: "Foundation",
+  },
+  {
+    key: "config",
+    label: "@justwant/config",
+    description: "Multi-source config service with waterfall resolution",
+    category: "Foundation",
+  },
+  {
+    key: "cookie",
+    label: "@justwant/cookie",
+    description: "Typed cookies with schema validation and framework adapters",
     category: "Foundation",
   },
   {
@@ -49,6 +102,12 @@ export const PACKAGES: {
     category: "Foundation",
   },
   {
+    key: "contract",
+    label: "@justwant/contract",
+    description: "Table contracts with typed fields and column mapping",
+    category: "Data",
+  },
+  {
     key: "db",
     label: "@justwant/db",
     description: "ORM-agnostic data access layer",
@@ -58,6 +117,18 @@ export const PACKAGES: {
     key: "cache",
     label: "@justwant/cache",
     description: "Key-value cache with adapters and plugins",
+    category: "Data",
+  },
+  {
+    key: "embedding",
+    label: "@justwant/embedding",
+    description: "Vector embeddings and similarity search with engine/storage abstraction",
+    category: "Data",
+  },
+  {
+    key: "warehouse",
+    label: "@justwant/warehouse",
+    description: "OLAP data access layer for ClickHouse and DuckDB",
     category: "Data",
   },
   {
@@ -94,6 +165,12 @@ export const PACKAGES: {
     key: "flag",
     label: "@justwant/flag",
     description: "Feature flags with typed rules and rollout",
+    category: "Product",
+  },
+  {
+    key: "preference",
+    label: "@justwant/preference",
+    description: "Typed user preferences with schema validation",
     category: "Product",
   },
   {

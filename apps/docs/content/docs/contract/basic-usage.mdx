@@ -1,0 +1,148 @@
+---
+title: Basic Usage
+description: Define a table contract with field builders, infer the TypeScript entity type, and use the contract with @justwant/db.
+icon: Play
+---
+
+## Overview
+
+A contract has three parts:
+
+1. **Table name** — the physical name of the database table
+2. **Fields** — a record of named field definitions built with field builder functions
+3. **Options** — optional column mapping rules
+
+## Defining a contract
+
+```ts title="contracts/user.ts"
+import { defineContract } from "@justwant/contract";
+import { uuid, string, email, boolean, date } from "@justwant/contract/fields";
+
+export const userContract = defineContract("users", {
+  id: uuid().primaryKey().required(),
+  email: email().required(),
+  name: string().required(),
+  isActive: boolean().required().default("1"),
+  createdAt: date().required(),
+  updatedAt: date().required(),
+  deletedAt: date().optional(),
+});
+```
+
+`defineContract` returns a `TableContract` object with three properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `tableName` | `string` | The physical table name passed as the first argument |
+| `fields` | `TableFields` | The field definitions record |
+| `mapping` | `StringMapping` | Contract key → column name map (computed from options) |
+
+## Column mapping
+
+By default every field maps to a column with the same name. Two mechanisms let you override this.
+
+### Automatic camelCase → snake_case
+
+Pass `{ defaultMapping: "camelToSnake" }` to convert every camelCase key automatically:
+
+```ts title="contracts/post.ts"
+import { defineContract } from "@justwant/contract";
+import { uuid, string, date } from "@justwant/contract/fields";
+
+export const postContract = defineContract("posts", {
+  id: uuid().primaryKey().required(),
+  authorId: uuid().required(),    // → author_id
+  publishedAt: date().optional(), // → published_at
+  createdAt: date().required(),   // → created_at
+}, { defaultMapping: "camelToSnake" });
+```
+
+### Per-field overrides
+
+Use `mapping` to override specific keys while leaving others unchanged:
+
+```ts title="contracts/session.ts"
+import { defineContract } from "@justwant/contract";
+import { uuid, string, date } from "@justwant/contract/fields";
+
+export const sessionContract = defineContract("sessions", {
+  id: uuid().primaryKey().required(),
+  userId: uuid().required(),
+  token: string().required(),
+  expiresAt: date().required(),
+}, {
+  defaultMapping: "camelToSnake",
+  mapping: {
+    token: { name: "session_token" }, // override for this key only
+  },
+});
+```
+
+The `mapping` overrides take precedence over `defaultMapping`.
+
+## TypeScript inference
+
+`InferContract<T>` (or the shorter alias `Infer<T>`) produces the entity type from a contract. Required fields become required properties; optional fields become optional.
+
+```ts title="contracts/user.ts"
+import { defineContract } from "@justwant/contract";
+import { uuid, string, email, date } from "@justwant/contract/fields";
+import type { InferContract } from "@justwant/contract";
+
+export const userContract = defineContract("users", {
+  id: uuid().primaryKey().required(),
+  email: email().required(),
+  name: string().required(),
+  createdAt: date().required(),
+  updatedAt: date().required(),
+  deletedAt: date().optional(),
+});
+
+// Inferred type:
+// {
+//   id: string;
+//   email: string;
+//   name: string;
+//   createdAt: Date;
+//   updatedAt: Date;
+//   deletedAt?: Date;
+// }
+export type User = InferContract<typeof userContract>;
+```
+
+`Infer` is identical to `InferContract` — use whichever reads better:
+
+```ts
+import type { Infer } from "@justwant/contract";
+type User = Infer<typeof userContract>;
+```
+
+## Accessing the mapping
+
+The computed mapping is available on the returned contract and can be inspected at runtime:
+
+```ts
+console.log(postContract.mapping);
+// {
+//   id:          { name: "id" },
+//   authorId:    { name: "author_id" },
+//   publishedAt: { name: "published_at" },
+//   createdAt:   { name: "created_at" },
+// }
+```
+
+Adapters in `@justwant/db` read this mapping automatically — you do not need to pass it manually.
+
+## Sharing contracts across packages
+
+Contracts are plain objects with no external dependencies at runtime. Define them in a shared internal package (e.g. `packages/contracts`) and import from there in your API, database layer, and tests.
+
+```ts title="packages/contracts/src/user.ts"
+export { userContract } from "./contracts/user.js";
+export type { User } from "./contracts/user.js";
+```
+
+## Next steps
+
+- [Fields](/docs/contract/fields) — All field builders and chainable methods
+- [Validation](/docs/contract/validation) — Validate data against a contract

@@ -28,9 +28,10 @@ env.NODE_ENV     // "development" | "production" | "test"
 By default, missing or invalid variables cause `createEnv` to throw an `EnvironmentError`:
 
 ```
-EnvironmentError: 2 environment variable(s) are invalid:
-  - DATABASE_URL: Invalid url
-  - SECRET_KEY: Required
+EnvironmentError: 2 invalid environment variable(s)
+
+  DATABASE_URL   → Invalid url
+  SECRET_KEY   → Required
 ```
 
 To change the error behavior:
@@ -225,3 +226,5 @@ const env = createEnv({
 JSON.stringify(env.toJSON());
 // sensitive keys are replaced with "[redacted]"
 ```
+
+**Note**: Redaction only checks top-level keys. If you use `groups`, the key checked is the group name (e.g. `"db"`), not the nested property name (e.g. `"password"`). A pattern matching `"password"` will **not** redact `db.password` — only the entire `db` group would be redacted if `"db"` matched. To redact sensitive nested properties, either define them as top-level `vars` or match the group name instead.

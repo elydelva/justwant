@@ -57,27 +57,28 @@ const set = await cache.setNx("lock:resource", "owner-id", { ttl: "30s" });
 ## Batch operations
 
 ```ts
-// Get multiple keys at once
+// Get multiple keys at once — returns Map<string, T | null>
 const values = await cache.getMany(["user:1", "user:2", "user:3"]);
+// → Map { "user:1" => { name: "Alice" }, "user:2" => null, ... }
 
 // Set multiple entries
 await cache.setMany([
-  { key: "a", value: 1, options: { ttl: "1m" } },
-  { key: "b", value: 2, options: { ttl: "1m" } },
+  { key: "a", value: 1, opts: { ttl: "1m" } },
+  { key: "b", value: 2, opts: { ttl: "1m" } },
 ]);
 
 // Delete multiple keys
 await cache.deleteMany(["a", "b"]);
 
-// wrap for multiple keys (fetches only misses)
+// wrap for multiple keys (fetches only misses) — returns Map<string, T>
 const results = await cache.wrapMany(
   ["user:1", "user:2"],
   async (missingKeys) => {
-    const users = await db.users.findMany(missingKeys.map((k) => k.split(":")[1]));
-    return users.map((u) => ({ key: `user:${u.id}`, value: u }));
+    return db.users.findMany(missingKeys.map((k) => k.split(":")[1]));
   },
-  { ttl: "5m" }
+  { ttl: "5m", keyFn: (u) => `user:${u.id}` }
 );
+// → Map { "user:1" => { id: 1, name: "Alice" }, "user:2" => { id: 2, ... } }
 ```
 
 ## Namespace
@@ -111,7 +112,7 @@ Configure a default TTL when creating the cache:
 
 ```ts
 const cache = createCache({
-  adapter: createMemoryAdapter(),
+  adapter: memoryAdapter(),
   defaults: { ttl: "1h" },
 });
 ```
@@ -122,7 +123,7 @@ Control behavior when an adapter operation fails:
 
 ```ts
 const cache = createCache({
-  adapter: createRedisAdapter({ client: redis }),
+  adapter: redisAdapter({ redis: redisClient }),
   onError: "silent", // "throw" | "silent" | "fallback"
 });
 ```

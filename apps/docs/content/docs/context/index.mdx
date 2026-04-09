@@ -1,0 +1,45 @@
+---
+title: Introduction
+description: Explicit, typed context propagation for TypeScript — no AsyncLocalStorage, runs anywhere.
+icon: Layers
+---
+
+## What is @justwant/context?
+
+`@justwant/context` is a **typed context propagation library** for TypeScript applications. It lets you define named, typed context slots and resolve them once per request — without relying on `AsyncLocalStorage` or any runtime-specific globals.
+
+**Use it when** you need to:
+- Propagate request-scoped values (user, tenant, database connection) through a call stack explicitly
+- Share resolved dependencies across multiple handlers without re-resolving them
+- Write code that runs identically on Node.js, Edge runtimes, Bun, and Deno
+- Avoid the pitfalls of implicit global state
+
+## Key concept: explicit propagation
+
+Most context systems use `AsyncLocalStorage` (Node.js) or similar runtime primitives to store context implicitly. This ties your code to a specific runtime and makes the data flow invisible.
+
+`@justwant/context` takes the opposite approach: a `RequestContext` is a plain object that you **pass explicitly** to any function that needs it. This makes dependencies clear and your code portable.
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Typed slots** | `defineSlot<T>` binds a key, scope, and resolver to a specific TypeScript type |
+| **Memoized resolution** | Each slot is resolved at most once per `RequestContext` — subsequent `get()` calls return the cached promise |
+| **Three scopes** | `eager` / `request` resolve at `forRequest()`, `on-demand` resolves lazily at first `get()` |
+| **No runtime globals** | No `AsyncLocalStorage`, no `cls-hooked`, no framework coupling |
+| **Error hierarchy** | `ContextError` → `SlotNotFoundError`, `ResolutionError` for structured error handling |
+
+## How it works
+
+1. **Define slots** — Each slot has a unique key, a scope, and an async resolver function.
+2. **Create a service** — `createContextService({ slots })` holds all slot definitions.
+3. **Fork per request** — Call `service.forRequest(initial)` at the entry point of each request. Eager slots start resolving immediately.
+4. **Consume** — Pass the `RequestContext` down and call `ctx.get(slot)` wherever the value is needed.
+
+## Next steps
+
+- [Installation](/docs/context/installation) — Install and wire up
+- [Basic Usage](/docs/context/basic-usage) — Define a slot and resolve it
+- [Scopes](/docs/context/scopes) — Understand `eager`, `request`, and `on-demand` scopes
+- [API Reference](/docs/context/api) — Full API documentation

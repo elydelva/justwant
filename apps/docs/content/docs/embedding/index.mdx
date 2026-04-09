@@ -1,0 +1,50 @@
+---
+title: Introduction
+description: Engine + storage abstraction for vector embeddings and semantic similarity search.
+icon: Brain
+---
+
+## What is @justwant/embedding?
+
+`@justwant/embedding` is a **headless vector embedding layer** for TypeScript applications. It provides a unified API for producing embeddings and running similarity searches, regardless of which embedding model or vector database you use.
+
+**Use it when** you need to:
+- Add semantic similarity search to any object type
+- Swap embedding models (OpenAI, Cloudflare AI) or vector databases (pgvector, sqlite-vec, Vectorize) without changing application code
+- Build recommendation systems, semantic search, or RAG pipelines
+- Keep embedding logic decoupled from storage concerns
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Engine abstraction** | Swap embedding models — OpenAI, Cloudflare Workers AI, or custom |
+| **Storage abstraction** | Swap vector backends — pgvector, sqlite-vec, Cloudflare Vectorize, or in-memory |
+| **Universes** | Named logical indexes, each typed to a specific object shape |
+| **`defineEmbeddable`** | Declare how an object type is reduced to embeddable text and metadata |
+| **`upsertFrom`** | Embed an object and store its vector in one call |
+| **`similar`** | k-NN search by text or pre-computed vector, with optional metadata filtering |
+| **Type-safe** | Full generics through `defineEmbeddable<T>` and `defineUniverse<T>` |
+
+## How it works
+
+1. **Define embeddables** with `defineEmbeddable<T>({ idField, toText, metadataFields? })` — tells the service how to extract an id, produce text, and which fields to persist as metadata.
+2. **Define universes** with `defineUniverse<T>({ id, dimension, embeddable })` — a named logical index scoped to a single object type.
+3. **Create the service** with `createEmbeddingService({ engine, storage, universes })` — wires together the engine, storage, and all universes.
+4. **Embed and store** with `service.upsertFrom(universeId, item)` — calls `toText`, embeds, and upserts into storage.
+5. **Search** with `service.similar(universeId, { text?, vector?, topK?, filter? })` — returns ranked results with scores and optional metadata.
+
+## Core principles
+
+- **Pure core** — No knowledge of any specific provider. Engines and storages are injected interfaces.
+- **Interface-first** — Core defines `EmbeddingEngine` and `VectorStorage`; adapters implement them.
+- **Zero vendor lock-in** — Swap any component without touching business logic.
+- **Framework-agnostic** — Works in Bun, Node.js, Deno, Edge, and Cloudflare Workers.
+
+## Next steps
+
+- [Installation](/docs/embedding/installation) — Install and set up your first service
+- [Basic Usage](/docs/embedding/basic-usage) — defineEmbeddable, defineUniverse, upsertFrom, similar
+- [Engines](/docs/embedding/engines) — Available embedding engines
+- [Storages](/docs/embedding/storages) — Available vector storage backends
+- [API Reference](/docs/embedding/api) — Full type and function reference

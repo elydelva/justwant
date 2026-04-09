@@ -1,0 +1,95 @@
+---
+title: Introduction
+description: Foundation interfaces shared across the entire @justwant ecosystem — zero dependencies, structural typing.
+icon: Blocks
+---
+
+## What is @justwant/meta?
+
+`@justwant/meta` is the **shared type foundation** of the `@justwant` ecosystem. It exports three structural interfaces that every `define*` factory function in the ecosystem satisfies.
+
+There are no runtime exports and no dependencies — it is a pure TypeScript types package.
+
+**Use it when** you need to:
+- Accept any `@justwant` factory function generically
+- Write utilities that work across multiple `define*` functions
+- Describe entity references (`{ type, id }`) in a portable way
+
+## Interfaces
+
+### `Inspectable<N>`
+
+Anything with a stable literal name — used for introspection and debugging.
+
+```ts
+interface Inspectable<N extends string = string> {
+  readonly name: N;
+}
+```
+
+| Member | Type | Description |
+|--------|------|-------------|
+| `name` | `N` | A stable literal string identifying this object |
+
+---
+
+### `Definable<K>`
+
+A callable factory function that constructs typed entity references. All `define*` functions in the ecosystem satisfy this interface structurally.
+
+```ts
+interface Definable<K extends string = string> extends Inspectable<K> {
+  (id: string): { type: K; id: string };
+}
+```
+
+Extends `Inspectable<K>`, so a `Definable` also carries a `.name` property equal to the entity type key.
+
+| Signature | Description |
+|-----------|-------------|
+| `(id: string)` | Returns a `RefLike<K>` for the given id |
+| `.name` | The type key (e.g. `"user"`, `"flag"`) |
+
+---
+
+### `RefLike<T>`
+
+A universal entity reference. The canonical shape returned by every `define*` call.
+
+```ts
+interface RefLike<T extends string = string> {
+  type: T;
+  id: string;
+}
+```
+
+| Member | Type | Description |
+|--------|------|-------------|
+| `type` | `T` | The entity type key |
+| `id` | `string` | The entity identifier |
+
+## Structural typing
+
+None of these interfaces need to be explicitly imported by implementers. Any object that matches the shape satisfies the interface. This keeps consumer packages free of a hard dependency on `@justwant/meta`.
+
+```ts
+// A custom define* function automatically satisfies Definable<"widget">
+function defineWidget(id: string) {
+  return { type: "widget" as const, id };
+}
+defineWidget.name = "widget" as const;
+
+// Assignable to Definable<"widget"> without an import
+```
+
+## Usage
+
+```ts
+import type { Definable, RefLike } from "@justwant/meta";
+
+// Accept any define* function generically
+function describe<K extends string>(factory: Definable<K>, id: string): string {
+  const ref: RefLike<K> = factory(id);
+  return `${ref.type}:${ref.id}`;
+}
+```

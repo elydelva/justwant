@@ -17,6 +17,17 @@ export const waitlist = defineDocs({ dir: "content/docs/waitlist" });
 export const referral = defineDocs({ dir: "content/docs/referral" });
 export const env = defineDocs({ dir: "content/docs/env" });
 export const id = defineDocs({ dir: "content/docs/id" });
+export const meta = defineDocs({ dir: "content/docs/meta" });
+export const actor = defineDocs({ dir: "content/docs/actor" });
+export const feature = defineDocs({ dir: "content/docs/feature" });
+export const bezier = defineDocs({ dir: "content/docs/bezier" });
+export const context = defineDocs({ dir: "content/docs/context" });
+export const config = defineDocs({ dir: "content/docs/config" });
+export const cookie = defineDocs({ dir: "content/docs/cookie" });
+export const contract = defineDocs({ dir: "content/docs/contract" });
+export const preference = defineDocs({ dir: "content/docs/preference" });
+export const embedding = defineDocs({ dir: "content/docs/embedding" });
+export const warehouse = defineDocs({ dir: "content/docs/warehouse" });
 
 export default defineConfig({
   mdxOptions: {

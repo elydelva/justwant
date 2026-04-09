@@ -41,14 +41,16 @@ const resource = billing(); // key: "billing"
 const user = defineLockable({ name: "user", singular: false });
 const resource = user("user-42"); // key: "user:user-42"
 
-// Plural — record param
+// Plural — record param (keys sorted alphabetically for determinism)
 const item = defineLockable({ name: "item", singular: false });
-const resource = item({ tenantId: "t1", itemId: "i99" }); // key: "item:tenantId=t1,itemId=i99"
+const resource = item({ tenantId: "t1", itemId: "i99" }); // key: "item:itemId:i99:tenantId:t1"
 
 // With prefix
 const order = defineLockable({ name: "order", singular: false, prefix: "shop" });
 const resource = order("order-7"); // key: "shop:order:order-7"
 ```
+
+**Record params — key ordering**: When a record is passed, its keys are always sorted alphabetically before serialization. This means `{ b: "2", a: "1" }` and `{ a: "1", b: "2" }` produce the identical key regardless of insertion order, guaranteeing determinism across calls.
 
 **Important**: Calling a singular lockable with params, or calling a plural lockable without params, throws `LockableParamsError`.
 

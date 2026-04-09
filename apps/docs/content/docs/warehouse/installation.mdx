@@ -1,0 +1,173 @@
+---
+title: Installation
+description: Install @justwant/warehouse and the peer dependencies for ClickHouse or DuckDB.
+icon: Download
+---
+
+## Install the core
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/warehouse
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/warehouse
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/warehouse
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/warehouse
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+Then install the peer dependencies for your dialect.
+
+<CodeBlockTabs defaultValue="duckdb">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="duckdb">DuckDB</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="clickhouse">ClickHouse</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="duckdb">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add waddler @duckdb/node-api
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install waddler @duckdb/node-api
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add waddler @duckdb/node-api
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add waddler @duckdb/node-api
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+  <CodeBlockTab value="clickhouse">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add waddler @clickhouse/client
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install waddler @clickhouse/client
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add waddler @clickhouse/client
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add waddler @clickhouse/client
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Quick setup
+
+### DuckDB (in-memory)
+
+```ts title="warehouse.ts"
+import { createWarehouse } from "@justwant/warehouse";
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+
+export const warehouse = createWarehouse(
+  createDuckDbAdapter({ path: ":memory:" })
+);
+```
+
+### DuckDB (file)
+
+```ts title="warehouse.ts"
+import { createWarehouse } from "@justwant/warehouse";
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+
+export const warehouse = createWarehouse(
+  createDuckDbAdapter({ path: "./analytics.duckdb" })
+);
+```
+
+### ClickHouse
+
+```ts title="warehouse.ts"
+import { createWarehouse } from "@justwant/warehouse";
+import { createClickHouseAdapter } from "@justwant/warehouse/clickhouse";
+
+export const warehouse = createWarehouse(
+  createClickHouseAdapter({ connection: "http://localhost:8123" })
+);
+```
+
+## Next steps
+
+- [Basic Usage](/docs/warehouse/basic-usage) — Insert, query, and aggregate data
+- [Dialects](/docs/warehouse/dialects) — Detailed driver options for each dialect

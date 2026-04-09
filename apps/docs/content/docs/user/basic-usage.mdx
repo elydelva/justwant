@@ -77,7 +77,7 @@ export const users = createUserService({ repo: memoryUsersRepo });
 
 ```ts
 const user = await users.create({ email: "ada@example.com", name: "Ada" });
-// throws DuplicateEmailError if email already exists
+// throws DuplicateEmailError if email is provided and already exists
 ```
 
 ### Find

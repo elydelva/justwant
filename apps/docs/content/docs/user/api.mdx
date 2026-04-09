@@ -75,7 +75,7 @@ Returns all users matching `where`. Pass `{}` to list all.
 create(data: CreateInput<User>): Promise<User>
 ```
 
-Persists a new user. Throws `DuplicateEmailError` if the email is already taken.
+Persists a new user. Throws `DuplicateEmailError` if `email` is provided in `data` and is already taken. If `email` is omitted, no duplicate check is performed.
 
 `CreateInput<User>` = `{ email: string; name?: string }`.
 

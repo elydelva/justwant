@@ -1,0 +1,46 @@
+---
+title: Introduction
+description: Type-safe cookies with schema validation and framework-agnostic adapters.
+icon: Cookie
+---
+
+## What is @justwant/cookie?
+
+`@justwant/cookie` is a **typed cookie library** for TypeScript applications. It provides a single, consistent API for reading and writing cookies with schema validation — regardless of the framework or runtime you use.
+
+**Use it when** you need to:
+- Read and write cookies with full TypeScript type inference
+- Validate cookie values against a schema (Zod, Valibot, or any Standard Schema)
+- Swap cookie backends (browser, Next.js, fetch Request/Response, plain headers) without changing application code
+- Manage multiple cookies together as a typed store
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Typed cookies** | Define cookies once with `defineCookie`, get full TypeScript inference |
+| **Schema validation** | Use any Standard Schema (Zod, Valibot, etc.) to validate values |
+| **Fallbacks** | Configure default values and `onMismatch` behavior |
+| **Cookie store** | Group multiple cookies into a single typed store |
+| **Adapter pattern** | Swap the underlying cookie source — browser, Next.js, fetch, headers |
+| **Framework-agnostic** | Works in the browser, Node.js, Bun, Deno, Edge, and Workers |
+
+## How it works
+
+1. **Define a cookie** with `defineCookie(name, options)`. Attach a schema and default value.
+2. **Create an adapter** for your environment — `DocumentAdapter`, `NextJSAdapter`, `RequestResponseAdapter`, or `HeaderAdapter`.
+3. **Read and write** using `setCookie` / `deleteCookie`, or bundle everything into a `createCookieStore`.
+
+## Core principles
+
+- **Zero dependencies** — The core has no runtime dependencies. Adapters are thin wrappers.
+- **Standard Schema** — Validation uses the `~standard` interface, compatible with Zod, Valibot, and more.
+- **Interface-first** — Core defines `CookieAdapter`; adapters implement it.
+- **Framework-agnostic** — Works anywhere cookies exist: browser `document.cookie`, HTTP headers, Next.js, or the Web Fetch API.
+
+## Next steps
+
+- [Installation](/docs/cookie/installation) — Install and set up your first typed cookie
+- [Basic Usage](/docs/cookie/basic-usage) — defineCookie, setCookie, deleteCookie, createCookieStore
+- [Adapters](/docs/cookie/adapters) — Choose the right adapter for your framework
+- [API Reference](/docs/cookie/api) — Full API documentation

@@ -37,7 +37,7 @@ To avoid throwing on adapter failures, set `onError` at cache creation time:
 
 ```ts
 const cache = createCache({
-  adapter: createRedisAdapter({ client: redis }),
+  adapter: redisAdapter({ redis: redisClient }),
   onError: "silent", // Return null instead of throwing
 });
 ```

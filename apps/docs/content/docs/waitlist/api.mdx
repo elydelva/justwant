@@ -197,6 +197,22 @@ interface WaitlistEntry {
 }
 ```
 
+### FindManyOptions
+
+```ts
+interface FindManyOptions {
+  orderBy?: { field: keyof WaitlistEntry; direction: "asc" | "desc" };
+  limit?: number;
+  offset?: number;
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `orderBy` | `{ field: keyof WaitlistEntry, direction: "asc" \| "desc" }` (optional) | Sort field and direction |
+| `limit` | `number` (optional) | Maximum number of results to return |
+| `offset` | `number` (optional) | Number of results to skip |
+
 ### WaitlistRepository
 
 ```ts

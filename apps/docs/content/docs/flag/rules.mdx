@@ -64,6 +64,10 @@ const percentageRule = defineRule({
 
 TypeScript infers `config` as `{ threshold: number }` and `context` as `{ userId: string; orgId?: string }` inside `logic` — no manual casting needed.
 
+## Schema validation limitation
+
+Async schema validators (those whose `validate()` method returns a `Promise`) are **not supported**. If an async validator is provided for `config` or `context`, validation will always fail with the message `"Async validation not supported"`. Use synchronous validators (e.g., `valibot`, `zod`, `arktype`) for config and context schemas.
+
 ## Async logic
 
 The `logic` function may return a `Promise<boolean>`:

@@ -1,0 +1,121 @@
+---
+title: Adapters
+description: In-memory adapter for development and tests; DB adapter for production.
+icon: Server
+---
+
+Both adapters implement the `PreferenceRepository` interface, so you can swap them without changing any application code.
+
+## In-memory adapter
+
+`createMemoryPreferenceAdapter` stores entries in a plain JavaScript array. It is designed for **unit tests and local development** — data does not survive process restarts.
+
+```ts
+import { createMemoryPreferenceAdapter } from "@justwant/preference";
+
+const repo = createMemoryPreferenceAdapter();
+```
+
+The adapter supports the full `PreferenceRepository` interface including `orderBy`, `limit`, and `offset` on `findMany` (applied in memory after filtering).
+
+### Use in tests
+
+```ts title="prefs.test.ts"
+import { test, expect } from "bun:test";
+import {
+  definePreference,
+  createPreferenceService,
+  createMemoryPreferenceAdapter,
+} from "@justwant/preference";
+
+const volume = definePreference({ name: "volume", default: 50 });
+
+test("set and get a preference", async () => {
+  const prefs = createPreferenceService({
+    preferences: [volume],
+    repo: createMemoryPreferenceAdapter(),
+  });
+
+  const actor = { type: "user", id: "u-test" };
+
+  await prefs.set(actor, volume, 80);
+  expect(await prefs.get(actor, volume)).toBe(80);
+});
+
+test("reset returns default", async () => {
+  const prefs = createPreferenceService({
+    preferences: [volume],
+    repo: createMemoryPreferenceAdapter(),
+  });
+
+  const actor = { type: "user", id: "u-test" };
+
+  await prefs.set(actor, volume, 80);
+  await prefs.reset(actor, volume);
+  expect(await prefs.get(actor, volume)).toBe(50);
+});
+```
+
+Each test instantiates a fresh adapter, so tests are fully isolated.
+
+## DB adapter
+
+`createPreferenceDbAdapter` wraps a table object that is compatible with the `@justwant/db` `MappedTable` interface. Use this in production.
+
+```ts
+import { createPreferenceDbAdapter } from "@justwant/preference";
+```
+
+### Required table interface
+
+The table object must satisfy `PreferenceTable`:
+
+```ts
+interface PreferenceTable {
+  create(data: Omit<PreferenceEntry, "id" | "createdAt" | "updatedAt"> & {
+    createdAt?: Date;
+    updatedAt?: Date;
+  }): Promise<PreferenceEntry>;
+  findOne(where: Partial<PreferenceEntry>): Promise<PreferenceEntry | null>;
+  findMany(where: Partial<PreferenceEntry>): Promise<PreferenceEntry[]>;
+  update(id: string, data: Partial<PreferenceEntry>): Promise<PreferenceEntry>;
+  delete(id: string): Promise<void>;
+}
+```
+
+Any `@justwant/db` `MappedTable` for the `preferences` table satisfies this interface automatically.
+
+### Setup with @justwant/db
+
+```ts title="lib/prefs.ts"
+import { createPreferenceService, createPreferenceDbAdapter } from "@justwant/preference";
+import { db } from "./db.ts"; // your @justwant/db instance
+import { theme, pageSize, emailNotifications } from "./preferences.ts";
+
+export const prefs = createPreferenceService({
+  preferences: [theme, pageSize, emailNotifications],
+  repo: createPreferenceDbAdapter({ table: db.table("preferences") }),
+});
+```
+
+### Notes on findMany ordering
+
+The `PreferenceTable.findMany` method does not accept `orderBy`, `limit`, or `offset`. When the service needs those options, the DB adapter fetches all matching rows from the table and sorts or paginates them in memory. For typical preference workloads (a handful of rows per actor) this is not a concern.
+
+## Bring your own adapter
+
+You can implement `PreferenceRepository` directly against any storage backend — Redis, a REST API, a flat file — as long as it satisfies the interface.
+
+```ts title="lib/redis-adapter.ts"
+import type { PreferenceRepository } from "@justwant/preference";
+
+export function createRedisPreferenceAdapter(client: RedisClient): PreferenceRepository {
+  return {
+    async create(data) { /* ... */ },
+    async findOne(where) { /* ... */ },
+    async findMany(where, opts) { /* ... */ },
+    async update(id, data) { /* ... */ },
+    async delete(id) { /* ... */ },
+  };
+}
+```

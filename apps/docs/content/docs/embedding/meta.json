@@ -1,0 +1,15 @@
+{
+  "title": "Embedding",
+  "icon": "Brain",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Backends---",
+    "engines",
+    "storages",
+    "---Reference---",
+    "api"
+  ]
+}

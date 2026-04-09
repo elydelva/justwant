@@ -1,0 +1,51 @@
+---
+title: Introduction
+description: Driver-agnostic table contracts. Define the shape of your data once and share it across @justwant/db, @justwant/warehouse, and any adapter.
+icon: Table
+---
+
+## What is @justwant/contract?
+
+`@justwant/contract` is the **structural schema layer** of the `@justwant` ecosystem. It lets you describe a database table — field names, types, constraints, and column mappings — as a plain TypeScript object. That description is called a **contract**.
+
+Contracts are the single source of truth for your data shape. They carry no database driver code, no ORM dependency, and no runtime overhead beyond the objects themselves.
+
+**Use it when** you need to:
+- Define a canonical data shape shared between your app, your database layer, and your tests
+- Validate incoming data against field-level rules (UUID format, email, URL, etc.)
+- Check at compile time or runtime that a table implementation matches an expected interface
+- Swap database backends without rewriting your data definitions
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Driver-agnostic** | No ORM or database driver dependency |
+| **Field builders** | `uuid()`, `string()`, `email()`, `url()`, `integer()`, and more |
+| **Column mapping** | Automatic camelCase → snake_case or explicit per-field overrides |
+| **Standard Schema** | Validation via any [Standard Schema](https://standardschema.dev) compatible library |
+| **TypeScript inference** | `InferContract<T>` produces the entity type from the contract |
+| **Conformity checks** | Compile-time and runtime assertions that a table satisfies a contract |
+
+## Packages that consume contracts
+
+| Package | How it uses contracts |
+|---------|----------------------|
+| `@justwant/db` | Binds a contract to an ORM table; drives CRUD operations and mapping |
+| `@justwant/warehouse` | Uses contracts to generate DDL and manage migrations |
+
+## How it works
+
+1. **Define a contract** — `defineContract(tableName, fields, options?)` returns a `TableContract` with field definitions and a column mapping.
+2. **Use field builders** — `uuid()`, `string()`, `email()`, etc. describe each column's type and constraints.
+3. **Infer the entity type** — `InferContract<typeof myContract>` gives you a fully typed TypeScript interface.
+4. **Validate data** — `validateContractData(data, contract.fields)` checks field values against their schemas.
+5. **Assert conformity** — `conformsTo(table, contract)` ensures a table implementation has all required fields.
+
+## Next steps
+
+- [Installation](/docs/contract/installation) — Install the package
+- [Basic Usage](/docs/contract/basic-usage) — Define your first contract
+- [Fields](/docs/contract/fields) — Field builders and their options
+- [Validation](/docs/contract/validation) — Validate data and check conformity
+- [API Reference](/docs/contract/api) — Complete type and function reference
