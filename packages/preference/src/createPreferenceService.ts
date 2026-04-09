@@ -72,7 +72,7 @@ export function createPreferenceService(
       return result;
     },
 
-    async get<T>(actor: Actor, pref: PreferenceDef<T>): Promise<T | undefined> {
+    async get<T>(actor: Actor, pref: PreferenceDef<string, T>): Promise<T | undefined> {
       const registered = prefMap.get(pref.key);
       if (!registered) {
         throw new Error(`Unknown preference: ${pref.key}`);
@@ -90,7 +90,7 @@ export function createPreferenceService(
       return (entry?.value ?? pref.default) as T | undefined;
     },
 
-    async set<T>(actor: Actor, pref: PreferenceDef<T>, value: T): Promise<PreferenceEntry> {
+    async set<T>(actor: Actor, pref: PreferenceDef<string, T>, value: T): Promise<PreferenceEntry> {
       const registered = prefMap.get(pref.key);
       if (!registered) {
         throw new Error(`Unknown preference: ${pref.key}`);
