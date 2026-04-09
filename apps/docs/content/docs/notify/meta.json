@@ -1,0 +1,21 @@
+{
+  "title": "Notify",
+  "icon": "Bell",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "templates",
+    "channels",
+    "---Channels---",
+    "email",
+    "sms",
+    "console",
+    "---Extend---",
+    "plugins",
+    "---Reference---",
+    "api"
+  ]
+}

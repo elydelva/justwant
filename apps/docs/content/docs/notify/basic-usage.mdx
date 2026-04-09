@@ -1,0 +1,122 @@
+---
+title: Basic Usage
+description: Create templates, canals, and send your first notification.
+icon: PlayCircle
+---
+
+## Overview
+
+A notification flows through three objects:
+
+1. A **template** defines the message content per channel
+2. A **canal** wraps a delivery adapter (Resend, Twilio, etc.)
+3. A **notify instance** ties them together and exposes `.send()`
+
+## Full example
+
+```ts title="lib/notify.ts"
+import { createNotify } from "@justwant/notify";
+import { createTemplate } from "@justwant/notify";
+import { createResendCanal } from "@justwant/notify/channels/email/resend";
+import { Resend } from "resend";
+
+// Step 1: Define templates
+const welcomeTemplate = createTemplate({
+  id: "welcome",
+  email: (args: { name: string; email: string }) => ({
+    to: args.email,
+    subject: `Welcome, ${args.name}!`,
+    html: `<p>Hi ${args.name}, thanks for signing up!</p>`,
+    text: `Hi ${args.name}, thanks for signing up!`,
+  }),
+});
+
+// Step 2: Create canals
+const emailCanal = createResendCanal({
+  client: new Resend(process.env.RESEND_API_KEY!),
+  from: "Acme <onboarding@acme.com>",
+});
+
+// Step 3: Create the notify instance
+export const notify = createNotify({
+  templates: [welcomeTemplate],
+  canals: {
+    email: emailCanal,
+  },
+});
+```
+
+## Send a notification
+
+```ts
+await notify.send({
+  templateId: "welcome",
+  canalId: "email",
+  args: { name: "Alice", email: "alice@example.com" },
+});
+```
+
+The `send` call:
+1. Looks up the template by `templateId`
+2. Looks up the canal by `canalId`
+3. Calls the template factory for the canal's channel kind
+4. Passes the resulting message to the canal's `send` method
+
+## Multiple canals
+
+You can register multiple canals under different IDs and send to each independently:
+
+```ts title="lib/notify.ts"
+import { createTwilioSmsCanal } from "@justwant/notify/channels/sms/twilio";
+import twilio from "twilio";
+
+const smsCanal = createTwilioSmsCanal({
+  client: twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!),
+  from: "+15005550006",
+});
+
+export const notify = createNotify({
+  templates: [welcomeTemplate],
+  canals: {
+    email: emailCanal,
+    sms: smsCanal,
+  },
+});
+```
+
+```ts
+// Send via email
+await notify.send({ templateId: "welcome", canalId: "email", args });
+
+// Send via SMS (requires an sms version in the template)
+await notify.send({ templateId: "welcome", canalId: "sms", args });
+```
+
+## Development: use the console canal
+
+During development, swap the email canal for the console canal to avoid sending real emails:
+
+```ts title="lib/notify.ts"
+import { consoleCanal } from "@justwant/notify/channels/console";
+
+export const notify = createNotify({
+  templates: [welcomeTemplate],
+  canals: {
+    email: process.env.NODE_ENV === "production"
+      ? emailCanal
+      : consoleCanal(),
+  },
+});
+```
+
+## Error handling
+
+By default `onError` is `"throw"`. Set it to `"silent"` to suppress errors:
+
+```ts
+export const notify = createNotify({
+  templates: [welcomeTemplate],
+  canals: { email: emailCanal },
+  onError: "silent",
+});
+```

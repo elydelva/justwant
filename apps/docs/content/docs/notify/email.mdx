@@ -1,0 +1,87 @@
+---
+title: Email Channel
+description: Send transactional email with Resend using @justwant/notify.
+icon: Mail
+---
+
+## Overview
+
+The email channel uses [Resend](https://resend.com) for transactional email delivery. You pass your Resend client instance to the adapter — no raw API calls.
+
+## Install peer dependency
+
+```bash
+bun add resend
+```
+
+## Import
+
+```ts
+import { createResendCanal } from "@justwant/notify/channels/email/resend";
+```
+
+## Setup
+
+```ts title="lib/notify.ts"
+import { createNotify, createTemplate } from "@justwant/notify";
+import { createResendCanal } from "@justwant/notify/channels/email/resend";
+import { Resend } from "resend";
+
+const emailCanal = createResendCanal({
+  client: new Resend(process.env.RESEND_API_KEY!),
+  from: "Acme <no-reply@acme.com>",
+});
+
+export const notify = createNotify({
+  templates: [myTemplate],
+  canals: { email: emailCanal },
+});
+```
+
+## Configuration
+
+### `ResendAdapterOptions`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `client` | `Resend` | Yes | Resend client instance (`new Resend(apiKey)`) |
+| `from` | `string` | Yes | Default "from" address. Format: `"Name <email>"` or just `"email"` |
+
+## Template email factory
+
+Your template's `email` factory must return an `EmailMessage`:
+
+```ts
+const orderConfirmationTemplate = createTemplate({
+  id: "order-confirmation",
+  email: (args: { email: string; orderId: string; total: number }) => ({
+    to: args.email,
+    subject: `Order #${args.orderId} confirmed`,
+    html: `<p>Your order of $${args.total} has been confirmed.</p>`,
+    text: `Your order of $${args.total} has been confirmed.`,
+    replyTo: "support@acme.com",
+  }),
+});
+```
+
+## Sending attachments
+
+```ts
+const template = createTemplate({
+  id: "invoice",
+  email: (args: { email: string; pdfBuffer: Buffer }) => ({
+    to: args.email,
+    subject: "Your invoice",
+    html: "<p>Please find your invoice attached.</p>",
+    attachments: [
+      { filename: "invoice.pdf", content: args.pdfBuffer },
+    ],
+  }),
+});
+```
+
+## Environment variables
+
+```bash title=".env"
+RESEND_API_KEY=re_...
+```

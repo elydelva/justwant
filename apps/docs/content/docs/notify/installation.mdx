@@ -1,0 +1,52 @@
+---
+title: Installation
+description: Install @justwant/notify and the channel peer dependencies you need.
+icon: Download
+---
+
+## Install the package
+
+```bash
+bun add @justwant/notify
+```
+
+## Install channel peer dependencies
+
+Each channel requires its own optional peer dependency. Install only the ones you need.
+
+<CodeBlockTabs defaultValue="console">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="console">Console (dev)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="resend">Email — Resend</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="twilio">SMS — Twilio</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="console">
+
+```bash
+bun add @justwant/notify
+```
+
+No extra dependencies. The console canal logs to stdout — ideal for development.
+
+  </CodeBlockTab>
+  <CodeBlockTab value="resend">
+
+```bash
+bun add @justwant/notify resend
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="twilio">
+
+```bash
+bun add @justwant/notify twilio
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Next steps
+
+- [Basic Usage](/docs/notify/basic-usage) — Create templates, canals, and send your first notification
+- [Email](/docs/notify/email) — Set up Resend for transactional email
+- [SMS](/docs/notify/sms) — Set up Twilio for SMS

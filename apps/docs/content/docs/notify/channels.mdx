@@ -1,0 +1,75 @@
+---
+title: Channels
+description: Overview of all supported notification channel types.
+icon: Radio
+---
+
+## Overview
+
+A **canal** is a delivery channel instance. You create one with `createEmailCanal`, `createSmsCanal`, or `createConsoleCanal`, then register it by a string key in `createNotify({ canals: { ... } })`.
+
+The `canalId` used in `notify.send({ canalId })` must match a key in the `canals` map.
+
+## Available channels
+
+| Channel | Kind | Import | Provider |
+|---------|------|--------|---------|
+| Email | `"email"` | `@justwant/notify/channels/email/resend` | Resend |
+| SMS | `"sms"` | `@justwant/notify/channels/sms/twilio` | Twilio |
+| Console | `"console"` | `@justwant/notify/channels/console` | Stdout |
+
+## Channel kinds and message types
+
+| Kind | Message type | Key fields |
+|------|-------------|------------|
+| `email` | `EmailMessage` | `to`, `subject`, `html` |
+| `sms` | `SmsMessage` | `to`, `body` |
+| `console` | `ConsoleMessage` | `level`, `text` |
+| `webhook` | `WebhookMessage` | `url`, `body` |
+| `slack` | `SlackMessage` | `text`, `blocks` |
+
+## Registering multiple canals
+
+```ts
+export const notify = createNotify({
+  templates: [...],
+  canals: {
+    email: emailCanal,
+    sms: smsCanal,
+    dev: consoleCanal(),
+  },
+});
+
+// Send to email
+await notify.send({ templateId: "welcome", canalId: "email", args });
+
+// Send to SMS
+await notify.send({ templateId: "welcome", canalId: "sms", args });
+```
+
+## Custom canal
+
+You can implement your own canal using `createCanal` from the main entry:
+
+```ts
+import { createCanal } from "@justwant/notify";
+
+const myWebhookCanal = createCanal({
+  kind: "webhook",
+  adapter: {
+    async send(message) {
+      await fetch(message.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...message.headers },
+        body: JSON.stringify(message.body),
+      });
+    },
+  },
+});
+```
+
+See each channel's page for provider-specific setup:
+
+- [Email (Resend)](/docs/notify/email)
+- [SMS (Twilio)](/docs/notify/sms)
+- [Console](/docs/notify/console)

@@ -1,0 +1,83 @@
+---
+title: Plugins
+description: Extend notification behavior with plugins — audit every send.
+icon: Puzzle
+---
+
+## What are plugins?
+
+Plugins hook into the notification lifecycle via `onSend`. They receive the template ID, canal ID, rendered message, and args — before and after the canal sends.
+
+```ts
+export const notify = createNotify({
+  templates: [...],
+  canals: { email: emailCanal },
+  plugins: [auditPlugin({ onSend: myLogger })],
+});
+```
+
+## Available plugins
+
+| Plugin | Subpath | Description |
+|--------|---------|-------------|
+| Audit | `/plugins/audit` | Log or record every notification sent |
+
+## Audit plugin
+
+The audit plugin calls your `onSend` callback before and after each notification is dispatched. Use it to write notification logs, track metrics, or push audit records to a database.
+
+```ts
+import { auditPlugin } from "@justwant/notify/plugins/audit";
+
+export const notify = createNotify({
+  templates: [...],
+  canals: { email: emailCanal },
+  plugins: [
+    auditPlugin({
+      onSend: async ({ templateId, canalId, args, message, phase, result }) => {
+        if (phase === "after") {
+          await db.notificationLogs.create({
+            templateId,
+            canalId,
+            success: result === undefined,
+            sentAt: new Date(),
+          });
+        }
+      },
+    }),
+  ],
+});
+```
+
+### `AuditPluginOptions`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `onSend` | `(options) => void \| Promise<void>` | Called before and after each `canal.send()` |
+
+### `onSend` options
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `templateId` | `string` | Template identifier |
+| `canalId` | `string` | Canal identifier |
+| `args` | `unknown` | Arguments passed to `notify.send` |
+| `message` | `ChannelMessage` | Rendered message (email, SMS, etc.) |
+| `phase` | `"before" \| "after"` | `"before"` = before send, `"after"` = after send |
+| `result` | `unknown` | `undefined` on success, error on failure (only present in `"after"` phase) |
+
+## Custom plugins
+
+You can write your own plugin by implementing the `NotifyPlugin` interface:
+
+```ts
+import type { NotifyPlugin } from "@justwant/notify";
+
+const metricsPlugin: NotifyPlugin = {
+  onSend({ templateId, phase }) {
+    if (phase === "before") {
+      metrics.increment(`notify.${templateId}.sent`);
+    }
+  },
+};
+```

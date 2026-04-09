@@ -1,0 +1,107 @@
+---
+title: Templates
+description: Define message templates for each channel with createTemplate.
+icon: FileText
+---
+
+## Overview
+
+A template maps a typed `args` object to a message for each channel kind. You define one template per notification type (welcome email, password reset, order confirmation), and the template holds a factory function for each channel you need to support.
+
+## Import
+
+```ts
+import { createTemplate } from "@justwant/notify";
+```
+
+## API
+
+### `createTemplate<TArgs>(options)`
+
+Creates a template with per-channel factory functions.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique template identifier — used in `notify.send({ templateId })` |
+| `email` | `(args: TArgs) => EmailMessage` | Factory for email messages |
+| `sms` | `(args: TArgs) => SmsMessage` | Factory for SMS messages |
+| `console` | `(args: TArgs) => ConsoleMessage` | Factory for console output |
+| `webhook` | `(args: TArgs) => WebhookMessage` | Factory for webhook payloads |
+| `slack` | `(args: TArgs) => SlackMessage` | Factory for Slack messages |
+
+All channel keys are optional — only define the ones you need.
+
+## Example: multi-channel template
+
+```ts
+import { createTemplate } from "@justwant/notify";
+
+interface PasswordResetArgs {
+  name: string;
+  email: string;
+  phone: string;
+  resetUrl: string;
+}
+
+export const passwordResetTemplate = createTemplate<PasswordResetArgs>({
+  id: "password-reset",
+
+  email: (args) => ({
+    to: args.email,
+    subject: "Reset your password",
+    html: `<p>Hi ${args.name}, <a href="${args.resetUrl}">click here</a> to reset your password.</p>`,
+    text: `Hi ${args.name}, visit this link to reset your password: ${args.resetUrl}`,
+  }),
+
+  sms: (args) => ({
+    to: args.phone,
+    body: `Hi ${args.name}, reset your password: ${args.resetUrl}`,
+  }),
+
+  console: (args) => ({
+    level: "info",
+    text: `Password reset for ${args.email}: ${args.resetUrl}`,
+  }),
+});
+```
+
+## Message types
+
+### `EmailMessage`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `to` | `string` | Yes | Recipient email address |
+| `subject` | `string` | Yes | Email subject line |
+| `html` | `string` | Yes | HTML body |
+| `text` | `string` | No | Plain-text body |
+| `replyTo` | `string` | No | Reply-to address |
+| `cc` | `string[]` | No | CC addresses |
+| `bcc` | `string[]` | No | BCC addresses |
+| `attachments` | `Array<{ filename: string; content: string \| Buffer }>` | No | Attachments |
+
+### `SmsMessage`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `to` | `string` | Yes | Recipient phone number (E.164) |
+| `body` | `string` | Yes | SMS text content |
+
+### `ConsoleMessage`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `level` | `"info" \| "warn" \| "error" \| "debug"` | Yes | Log level |
+| `text` | `string` | Yes | Message text |
+
+### `WebhookMessage`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `url` | `string` | Yes | Webhook endpoint URL |
+| `body` | `unknown` | Yes | Request body |
+| `headers` | `Record<string, string>` | No | Additional headers |
+
+## Template registry
+
+Templates are registered in `createNotify` at startup. You can also use a repository (`repo`) to manage templates dynamically — see the [API reference](/docs/notify/api).

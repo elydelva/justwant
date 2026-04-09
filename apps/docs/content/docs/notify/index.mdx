@@ -1,0 +1,46 @@
+---
+title: Introduction
+description: Multi-channel notifications with templates — email via Resend, SMS via Twilio, console, and more.
+icon: Bell
+---
+
+## What is @justwant/notify?
+
+`@justwant/notify` is a **multi-channel notification system** for TypeScript applications. It separates *what* to send (templates) from *where* to send it (canals), so you can reuse the same template logic across email, SMS, console, and webhooks.
+
+**Use it when** you need to:
+- Send transactional emails via Resend
+- Send SMS messages via Twilio
+- Route the same notification to multiple channels (email + SMS fallback)
+- Log notifications in development without external services
+- Audit every notification sent
+
+## Core concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Template** | Defines the message for each channel — created with `createTemplate` |
+| **Canal** | A delivery channel instance (email, SMS, console) — created with `createEmailCanal`, etc. |
+| **NotifyInstance** | Registry of templates and canals; call `.send()` to dispatch |
+
+## How it works
+
+1. **Create templates** with `createTemplate`. Each template has an `id` and per-channel factory functions.
+2. **Create canals** with `createEmailCanal`, `createSmsCanal`, or `createConsoleCanal`. Pass an adapter (Resend, Twilio, etc.).
+3. **Create a notify instance** with `createNotify`. Register your templates and canals.
+4. **Send notifications** with `notify.send({ templateId, canalId, args })`.
+
+## Available channels
+
+| Channel | Import | Provider |
+|---------|--------|---------|
+| Email | `@justwant/notify/channels/email/resend` | Resend |
+| SMS | `@justwant/notify/channels/sms/twilio` | Twilio |
+| Console | `@justwant/notify/channels/console` | Stdout (dev only) |
+
+## Next steps
+
+- [Installation](/docs/notify/installation) — Install and set up channel dependencies
+- [Basic Usage](/docs/notify/basic-usage) — Full example from template to send
+- [Templates](/docs/notify/templates) — How to define message templates
+- [Channels](/docs/notify/channels) — Overview of all channel types
