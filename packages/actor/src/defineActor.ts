@@ -4,6 +4,7 @@
  * Accepts { name }, { name, within }, or { from: IdentityLike } for composition.
  */
 
+import type { Definable } from "@justwant/meta";
 import type { Actor, ActorWithin, IdentityLike } from "./types.js";
 
 export interface DefineActorOptionsWithName<N extends string = string> {
@@ -27,7 +28,7 @@ export type DefineActorOptions<N extends string = string> =
   | DefineActorOptionsWithWithin<N>
   | DefineActorOptionsWithFrom;
 
-export interface ActorDef<N extends string = string> {
+export interface ActorDef<N extends string = string> extends Definable<N> {
   readonly name: N;
   readonly within?: string;
   (id: string): Actor<N>;
