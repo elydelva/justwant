@@ -115,7 +115,7 @@ export function createDrizzleAdapter(
           createBoundQuery(async () => {
             let conditions: ReturnType<typeof eq>;
             if (idCol && baseWhere)
-              conditions = and(eq(idCol as never, id), baseWhere) as ReturnType<typeof eq>;
+              conditions = and(eq(idCol as never, id), baseWhere) as typeof conditions;
             else if (idCol) conditions = eq(idCol as never, id);
             else conditions = eq((table as Record<string, unknown>).id as never, id);
             const rows = (await select().from(table).where(conditions).limit(1)) as Record<

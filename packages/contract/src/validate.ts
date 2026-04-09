@@ -96,7 +96,7 @@ export function validateContractData<T extends Record<string, unknown>>(
 
   for (const key of keysToValidate) {
     if (!(key in data)) continue; // skip keys not in data (e.g. partial update)
-    const field = contract[key] as FieldDef<unknown, boolean> | undefined;
+    const field = contract[key];
     if (!field) continue;
     const {
       issues: fieldIssues,

@@ -54,7 +54,7 @@ export function defineCookie<T = string>(
 ): TypedCookie<T> {
   const isParser = typeof parserOrOptions === "function";
   const parser = isParser ? parserOrOptions : undefined;
-  const opts = isParser ? undefined : (parserOrOptions as DefineCookieOptions<T>);
+  const opts = isParser ? undefined : parserOrOptions;
   const schema = opts?.schema;
   const defaultValue = opts?.default;
   const onMismatch = opts?.onMismatch ?? (defaultValue === undefined ? undefined : "fallback");
@@ -64,8 +64,7 @@ export function defineCookie<T = string>(
       const v = raw !== undefined && raw !== "" ? raw : undefined;
       const { valid, value } = validateSchema(schema, v);
       if (!valid) {
-        const fallback = defaultValue as T;
-        return { value: fallback, remove: onMismatch === "remove" };
+        return { value: defaultValue as T, remove: onMismatch === "remove" };
       }
       return { value: (value ?? defaultValue) as T };
     }
@@ -176,7 +175,9 @@ export function createCookieStore<T extends Record<string, TypedCookie<unknown>>
     serialize(name, value, opts) {
       const cookie = cookies[name];
       if (!cookie) throw new Error(`Unknown cookie: ${String(name)}`);
-      return serializeCookie(cookie.name, String(value), opts);
+      const serialized =
+        typeof value === "object" && value !== null ? JSON.stringify(value) : String(value);
+      return serializeCookie(cookie.name, serialized, opts);
     },
   };
 
@@ -185,7 +186,9 @@ export function createCookieStore<T extends Record<string, TypedCookie<unknown>>
     store.set = (name, value, opts) => {
       const cookie = cookies[name];
       if (!cookie) throw new Error(`Unknown cookie: ${String(name)}`);
-      adapter.write(cookie.name, String(value), opts);
+      const serialized =
+        typeof value === "object" && value !== null ? JSON.stringify(value) : String(value);
+      adapter.write(cookie.name, serialized, opts);
     };
   }
 
