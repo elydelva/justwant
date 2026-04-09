@@ -1,0 +1,133 @@
+---
+title: Basic Usage
+description: Define events, create a bus, listen, emit, and clean up with a real domain example.
+icon: Play
+---
+
+## Full example
+
+This example models two domain event families — `user.*` and `order.*`.
+
+```ts title="lib/events.ts"
+import { defineEvent, createEventBus } from "@justwant/event";
+
+export const userCreated = defineEvent(
+  "user.created",
+  (id: string, email: string) => ({ id, email })
+);
+
+export const userDeleted = defineEvent(
+  "user.deleted",
+  (id: string) => ({ id })
+);
+
+export const orderShipped = defineEvent(
+  "order.shipped",
+  (orderId: string, trackingCode: string) => ({ orderId, trackingCode, shippedAt: new Date() })
+);
+
+export const orderCancelled = defineEvent(
+  "order.cancelled",
+  (orderId: string, reason: string) => ({ orderId, reason })
+);
+
+export const bus = createEventBus({
+  events: [userCreated, userDeleted, orderShipped, orderCancelled] as const,
+});
+```
+
+## listen
+
+Subscribe to an event. Returns an unsubscribe function.
+
+```ts
+import { bus, userCreated } from "@/lib/events";
+
+// Using the event object (recommended — fully typed)
+const unsub = bus.listen(userCreated, (payload) => {
+  // payload: { id: string; email: string }
+  console.log("User created:", payload.id);
+});
+
+// Using the event name string
+bus.listen("user.created", (payload) => {
+  console.log("User created:", payload.id);
+});
+```
+
+## emit
+
+Emit an event. Arguments are type-checked against the event definition.
+
+```ts
+// Using the event object
+bus.emit(userCreated, "usr_01", "alice@example.com");
+
+// Using the event name string
+bus.emit("user.created", "usr_01", "alice@example.com");
+```
+
+`emit` is synchronous when all handlers return `void`. If any handler returns a `Promise`, `emit` returns a `Promise<void>` that resolves when all handlers complete.
+
+## off / unlisten
+
+Remove a specific handler:
+
+```ts
+function onUserCreated(payload: { id: string; email: string }) {
+  console.log(payload.id);
+}
+
+bus.listen(userCreated, onUserCreated);
+
+// Later: remove the handler
+bus.unlisten(userCreated, onUserCreated);
+
+// Or use the unsubscribe function returned by listen
+const unsub = bus.listen(userCreated, onUserCreated);
+unsub();
+```
+
+## once / listenOnce
+
+Subscribe for a single event dispatch. Auto-unsubscribes after the first call.
+
+```ts
+bus.listenOnce("order.shipped", (payload) => {
+  console.log("First shipment ever:", payload.orderId);
+});
+```
+
+`listenOnce` also returns an unsubscribe function to cancel before it fires.
+
+## Wildcard patterns
+
+Listen to all events under a prefix, or every event:
+
+```ts
+// All user events
+bus.listen("user.*", (payload) => {
+  // payload is the union of all user.* payloads
+  console.log("User event:", payload);
+});
+
+// All events
+bus.listen("*", (payload) => {
+  console.log("Any event:", payload);
+});
+```
+
+**Note**: wildcard patterns are only available on `listen` and `listenOnce`, not on `emit`. Wildcards are enabled by default (`wildcard: true`). Pass `wildcard: false` to disable them.
+
+## Async handlers
+
+Handlers can be async. `emit` returns a `Promise<void>` when any handler is async.
+
+```ts
+bus.listen("user.created", async (payload) => {
+  await sendWelcomeEmail(payload.email);
+});
+
+// Await all handlers
+await bus.emit(userCreated, "usr_01", "alice@example.com");
+```

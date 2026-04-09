@@ -1,0 +1,121 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/event.
+icon: BookOpen
+---
+
+## Imports
+
+```ts
+// Typed event bus
+import { defineEvent, createEventBus } from "@justwant/event";
+
+// Primitive (untyped) bus
+import { createPrimitiveEventBus } from "@justwant/event/primitive";
+```
+
+## defineEvent
+
+```ts
+function defineEvent<TName extends string, TArgs extends unknown[], TPayload>(
+  name: TName,
+  builder: (...args: TArgs) => TPayload
+): TypedEvent<TArgs, TPayload, TName>
+```
+
+Creates a typed event definition.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | `string` literal | Event type identifier (e.g. `"user.created"`) |
+| `builder` | `(...args: TArgs) => TPayload` | Constructs the payload from emit arguments |
+
+Returns a `TypedEvent` object with `type` and `createPayload`.
+
+## createEventBus
+
+```ts
+function createEventBus<TEvents extends readonly TypedEvent[]>(
+  options: CreateTypedEventBusOptions<TEvents>
+): EventBus<TEvents>
+```
+
+### CreateTypedEventBusOptions
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `events` | `readonly TypedEvent[]` | required | Event definitions. Use `as const`. |
+| `wildcard` | `boolean` | `true` | Enable `user.*` and `*` patterns |
+
+## EventBus
+
+```ts
+interface EventBus<TEvents, W extends boolean = true> {
+  emit<Pattern>(event: Pattern, ...args: EmitArgsForPattern<TEvents, Pattern>): void | Promise<void>;
+  listen<Pattern>(event: Pattern, handler: (payload: PayloadForPattern<TEvents, Pattern>) => void | Promise<void>): () => void;
+  listenOnce<Pattern>(event: Pattern, handler: (payload: PayloadForPattern<TEvents, Pattern>) => void | Promise<void>): () => void;
+  unlisten<Pattern>(event: Pattern, handler: (payload: PayloadForPattern<TEvents, Pattern>) => void | Promise<void>): void;
+}
+```
+
+### emit
+
+| Parameter | Description |
+|-----------|-------------|
+| `event` | A `TypedEvent` object or event name string |
+| `...args` | Arguments typed by the event's payload builder |
+
+Returns `void` or `Promise<void>` (when any handler is async).
+
+### listen / listenOnce
+
+| Parameter | Description |
+|-----------|-------------|
+| `event` | Event object, exact name, or wildcard pattern (`user.*`, `*`) |
+| `handler` | Callback receiving the typed payload |
+
+Returns an unsubscribe `() => void`.
+
+### unlisten
+
+| Parameter | Description |
+|-----------|-------------|
+| `event` | Event object or name |
+| `handler` | The exact handler reference to remove |
+
+## TypedEvent
+
+```ts
+interface TypedEvent<TArgs, TPayload, TType extends string> {
+  readonly type: TType;
+  createPayload(...args: TArgs): TPayload;
+}
+```
+
+## Type utilities
+
+| Type | Description |
+|------|-------------|
+| `PayloadForPattern<TEvents, Pattern>` | Payload type for a listen pattern (event object, exact name, `user.*`, `*`) |
+| `EmitArgsForPattern<TEvents, Pattern>` | Argument tuple for an emit pattern |
+| `WildcardPatterns<TEvents>` | Union of valid wildcard patterns for a set of events |
+| `TypedEventMap` | `Record<string, TypedEvent>` |
+
+## createPrimitiveEventBus
+
+```ts
+function createPrimitiveEventBus(): EventBus
+```
+
+Creates an untyped string-keyed event bus (from `@justwant/event/primitive`).
+
+```ts
+interface EventBus {
+  emit(type: string, payload?: unknown): void | Promise<void>;
+  listen<T = unknown>(type: string, handler: (payload: T) => void | Promise<void>): () => void;
+  listenOnce<T = unknown>(type: string, handler: (payload: T) => void | Promise<void>): () => void;
+  unlisten(type: string, handler: (payload: unknown) => void | Promise<void>): void;
+}
+```
+
+Supports the same wildcard matching as the typed bus.

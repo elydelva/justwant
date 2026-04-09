@@ -1,0 +1,53 @@
+---
+title: Installation
+description: Install @justwant/event and create your first typed event bus.
+icon: Download
+---
+
+## Install
+
+```bash
+bun add @justwant/event
+```
+
+## Quick setup
+
+Define your domain events, create a bus, and start listening.
+
+```ts title="lib/events.ts"
+import { defineEvent, createEventBus } from "@justwant/event";
+
+// 1. Define events
+const userCreated = defineEvent("user.created", (id: string, email: string) => ({
+  id,
+  email,
+}));
+
+const orderShipped = defineEvent("order.shipped", (orderId: string) => ({
+  orderId,
+  shippedAt: new Date(),
+}));
+
+// 2. Create the bus
+export const bus = createEventBus({
+  events: [userCreated, orderShipped] as const,
+});
+```
+
+```ts title="app.ts"
+import { bus } from "@/lib/events";
+
+// Listen for a specific event
+bus.listen("user.created", (payload) => {
+  console.log("New user:", payload.id, payload.email);
+});
+
+// Emit
+bus.emit("user.created", "usr_01", "alice@example.com");
+```
+
+## Next steps
+
+- [Basic Usage](/docs/event/basic-usage) — Full example with domain events
+- [defineEvent](/docs/event/define-event) — Event definitions in depth
+- [Event Bus](/docs/event/event-bus) — Bus methods, wildcard patterns, primitive subpath
