@@ -1,0 +1,227 @@
+---
+title: Basic Usage
+description: createEnv options, groups, sources, validation behavior, client prefix, and hot reload.
+icon: Play
+---
+
+## createEnv
+
+```ts
+import { createEnv } from "@justwant/env";
+import { z } from "zod";
+
+const env = createEnv({
+  vars: {
+    PORT: z.string().transform(Number),
+    DATABASE_URL: z.string().url(),
+    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  },
+});
+
+env.PORT         // number
+env.DATABASE_URL // string
+env.NODE_ENV     // "development" | "production" | "test"
+```
+
+## Validation errors
+
+By default, missing or invalid variables cause `createEnv` to throw an `EnvironmentError`:
+
+```
+EnvironmentError: 2 environment variable(s) are invalid:
+  - DATABASE_URL: Invalid url
+  - SECRET_KEY: Required
+```
+
+To change the error behavior:
+
+```ts
+const env = createEnv({
+  vars: { ... },
+  validation: {
+    onError: "warn",   // "throw" (default) | "warn" | "silent" | false
+  },
+});
+```
+
+To skip validation entirely (e.g. in tests):
+
+```ts
+const env = createEnv({
+  vars: { ... },
+  validation: { skip: true },
+});
+```
+
+## Groups
+
+Groups let you namespace a set of variables under a common prefix. Environment variables are read as `GROUP_KEY` (uppercase, with `_` separator by default) and accessed as `env.group.key`.
+
+```ts
+const env = createEnv({
+  groups: {
+    db: {
+      host: z.string(),
+      port: z.string().transform(Number),
+      name: z.string(),
+    },
+    redis: {
+      url: z.string().url(),
+    },
+  },
+});
+
+env.db.host   // string — reads DB_HOST
+env.db.port   // number — reads DB_PORT
+env.redis.url // string — reads REDIS_URL
+```
+
+```bash title=".env"
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=myapp
+REDIS_URL=redis://localhost:6379
+```
+
+## Sources
+
+By default, `createEnv` reads `process.env` and `.env` files. You can customize this:
+
+```ts
+const env = createEnv({
+  vars: { ... },
+  sources: {
+    // Override the files to load
+    files: [".env", ".env.local"],
+    // Use process.env (default: true)
+    processEnv: true,
+    // Inject inline values (useful in tests)
+    inline: { PORT: "3001" },
+  },
+});
+```
+
+## Variable expansion
+
+When `expand: true` (default), values can reference other variables:
+
+```bash title=".env"
+BASE_URL=https://api.example.com
+USERS_URL=${BASE_URL}/users
+```
+
+To disable expansion:
+
+```ts
+const env = createEnv({
+  vars: { ... },
+  expand: false,
+});
+```
+
+## Client prefix
+
+Mark variables that are safe to include in client-side bundles (e.g. Next.js `NEXT_PUBLIC_`):
+
+```ts
+const env = createEnv({
+  vars: {
+    ANALYTICS_ID: z.string(),
+    APP_NAME: z.string(),
+  },
+  clientPrefix: "NEXT_PUBLIC_",
+});
+```
+
+With this prefix, `createEnv` reads `NEXT_PUBLIC_ANALYTICS_ID` from the environment and exposes it as `env.ANALYTICS_ID`.
+
+## defineEnv (shared definitions)
+
+Use `defineEnv` to define a reusable env block that can be included in multiple `createEnv` calls — useful when sharing between server and client entry points.
+
+```ts title="lib/client-env.ts"
+import { defineEnv } from "@justwant/env";
+import { z } from "zod";
+
+export const clientEnv = defineEnv({
+  vars: {
+    APP_NAME: z.string(),
+    ANALYTICS_ID: z.string(),
+  },
+  clientPrefix: "NEXT_PUBLIC_",
+});
+```
+
+```ts title="lib/server-env.ts"
+import { createEnv } from "@justwant/env";
+import { z } from "zod";
+import { clientEnv } from "./client-env";
+
+export const env = createEnv({
+  include: [clientEnv],
+  vars: {
+    DATABASE_URL: z.string().url(),
+    SECRET_KEY: z.string().min(32),
+  },
+});
+```
+
+## Hot reload (development)
+
+Watch `.env` files and reload when they change:
+
+```ts
+const env = createEnv({
+  vars: { ... },
+  watch: true,
+  onReload: (changedFiles) => {
+    console.log("Reloaded:", changedFiles);
+  },
+});
+```
+
+**Note**: `watch` is only available in Node.js and Bun. It is not available in the Edge build.
+
+## Modes
+
+Require specific variables in specific modes:
+
+```ts
+const env = createEnv({
+  vars: {
+    SENTRY_DSN: z.string().optional(),
+    DATABASE_URL: z.string().url(),
+  },
+  modes: {
+    production: ["SENTRY_DSN"],
+  },
+});
+```
+
+If `NODE_ENV=production` and `SENTRY_DSN` is not set, `createEnv` reports a validation error.
+
+## Proxy methods
+
+The returned env object also has proxy helpers for dynamic access:
+
+```ts
+env.get("PORT")               // typed get
+env.get("MISSING", 3000)      // with fallback
+env.has("PORT")               // boolean
+env.raw("PORT")               // raw string before validation
+env.toJSON()                  // plain object (sensitive keys redacted if configured)
+```
+
+## Redaction
+
+Hide sensitive values in `toJSON()` output:
+
+```ts
+const env = createEnv({
+  vars: { ... },
+  redact: /SECRET|PASSWORD|KEY/i,
+});
+
+JSON.stringify(env.toJSON());
+// sensitive keys are replaced with "[redacted]"
+```
