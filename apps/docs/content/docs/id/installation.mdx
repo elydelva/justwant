@@ -1,0 +1,38 @@
+---
+title: Installation
+description: Install @justwant/id and import from the correct subpath.
+icon: Download
+---
+
+## Install
+
+```bash
+bun add @justwant/id
+```
+
+## Subpath imports
+
+`@justwant/id` has no root export. Import from one of these subpaths:
+
+```ts
+// Time-sortable IDs (ULID)
+import { createId, getTimestamp } from "@justwant/id/sortable";
+
+// Short URL-safe IDs (nanoid)
+import { createId } from "@justwant/id/short";
+
+// Raw primitives (ulid, nanoid libraries)
+import { ulid, nanoid, customAlphabet } from "@justwant/id/primitives";
+```
+
+**Important**: Both `/sortable` and `/short` export a function named `createId`. Do not import both in the same file without aliasing.
+
+```ts
+import { createId as createSortableId } from "@justwant/id/sortable";
+import { createId as createShortId } from "@justwant/id/short";
+```
+
+## Next steps
+
+- [Sortable](/docs/id/sortable) — ULID-based time-sortable IDs
+- [Short](/docs/id/short) — nanoid-based short IDs

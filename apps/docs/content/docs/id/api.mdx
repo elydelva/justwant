@@ -1,0 +1,121 @@
+---
+title: API Reference
+description: Complete subpath API reference for @justwant/id.
+icon: BookOpen
+---
+
+## @justwant/id/sortable
+
+```ts
+import { createId, getTimestamp } from "@justwant/id/sortable";
+```
+
+### createId
+
+```ts
+function createId(): string
+```
+
+Generates a new ULID. Returns a 26-character uppercase base32 string.
+
+### getTimestamp
+
+```ts
+function getTimestamp(id: string): number
+```
+
+Extracts the millisecond-precision Unix timestamp from a ULID. Throws if `id` is not a valid ULID.
+
+---
+
+## @justwant/id/short
+
+```ts
+import { createId } from "@justwant/id/short";
+```
+
+### createId
+
+```ts
+function createId(size?: number): string
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `size` | `number` | `21` | ID length in characters |
+
+Generates a URL-safe random ID using the `A-Za-z0-9_-` alphabet.
+
+---
+
+## @justwant/id/primitives
+
+Raw library exports for advanced use cases. Prefer the `/sortable` and `/short` subpaths for typical usage.
+
+```ts
+import {
+  // From ulid
+  ulid,
+  isValid,
+  decodeTime,
+  monotonicFactory,
+  // From nanoid
+  nanoid,
+  customAlphabet,
+} from "@justwant/id/primitives";
+```
+
+### ulid
+
+```ts
+function ulid(seedTime?: number): string
+```
+
+Generates a ULID. Optionally seed with a specific timestamp for testing.
+
+### isValid
+
+```ts
+function isValid(id: string): boolean
+```
+
+Returns `true` if `id` is a valid ULID.
+
+### decodeTime
+
+```ts
+function decodeTime(id: string): number
+```
+
+Same as `getTimestamp` from `/sortable` — extracts the timestamp in milliseconds.
+
+### monotonicFactory
+
+```ts
+function monotonicFactory(prng?: () => number): (seedTime?: number) => string
+```
+
+Creates a monotonic ULID generator. IDs generated in the same millisecond are guaranteed to sort correctly.
+
+### nanoid
+
+```ts
+function nanoid(size?: number): string
+```
+
+Same as `createId` from `/short`.
+
+### customAlphabet
+
+```ts
+function customAlphabet(alphabet: string, size?: number): (size?: number) => string
+```
+
+Create a custom ID generator with your own character set.
+
+```ts
+import { customAlphabet } from "@justwant/id/primitives";
+
+const numeric = customAlphabet("0123456789", 6);
+numeric(); // "391490"
+```

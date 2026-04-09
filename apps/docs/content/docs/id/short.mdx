@@ -1,0 +1,78 @@
+---
+title: Short IDs
+description: Short, URL-safe IDs using nanoid. Configurable length — ideal for public-facing identifiers, tokens, and slugs.
+icon: Link
+---
+
+## Overview
+
+`@justwant/id/short` generates compact, URL-safe IDs using [nanoid](https://github.com/ai/nanoid). Unlike ULIDs, these IDs are purely random with no embedded timestamp.
+
+```ts
+import { createId } from "@justwant/id/short";
+```
+
+## createId
+
+```ts
+function createId(size?: number): string
+```
+
+Generates a new nanoid. Default length is 21 characters (URL-safe alphabet: `A-Za-z0-9_-`).
+
+```ts
+const id = createId();      // "V1StGXR8_Z5jdHi6B-myT" (21 chars)
+const short = createId(8);  // "V1StGXR8"  (8 chars)
+const long = createId(32);  // 32 chars
+```
+
+**Properties:**
+- URL-safe alphabet (`A-Za-z0-9_-`)
+- Cryptographically random (uses `crypto.getRandomValues`)
+- Compact — 21 chars has ~same collision probability as UUID v4
+- No embedded timestamp, not sortable
+
+## When to use short IDs
+
+Use `@justwant/id/short` for:
+
+- **Public-facing IDs** — shorter and friendlier in URLs (`/posts/V1StGXR8` vs `/posts/01ARYZ6S41TPTWJ6SXKWG5FPFR`)
+- **Invite codes and tokens** — short, random, no guessable structure
+- **Slugs** — auto-generated unique suffixes for titles
+- **Share links** — compact identifiers for sharing resources
+
+## Choosing a length
+
+The default of 21 characters provides ~126 bits of randomness — the same collision probability as UUID v4. Shorter IDs have higher collision probability; choose based on your expected volume.
+
+| Length | Example | ~Bits of randomness |
+|--------|---------|---------------------|
+| 8 | `V1StGXR8` | ~48 bits |
+| 12 | `V1StGXR8_Z5j` | ~72 bits |
+| 16 | `V1StGXR8_Z5jdHi6` | ~96 bits |
+| 21 (default) | `V1StGXR8_Z5jdHi6B-myT` | ~126 bits |
+
+## Example: invite code
+
+```ts
+import { createId } from "@justwant/id/short";
+
+async function createInvite(teamId: string) {
+  const code = createId(12); // 12-char code
+  await db.invites.create({ code, teamId, expiresAt: addDays(new Date(), 7) });
+  return code;
+}
+```
+
+## Example: slug generation
+
+```ts
+import { createId } from "@justwant/id/short";
+
+function slugify(title: string): string {
+  const base = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40);
+  return `${base}-${createId(6)}`;
+}
+
+slugify("Hello World"); // "hello-world-V1StGX"
+```
