@@ -9,7 +9,7 @@ import type { EmbeddingEngine } from "../types.js";
 function hashString(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) {
-    h = (h << 5) - h + s.charCodeAt(i);
+    h = (h << 5) - h + (s.codePointAt(i) ?? 0);
     h = h & h;
   }
   return Math.abs(h);

@@ -9,9 +9,7 @@ import type {
   ConsoleCanal,
   CreateCanalOptions,
   EmailCanal,
-  SlackCanal,
   SmsCanal,
-  WebhookCanal,
 } from "./types.js";
 
 /**

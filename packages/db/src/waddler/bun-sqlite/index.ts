@@ -27,6 +27,6 @@ export function createBunSqliteAdapter(
   };
   const sql = config.client
     ? waddler({ client: config.client })
-    : waddler((config.connection ?? ":memory:") as string);
+    : waddler(config.connection ?? ":memory:");
   return { sql, dialect: "sqlite", driver: config.client };
 }

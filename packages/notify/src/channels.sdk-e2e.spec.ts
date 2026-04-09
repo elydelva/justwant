@@ -4,7 +4,7 @@
  * See TESTING.md for official docs (Resend test addresses, Twilio test credentials + magic numbers).
  */
 
-import { describe, expect, test } from "bun:test";
+import { describe, test } from "bun:test";
 import { createCanal } from "./createCanal.js";
 import { createNotify } from "./createNotify.js";
 import { createTemplate } from "./createTemplate.js";

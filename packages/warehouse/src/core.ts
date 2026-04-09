@@ -2,7 +2,7 @@
  * Warehouse adapter core - batch insert, query, aggregate.
  */
 
-import type { InferContract, TableContract, TableFields } from "@justwant/contract";
+import type { InferContract } from "@justwant/contract";
 import { parseExistResult, toRows } from "@justwant/core/db";
 import { appendOrderBy } from "./buildOrderBy.js";
 import { appendWhere } from "./buildWhere.js";
@@ -58,7 +58,7 @@ function resolveClickhouseTypes(
     if ((field as { _columnType?: string })._columnType === "REAL") base = "Float64";
     else if ((field as { _columnType?: string })._columnType === "INTEGER") base = "Int64";
     else base = "String";
-    return !(field as { _required?: boolean })._required ? `Nullable(${base})` : base;
+    return (field as { _required?: boolean })._required ? base : `Nullable(${base})`;
   });
 }
 
@@ -168,7 +168,7 @@ export function createWarehouseFromSql(
               dialect,
               sqlDefault
             );
-            const colList = colOrder.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(", ");
+            const colList = colOrder.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(", ");
             const types =
               dialect === "clickhouse"
                 ? resolveClickhouseTypes(
@@ -178,12 +178,12 @@ export function createWarehouseFromSql(
                   )
                 : undefined;
             const valuesArg =
-              types !== undefined
-                ? (sql as { values: (v: unknown[][], t?: string[]) => unknown }).values(
+              types === undefined
+                ? sql.values(tuples)
+                : (sql as { values: (v: unknown[][], t?: string[]) => unknown }).values(
                     tuples,
                     types
-                  )
-                : sql.values(tuples);
+                  );
             await executeMutation(
               sql`INSERT INTO ${tableId} (${sql.raw(colList)}) VALUES ${valuesArg}`,
               dialect

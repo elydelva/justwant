@@ -20,7 +20,7 @@ export async function encodeJwt(
   options?: JwtEncodeOptions
 ): Promise<string> {
   const key = secretToKey(secret);
-  let jwt = new SignJWT(payload as Record<string, unknown>)
+  let jwt = new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuedAt(options?.iat ?? Math.floor(Date.now() / 1000));
   if (options?.expIn !== undefined) {

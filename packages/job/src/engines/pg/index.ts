@@ -179,9 +179,7 @@ export function pgEngine(options: PgEngineOptions): JobEngineContract {
         [id, cron, nextRun]
       );
 
-      if (!pollTimer) {
-        pollTimer = setInterval(pollAndExecute, pollIntervalMs);
-      }
+      pollTimer ??= setInterval(pollAndExecute, pollIntervalMs);
     },
 
     async unregister(id: string): Promise<void> {

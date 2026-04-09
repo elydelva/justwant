@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { defineJsonSource } from "./json.js";
 
 describe("defineJsonSource", () => {
@@ -36,5 +39,22 @@ describe("defineJsonSource", () => {
     const source = defineJsonSource({ data: { a: {} } });
     const value = source.get({ path: "a.b.c" });
     expect(value).toBeUndefined();
+  });
+
+  test("loads from JSON file when path is given", () => {
+    const dir = mkdtempSync(join(tmpdir(), "justwant-test-"));
+    const file = join(dir, "config.json");
+    writeFileSync(file, JSON.stringify({ db: { url: "postgres://file" } }));
+    try {
+      const source = defineJsonSource({ path: file });
+      expect(source.get({ path: "db.url" })).toBe("postgres://file");
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
+  test("returns empty object when neither path nor data given", () => {
+    const source = defineJsonSource();
+    expect(source.get({ path: "anything" })).toBeUndefined();
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
 import { createReferralService } from "../createReferralService.js";
-import type { Actor, Referral, ReferralRepository } from "../types.js";
+import type { Referral, ReferralRepository } from "../types.js";
 import { auditPlugin } from "./audit.js";
 
 function createMockRepo(): ReferralRepository {

@@ -2,7 +2,7 @@
  * Expand ${VAR} and ${VAR:-default} in string values.
  */
 export function expandVars(value: string, vars: Record<string, string | undefined>): string {
-  return value.replace(/\$\{([^}:]+)(?::-([^}]*))?\}/g, (_, name: string, def?: string) => {
+  return value.replaceAll(/\$\{([^}:]+)(?::-([^}]*))?\}/g, (_, name: string, def?: string) => {
     const v = vars[name];
     if (v !== undefined && v !== "") return v;
     return def ?? "";

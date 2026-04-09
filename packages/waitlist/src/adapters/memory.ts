@@ -5,7 +5,7 @@
 
 import { randomUUID } from "node:crypto";
 import { parseActorKey, toRepo } from "@justwant/actor";
-import type { FindManyOptions, WaitlistEntry, WaitlistRepository } from "../types.js";
+import type { WaitlistEntry, WaitlistRepository } from "../types.js";
 
 export function createMemoryWaitlistAdapter(): WaitlistRepository {
   const entries: WaitlistEntry[] = [];

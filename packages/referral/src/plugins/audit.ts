@@ -3,7 +3,7 @@
  * Logs each referral for audit trail.
  */
 
-import type { Referral, ReferralPlugin } from "../types.js";
+import type { ReferralPlugin } from "../types.js";
 
 export interface ReferralAuditEntry {
   offerKey: string;

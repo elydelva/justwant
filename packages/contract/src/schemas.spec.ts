@@ -1,13 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  emailSchema,
-  hostnameSchema,
-  ipv4Schema,
-  ipv6Schema,
-  slugSchema,
-  urlSchema,
-  uuidSchema,
-} from "./schemas.js";
+import { emailSchema, ipv4Schema, slugSchema, urlSchema, uuidSchema } from "./schemas.js";
 
 function validate(schema: { "~standard"?: { validate: (v: unknown) => unknown } }, value: unknown) {
   const result = schema["~standard"]?.validate(value);

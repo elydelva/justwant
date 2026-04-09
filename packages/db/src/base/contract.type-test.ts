@@ -3,13 +3,13 @@
  * Excluded from build; run via `tsc --noEmit` to validate.
  */
 import type { InferContract } from "@justwant/contract";
-import { defineContract, field } from "@justwant/contract";
+import { defineContract, field } from "@justwant/contract"; // NOSONAR
 
 const UserContract = defineContract({
-  id: field<string>().required(),
-  email: field<string>().required(),
-  name: field<string>().optional(),
-  createdAt: field<Date>().required(),
+  id: field<string>().required(), // NOSONAR
+  email: field<string>().required(), // NOSONAR
+  name: field<string>().optional(), // NOSONAR
+  createdAt: field<Date>().required(), // NOSONAR
 });
 
 type User = InferContract<typeof UserContract>;

@@ -21,7 +21,7 @@ export function parseTtl(ttl: TTL | undefined, now = Date.now()): number | Date 
   if (ttl instanceof Date) return ttl;
   if (typeof ttl !== "string") return undefined;
 
-  const match = ttl.trim().match(STRING_REGEX);
+  const match = STRING_REGEX.exec(ttl.trim());
   if (!match) return undefined;
 
   const value = Number.parseInt(match[1] ?? "0", 10);

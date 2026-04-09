@@ -2,9 +2,10 @@
  * @justwant/job — Engine utilities
  */
 
-import type { EngineCapabilities, JobEngineContract } from "../types.js";
+import type { JobEngineContract } from "../types.js";
 
-export type { JobEngineContract, EngineCapabilities };
+export type { JobEngineContract } from "../types.js";
+export type { EngineCapabilities } from "../types.js";
 
 /**
  * Helper to create an engine with explicit capabilities.

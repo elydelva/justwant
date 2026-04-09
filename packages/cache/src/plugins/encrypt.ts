@@ -19,7 +19,7 @@ export function encryptPlugin(options: EncryptPluginOptions): CachePlugin {
         serialize: (v: unknown) => encrypt(JSON.stringify(v), key),
         deserialize: (raw: string) => {
           const dec = decrypt(raw, key);
-          return dec !== null ? (JSON.parse(dec) as unknown) : null;
+          return dec === null ? null : (JSON.parse(dec) as unknown);
         },
       };
       context.setSerializer?.(serializer);

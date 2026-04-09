@@ -24,7 +24,7 @@ export function diffusionStepped(options: DiffusionSteppedOptions): number {
   if (duration <= 0 || steps.length === 0) return 0;
   const rawProgress = (atMs - startMs) / duration;
   if (rawProgress < 0) return 0;
-  if (rawProgress >= 1) return steps[steps.length - 1] ?? 0;
+  if (rawProgress >= 1) return steps.at(-1) ?? 0;
   const progress = rawProgress;
   const n = steps.length - 1;
   const segment = progress * n;

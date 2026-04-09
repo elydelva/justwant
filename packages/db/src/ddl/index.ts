@@ -3,8 +3,7 @@
  * Extracted from tableContract - adapter-specific SQL generation.
  */
 
-import type { FieldDef } from "@justwant/contract";
-import type { TableContract } from "@justwant/contract";
+import type { FieldDef, TableContract } from "@justwant/contract";
 
 export type SqlDialect = "sqlite" | "pg" | "mysql";
 
@@ -48,7 +47,7 @@ export function getCreateTableSQL(
   const { tableName, fields, mapping } = contract;
   const parts: string[] = [];
   for (const [key, col] of Object.entries(mapping)) {
-    const field = fields[key as keyof typeof fields];
+    const field = fields[key];
     if (!field) continue;
     const colName = col.name;
     const type = columnTypeForDialect(field, dialect);

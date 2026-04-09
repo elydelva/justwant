@@ -2,7 +2,7 @@
  * Create a Prisma adapter with full CRUD implementation.
  */
 
-import type { AnyContract, InferContract } from "@justwant/contract";
+import type { InferContract } from "@justwant/contract";
 import type { BoundQuery, CreateInput } from "@justwant/db";
 import { AdapterMappingError } from "@justwant/db/errors";
 import { buildPrismaWhere } from "./buildWhere.js";

@@ -6,5 +6,5 @@
 import type { SourceLookup } from "./SourceLookup.js";
 
 export interface ConfigSource {
-  get(lookup: SourceLookup): Promise<unknown> | unknown;
+  get(lookup: SourceLookup): unknown;
 }

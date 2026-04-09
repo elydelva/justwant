@@ -72,13 +72,13 @@ export function assertTableConforms<TExpected extends AnyContract>(
   const expected =
     expectedContract && "fields" in expectedContract
       ? (expectedContract as TableContract<TExpected>).fields
-      : (expectedContract as TExpected);
+      : expectedContract;
 
-  const tableContract = table.contract as AnyContract;
+  const tableContract = table.contract;
 
-  for (const key of Object.keys(expected) as (keyof TExpected)[]) {
-    const expectedField = expected[key] as FieldDef<unknown, boolean> | undefined;
-    const actual = tableContract[key as string] as FieldDef<unknown, boolean> | undefined;
+  for (const key of Object.keys(expected)) {
+    const expectedField = expected[key];
+    const actual = tableContract[key];
 
     if (!actual) {
       throw new ContractConformityError(`Missing field: ${String(key)}`, [String(key)]);

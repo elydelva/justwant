@@ -10,7 +10,7 @@ function getLookup(def: ValueDef): SourceLookup {
   return "field" in def && def.field ? { path: def.path, field: def.field } : { path: def.path };
 }
 
-function getFromSource(source: ValueDef["from"], lookup: SourceLookup): Promise<unknown> | unknown {
+function getFromSource(source: ValueDef["from"], lookup: SourceLookup): unknown {
   const result = source.get(lookup);
   return result;
 }

@@ -3,7 +3,6 @@
  */
 
 import { escapeStringLiteral } from "@justwant/core/db";
-import { escapeIdentifier } from "./escape.js";
 import type { SqlDialect } from "./index.js";
 
 export function getExistTableSQL(tableName: string, dialect: SqlDialect, schema?: string): string {

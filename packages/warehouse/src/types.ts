@@ -4,9 +4,10 @@
  */
 
 import type { InferContract, TableContract, TableFields } from "@justwant/contract";
-import type { StringMapping, WaddlerQuery, WaddlerSql } from "@justwant/core/db";
+import type { WaddlerSql } from "@justwant/core/db";
 
-export type { WaddlerSql, WaddlerQuery, StringMapping };
+export type { WaddlerSql } from "@justwant/core/db";
+export type { WaddlerQuery, StringMapping } from "@justwant/core/db";
 
 export type WarehouseDialect = "clickhouse" | "duckdb";
 

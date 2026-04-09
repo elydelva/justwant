@@ -4,16 +4,16 @@
  */
 
 import type { InferContract } from "@justwant/contract";
-import { defineContract, field } from "@justwant/contract";
+import { defineContract, field } from "@justwant/contract"; // NOSONAR
 import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { defineMappedTable } from "./defineMappedTable.js";
 import type { MappingFor } from "./mapping.js";
 import type { DrizzleMappedTable } from "./types.js";
 
 const UserContract = defineContract({
-  id: field<string>().required(),
-  email: field<string>().required(),
-  name: field<string>().optional(),
+  id: field<string>().required(), // NOSONAR
+  email: field<string>().required(), // NOSONAR
+  name: field<string>().optional(), // NOSONAR
 });
 
 const usersTable = sqliteTable("users", {

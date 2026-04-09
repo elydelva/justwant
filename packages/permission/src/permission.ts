@@ -14,13 +14,15 @@ import {
   findGrantOverride,
   getRolePermissions,
 } from "./resolve.js";
-import type { Actor, Resource, Scope } from "./types/index.js";
 import type {
+  Actor,
   Assignment,
   AssignmentsRepo,
   CreateInput,
   Override,
   OverridesRepo,
+  Resource,
+  Scope,
 } from "./types/index.js";
 
 export interface CreatePermissionOptions<ScopeNames extends string = string> {

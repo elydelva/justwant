@@ -3,8 +3,7 @@
  * MergeTree requires ORDER BY - use first column from mapping.
  */
 
-import type { FieldDef } from "@justwant/contract";
-import type { TableContract } from "@justwant/contract";
+import type { FieldDef, TableContract } from "@justwant/contract";
 import { escapeIdentifier } from "@justwant/core/db";
 
 function columnTypeForClickHouse(field: FieldDef<unknown, boolean>): string {
@@ -31,11 +30,11 @@ export function getCreateTableSQL(
   const parts: string[] = [];
 
   for (const [key, col] of entries) {
-    const field = fields[key as keyof typeof fields];
+    const field = fields[key];
     if (!field) continue;
     const colName = col.name;
     const baseType = columnTypeForClickHouse(field);
-    const type = !field._required ? `Nullable(${baseType})` : baseType;
+    const type = field._required ? baseType : `Nullable(${baseType})`;
     parts.push(`${escapeIdentifier(colName)} ${type}`);
   }
 

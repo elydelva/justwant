@@ -5,10 +5,7 @@
  */
 
 import { defineAtomicPermission, defineRealm, defineRole, defineScope } from "@justwant/permission";
-import type { IdentityLike } from "@justwant/permission";
-import type { AtomicPermission } from "@justwant/permission";
-import type { RealmDef } from "@justwant/permission";
-import type { RoleDef } from "@justwant/permission";
+import type { AtomicPermission, IdentityLike, RealmDef, RoleDef } from "@justwant/permission";
 
 export interface CreateStandardOrganisationPermissionOptions<N extends string = string> {
   name: N;

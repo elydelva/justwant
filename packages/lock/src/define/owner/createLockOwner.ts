@@ -4,7 +4,6 @@
  * Produces Actor with optional within (e.g. org, team).
  */
 
-import type { Actor } from "@justwant/actor";
 import type { LockOwner } from "../../types/index.js";
 
 export interface CreateLockOwnerOptions<N extends string = string> {

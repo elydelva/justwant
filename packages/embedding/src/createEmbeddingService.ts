@@ -4,13 +4,7 @@
 
 import { InvalidStorageError, UniverseNotFoundError } from "./errors.js";
 import { EMBEDDING_CAPABILITY } from "./types.js";
-import type {
-  CreateEmbeddingServiceOptions,
-  EmbeddingEngine,
-  SimilarOptions,
-  Universe,
-  VectorStorage,
-} from "./types.js";
+import type { CreateEmbeddingServiceOptions, SimilarOptions, Universe } from "./types.js";
 
 export interface EmbeddingService {
   /** Produce a vector from text. Delegates to engine. */
@@ -36,7 +30,7 @@ function extractId<T>(item: T, idField: string): string {
   const rec = item as Record<string, unknown>;
   const val = rec[idField];
   if (typeof val !== "string") {
-    throw new Error(`Expected string id at "${idField}", got ${typeof val}`);
+    throw new TypeError(`Expected string id at "${idField}", got ${typeof val}`);
   }
   return val;
 }
@@ -91,10 +85,10 @@ export function createEmbeddingService(options: CreateEmbeddingServiceOptions): 
       let vector: number[];
       if (opts.text !== undefined) {
         vector = await engine.embed(opts.text);
-      } else if (opts.vector !== undefined) {
-        vector = opts.vector;
-      } else {
+      } else if (opts.vector === undefined) {
         throw new Error("similar() requires either text or vector");
+      } else {
+        vector = opts.vector;
       }
 
       return storage.query(universeId, vector, {

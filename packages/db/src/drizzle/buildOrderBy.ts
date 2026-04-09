@@ -3,8 +3,7 @@
  */
 
 import { asc, desc } from "drizzle-orm";
-import type { SQL } from "drizzle-orm";
-import type { Column } from "drizzle-orm";
+import type { Column, SQL } from "drizzle-orm";
 
 export type OrderDirection = "asc" | "desc";
 

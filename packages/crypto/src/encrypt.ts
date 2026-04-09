@@ -1,6 +1,5 @@
 import { gcm } from "@noble/ciphers/aes.js";
-import { randomBytes } from "@noble/hashes/utils.js";
-import { utf8ToBytes } from "@noble/hashes/utils.js";
+import { randomBytes, utf8ToBytes } from "@noble/hashes/utils.js";
 import { deriveKey } from "./kdf.js";
 
 const NONCE_LEN = 12;
@@ -9,16 +8,19 @@ const SALT_LEN = 16;
 const SEP = ".";
 
 function b64urlEncode(bytes: Uint8Array): string {
-  const b64 = btoa(String.fromCharCode(...bytes));
-  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const b64 = btoa(String.fromCodePoint(...bytes));
+  return b64
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/={1,2}$/, "");
 }
 
 function b64urlDecode(str: string): Uint8Array {
-  const b64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  const b64 = str.replaceAll("-", "+").replaceAll("_", "/");
   const pad = b64.length % 4;
   const padded = pad ? b64 + "=".repeat(4 - pad) : b64;
   const binary = atob(padded);
-  return new Uint8Array([...binary].map((c) => c.charCodeAt(0)));
+  return new Uint8Array([...binary].map((c) => c.codePointAt(0) ?? 0));
 }
 
 /**

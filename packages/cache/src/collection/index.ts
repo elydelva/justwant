@@ -34,7 +34,7 @@ export function createCacheCollection<TEntries extends Record<string, Collection
   const result: Record<string, unknown> = {};
 
   for (const [name, def] of Object.entries(entries)) {
-    const d = def as CollectionEntryDef<unknown>;
+    const d = def;
     const entry = createCacheEntry({
       cache: nsCache,
       key: d.key,

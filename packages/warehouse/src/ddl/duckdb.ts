@@ -2,8 +2,7 @@
  * DDL for DuckDB.
  */
 
-import type { FieldDef } from "@justwant/contract";
-import type { TableContract } from "@justwant/contract";
+import type { FieldDef, TableContract } from "@justwant/contract";
 import { escapeIdentifier } from "@justwant/core/db";
 
 function columnTypeForDuckDb(field: FieldDef<unknown, boolean>): string {
@@ -30,7 +29,7 @@ export function getCreateTableSQL(
   const parts: string[] = [];
 
   for (const [key, col] of Object.entries(mapping)) {
-    const field = fields[key as keyof typeof fields];
+    const field = fields[key];
     if (!field) continue;
     const colName = col.name;
     const type = columnTypeForDuckDb(field);

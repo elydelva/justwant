@@ -2,8 +2,7 @@
  * Waddler adapter core - CRUD with schema-less mapping.
  */
 
-import type { AnyContract, InferContract } from "@justwant/contract";
-import type { TableContract } from "@justwant/contract";
+import type { InferContract } from "@justwant/contract";
 import { ContractValidationError, validateContractData } from "@justwant/contract/validate";
 import { parseExistResult, toRows } from "@justwant/core/db";
 import type { BoundQuery, CreateInput } from "@justwant/db";
@@ -13,12 +12,9 @@ import { mapRowToContract } from "./mapping.js";
 import type {
   CreateWaddlerAdapterOptions,
   Db,
-  DefineWaddlerTableOptions,
   StringMapping,
-  TableOptions,
   TableSource,
   WaddlerConnectionConfig,
-  WaddlerDialect,
   WaddlerMappedTable,
   WaddlerQuery,
   WaddlerSql,
@@ -29,9 +25,9 @@ function resolveTableIdentifier(
   source: TableSource
 ): ReturnType<WaddlerSql["identifier"]> {
   if (typeof source === "string") {
-    return sql.identifier(source) as ReturnType<WaddlerSql["identifier"]>;
+    return sql.identifier(source);
   }
-  return sql.identifier(source) as ReturnType<WaddlerSql["identifier"]>;
+  return sql.identifier(source);
 }
 
 function resolveTableName(source: TableSource): string {
@@ -77,12 +73,12 @@ function buildSelectQuery(
   // Build WHERE as single template (no append) for pg/mysql compatibility
   const conditions: WaddlerQuery[] = [];
   if (softDeleteColName) {
-    conditions.push(sql`${sql.identifier(softDeleteColName)} IS NULL` as WaddlerQuery);
+    conditions.push(sql`${sql.identifier(softDeleteColName)} IS NULL`);
   }
   for (const [key, val] of whereEntries) {
     const colName = mapping[key]?.name;
     if (colName) {
-      conditions.push(sql`${sql.identifier(colName)} = ${val}` as WaddlerQuery);
+      conditions.push(sql`${sql.identifier(colName)} = ${val}`);
     }
   }
 
@@ -95,10 +91,10 @@ function buildSelectQuery(
 
   let query: WaddlerQuery = sql`SELECT * FROM ${tableId} WHERE ${conditions[0]}`;
   for (let i = 1; i < conditions.length; i++) {
-    query = sql`${query} AND ${conditions[i]}` as WaddlerQuery;
+    query = sql`${query} AND ${conditions[i]}`;
   }
   if (limit !== undefined) {
-    query = sql`${query} LIMIT ${limit}` as WaddlerQuery;
+    query = sql`${query} LIMIT ${limit}`;
   }
   return query;
 }
@@ -128,7 +124,7 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
     dialect,
 
     async createTable(contract) {
-      const dialect = adapter.dialect as "sqlite" | "pg" | "mysql";
+      const dialect = adapter.dialect;
       const ddl = getCreateTableSQL(contract, dialect);
       await sql`${sql.raw(ddl)}`;
     },
@@ -202,8 +198,8 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
         const vals = Object.values(values);
         const colList =
           dialect === "mysql"
-            ? cols.map((c) => `\`${String(c).replace(/`/g, "``")}\``).join(", ")
-            : cols.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(", ");
+            ? cols.map((c) => `\`${String(c).replaceAll("`", "``")}\``).join(", ")
+            : cols.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(", ");
         const returning = supportsReturning ? " RETURNING *" : "";
 
         const insertQuery = sql`INSERT INTO ${tableId} (${sql.raw(colList)}) VALUES ${sql.values([vals])}${sql.raw(returning)}`;
@@ -249,10 +245,7 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
 
         const setClause = entries
           .map(([col, val]) => sql`${sql.identifier(col)} = ${val}`)
-          .reduce(
-            (acc, part, i) => (i === 0 ? part : (sql`${acc}, ${part}` as typeof acc)),
-            sql.raw("")
-          );
+          .reduce((acc, part, i) => (i === 0 ? part : sql`${acc}, ${part}`), sql.raw(""));
 
         const updateQuery = sql`UPDATE ${tableId} SET ${setClause} WHERE ${sql.identifier(idColName)} = ${id}${supportsReturning ? sql.raw(" RETURNING *") : sql.raw("")}`;
         const rows = toRows(await updateQuery);
@@ -332,7 +325,7 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
         tableName: simpleTableName,
         fields: contract,
         mapping,
-      } as TableContract<typeof contract>;
+      };
 
       const mapped: WaddlerMappedTable<typeof contract> = {
         get infer() {
@@ -343,7 +336,7 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
           contract,
           sql: sqlOps,
           tableName,
-          mapping: mapping as StringMapping<typeof contract>,
+          mapping,
           client: sql,
         },
         create: (data) => sqlOps.create(data).execute(),
@@ -374,7 +367,7 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
         },
         createTable: async () => {
           try {
-            const ddl = getCreateTableSQL(tableContract, dialect as "sqlite" | "pg" | "mysql", {
+            const ddl = getCreateTableSQL(tableContract, dialect, {
               schema,
               ifNotExists: true,
             });
@@ -386,11 +379,7 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
         },
         exist: async () => {
           try {
-            const existSql = getExistTableSQL(
-              simpleTableName,
-              dialect as "sqlite" | "pg" | "mysql",
-              schema
-            );
+            const existSql = getExistTableSQL(simpleTableName, dialect, schema);
             const rows = toRows(await sql`${sql.raw(existSql)}`);
             return parseExistResult(rows);
           } catch (err) {
@@ -400,11 +389,7 @@ export function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdap
         },
         drop: async () => {
           try {
-            const dropSql = getDropTableSQL(
-              simpleTableName,
-              dialect as "sqlite" | "pg" | "mysql",
-              schema
-            );
+            const dropSql = getDropTableSQL(simpleTableName, dialect, schema);
             await sql`${sql.raw(dropSql)}`;
           } catch (err) {
             if (err instanceof ContractValidationError) throw err;

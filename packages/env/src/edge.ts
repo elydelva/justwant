@@ -5,42 +5,23 @@
  */
 import {
   type CreateEnvOptions,
-  type CreateEnvResult,
   type EnvSchema,
   type GroupSchema,
-  type InferEnv,
-  type InferGroupEnv,
   createEnvWithDeps,
 } from "./core.js";
+import { getCwd, getNodeEnv } from "./shared.js";
 import { mergeSources } from "./utils-edge.js";
 
-function getCwd(): string {
-  if (typeof process !== "undefined" && typeof process.cwd === "function") {
-    return process.cwd();
-  }
-  return "";
-}
-
-function getNodeEnv(): string {
-  if (typeof process !== "undefined" && process.env?.NODE_ENV) {
-    return process.env.NODE_ENV;
-  }
-  return "development";
-}
-
-export type { CreateEnvOptions, CreateEnvResult, EnvSchema, GroupSchema, InferEnv, InferGroupEnv };
-
-export interface DefineEnvOptions<T extends EnvSchema> {
-  vars: T;
-  clientPrefix?: string | string[];
-}
-
-export function defineEnv<T extends EnvSchema>(options: DefineEnvOptions<T>) {
-  return {
-    vars: options.vars,
-    clientPrefix: options.clientPrefix,
-  };
-}
+export type {
+  CreateEnvOptions,
+  CreateEnvResult,
+  EnvSchema,
+  GroupSchema,
+  InferEnv,
+  InferGroupEnv,
+} from "./core.js";
+export { defineEnv } from "./shared.js";
+export type { DefineEnvOptions } from "./shared.js";
 
 export function createEnv<T extends EnvSchema, G extends GroupSchema | undefined = undefined>(
   options: CreateEnvOptions<T> & (G extends undefined ? object : { groups: G })

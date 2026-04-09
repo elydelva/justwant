@@ -8,14 +8,14 @@ import assert from "node:assert";
  * Or: bun run test:better-sqlite3
  */
 import { describe, it } from "node:test";
-import { defineContract, field } from "@justwant/contract";
+import { defineContract, string } from "@justwant/contract";
 import { createBetterSqlite3Adapter } from "@justwant/db/better-sqlite3";
 import { createDb } from "@justwant/db/waddler";
 
 const UserContract = defineContract({
-  id: field().required(),
-  email: field().required(),
-  name: field().optional(),
+  id: string().required(),
+  email: string().required(),
+  name: string().optional(),
 });
 
 const mapping = { id: { name: "id" }, email: { name: "email" }, name: { name: "name" } };

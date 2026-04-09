@@ -32,7 +32,8 @@ export class WarehouseTimeoutError extends WarehouseError {
 
 export function parseWarehouseError(raw: unknown): WarehouseError {
   const err = raw as Record<string, unknown>;
-  const message = typeof err?.message === "string" ? err.message : String(raw ?? "Unknown error");
+  const fallback = typeof raw === "string" ? raw : "Unknown error";
+  const message = typeof err?.message === "string" ? err.message : fallback;
   const cause = err?.cause as Record<string, unknown> | undefined;
   const code = (err?.code ?? cause?.code) as string | undefined;
 
@@ -46,5 +47,5 @@ export function parseWarehouseError(raw: unknown): WarehouseError {
     }
   }
 
-  return new WarehouseError(String(message), "UNKNOWN", { original: raw });
+  return new WarehouseError(message, "UNKNOWN", { original: raw });
 }

@@ -187,8 +187,7 @@ export function createJob(options: CreateJobOptions): JobService {
   ): () => Promise<void> {
     let next: () => Promise<void> = () => handler.run(payload);
 
-    for (let i = plugins.length - 1; i >= 0; i--) {
-      const p = plugins[i];
+    for (const p of [...plugins].reverse()) {
       const before = p?.beforeExecute;
       if (before) {
         const n = next;
@@ -196,8 +195,7 @@ export function createJob(options: CreateJobOptions): JobService {
       }
     }
 
-    for (let i = 0; i < plugins.length; i++) {
-      const p = plugins[i];
+    for (const p of plugins) {
       const after = p?.afterExecute;
       if (after) {
         const n = next;
@@ -300,7 +298,7 @@ export function createJob(options: CreateJobOptions): JobService {
       }
 
       try {
-        const body = preParsedBody !== undefined ? preParsedBody : await parseBody(req);
+        const body = preParsedBody ?? (await parseBody(req));
         const payload = validatePayloadWithSchema(reg.definition.job.schema, body, queueIdParam);
         await executeWithPlugins(queueIdParam, payload);
         return { status: 200, body: { ok: true } };

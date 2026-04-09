@@ -12,9 +12,10 @@ export interface RenamePluginOptions {
 
 function sanitizePath(path: string): string {
   return path
-    .replace(/[<>:"|?*]/g, "_")
-    .replace(/\/+/g, "/")
-    .replace(/^\/+|\/+$/g, "");
+    .replaceAll(/[<>:"|?*]/g, "_")
+    .replaceAll(/\/{2,}/g, "/")
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "");
 }
 
 function getExtension(path: string): string {
@@ -26,8 +27,10 @@ function getExtension(path: string): string {
 function slugify(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replaceAll(/[^a-z0-9]/g, "-")
+    .replaceAll(/-{2,}/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
 }
 
 async function toBuffer(

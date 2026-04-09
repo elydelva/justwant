@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import { createBezierCurve } from "./createBezierCurve.js";
-import { InvalidBezierParamsError } from "./errors.js";
 
 describe("createBezierCurve", () => {
   test("at(0) returns 0", () => {
