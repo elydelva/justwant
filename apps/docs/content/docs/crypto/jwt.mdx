@@ -1,0 +1,96 @@
+---
+title: JWT
+description: Encode and decode HS256 JWTs using @justwant/crypto/jwt.
+icon: Shield
+---
+
+## Overview
+
+The `/jwt` module provides HS256 JWT encoding and decoding via [jose](https://github.com/panva/jose). Use it to issue short-lived access tokens, session tokens, or any signed payload that needs a standard expiry claim.
+
+## Import
+
+```ts
+import { encodeJwt, decodeJwt } from "@justwant/crypto/jwt";
+// Aliases
+import { createJwt, verifyJwt } from "@justwant/crypto/jwt";
+```
+
+## API
+
+### `encodeJwt(payload, secret, options?)`
+
+Signs a payload as an HS256 JWT. Returns the compact JWT string.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `payload` | `Record<string, unknown>` | Claims to embed |
+| `secret` | `string \| Uint8Array` | Signing secret |
+| `options.expIn` | `number` | Expiry in seconds from now |
+| `options.iat` | `number` | Override issued-at timestamp |
+
+```ts
+const token = await encodeJwt(
+  { sub: "user_123", role: "admin" },
+  process.env.JWT_SECRET!,
+  { expIn: 3600 } // 1 hour
+);
+```
+
+### `decodeJwt<T>(token, secret)`
+
+Verifies the signature and decodes the JWT payload. Returns the typed payload, or `null` if the token is invalid, expired, or the signature does not match.
+
+```ts
+const payload = await decodeJwt<{ sub: string; role: string }>(token, process.env.JWT_SECRET!);
+if (!payload) {
+  throw new Error("Invalid or expired token");
+}
+```
+
+## Access token pattern
+
+```ts title="lib/tokens.ts"
+import { encodeJwt, decodeJwt } from "@justwant/crypto/jwt";
+
+const SECRET = process.env.JWT_SECRET!;
+
+export interface AccessTokenPayload {
+  sub: string;
+  role: string;
+  sessionId: string;
+}
+
+export async function issueAccessToken(payload: AccessTokenPayload): Promise<string> {
+  return encodeJwt(payload, SECRET, { expIn: 15 * 60 }); // 15 minutes
+}
+
+export async function validateAccessToken(token: string): Promise<AccessTokenPayload | null> {
+  return decodeJwt<AccessTokenPayload>(token, SECRET);
+}
+```
+
+```ts title="middleware/auth.ts"
+import { validateAccessToken } from "@/lib/tokens";
+
+export async function authMiddleware(request: Request) {
+  const header = request.headers.get("Authorization");
+  const token = header?.replace("Bearer ", "");
+  if (!token) return new Response("Unauthorized", { status: 401 });
+
+  const payload = await validateAccessToken(token);
+  if (!payload) return new Response("Unauthorized", { status: 401 });
+
+  return payload;
+}
+```
+
+## Aliases
+
+| Alias | Canonical |
+|-------|-----------|
+| `createJwt` | `encodeJwt` |
+| `verifyJwt` | `decodeJwt` |
+| `CreateJwtOptions` | `JwtEncodeOptions` |
+
+**Note**: JWTs are signed but not encrypted. Do not embed sensitive data (passwords, secrets) in the payload. Use `/encrypt` if you need confidentiality.

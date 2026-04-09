@@ -1,0 +1,99 @@
+---
+title: Encrypt
+description: Encrypt and decrypt strings with AES-256-GCM using @justwant/crypto/encrypt.
+icon: LockKeyhole
+---
+
+## Overview
+
+The `/encrypt` module provides AES-256-GCM symmetric encryption. Use it to encrypt PII and other sensitive data before storing it in a database.
+
+The output is a single Base64url string containing the nonce and ciphertext — no extra fields to manage.
+
+## Import
+
+```ts
+import { encrypt, decrypt, encryptWithPassword, decryptWithPassword } from "@justwant/crypto/encrypt";
+```
+
+## API
+
+### `encrypt(plaintext, key)`
+
+Encrypts a string with a 32-byte `Uint8Array` key. The nonce is randomly generated and included in the output.
+
+```ts
+const ciphertext = encrypt("john.doe@example.com", key);
+// "nonce+ciphertext as Base64url"
+```
+
+**Note**: The `key` must be exactly 32 bytes. Use [`deriveKey`](/docs/crypto/derive-key) to produce a key from a secret string.
+
+### `decrypt(ciphertext, key)`
+
+Decrypts a string produced by `encrypt()`. Returns the original plaintext, or `null` if the ciphertext is invalid or the key does not match.
+
+```ts
+const plaintext = decrypt(ciphertext, key);
+// "john.doe@example.com" or null
+```
+
+### `encryptWithPassword(plaintext, password, salt?)`
+
+Encrypts a string with a password. Derives the key using PBKDF2 internally. The random salt is included in the output.
+
+```ts
+const ciphertext = encryptWithPassword("sensitive data", "my-password");
+```
+
+### `decryptWithPassword(ciphertext, password)`
+
+Decrypts a string produced by `encryptWithPassword()`. Returns the original string, or `null` if invalid.
+
+```ts
+const plaintext = decryptWithPassword(ciphertext, "my-password");
+```
+
+## Encrypting PII at rest
+
+A common pattern is to derive a per-field key using `deriveKey` and encrypt PII before writing it to the database.
+
+```ts title="lib/pii.ts"
+import { deriveKey } from "@justwant/crypto/derive-key";
+import { encrypt, decrypt } from "@justwant/crypto/encrypt";
+
+const MASTER_SECRET = process.env.ENCRYPTION_SECRET!;
+
+async function getFieldKey(field: string): Promise<Uint8Array> {
+  return deriveKey(MASTER_SECRET, "pii-encryption", field, 32);
+}
+
+export async function encryptField(field: string, value: string): Promise<string> {
+  const key = await getFieldKey(field);
+  return encrypt(value, key);
+}
+
+export async function decryptField(field: string, ciphertext: string): Promise<string | null> {
+  const key = await getFieldKey(field);
+  return decrypt(ciphertext, key);
+}
+```
+
+```ts title="lib/users.ts"
+import { encryptField, decryptField } from "@/lib/pii";
+
+export async function createUser(data: { email: string; phone: string }) {
+  await db.users.create({
+    emailEncrypted: await encryptField("email", data.email),
+    phoneEncrypted: await encryptField("phone", data.phone),
+  });
+}
+
+export async function getUserEmail(userId: string): Promise<string | null> {
+  const user = await db.users.find(userId);
+  if (!user) return null;
+  return decryptField("email", user.emailEncrypted);
+}
+```
+
+**Important**: Store your `ENCRYPTION_SECRET` in a secrets manager, not in source code or `.env` files committed to version control. Losing the secret means losing access to all encrypted data.

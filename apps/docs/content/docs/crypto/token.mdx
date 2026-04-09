@@ -1,0 +1,126 @@
+---
+title: Token
+description: Generate secure random tokens and short codes, hash them for storage, and verify them.
+icon: Fingerprint
+---
+
+## Overview
+
+The `/token` module provides utilities for generating and verifying cryptographically secure tokens. Common uses include magic links, email verification tokens, password reset tokens, API keys, and OTP codes.
+
+**Important**: Always store the *hashed* version of a token in your database. Only send the plain token to the user. This limits exposure if your database is compromised.
+
+## Import
+
+```ts
+import {
+  generateToken,
+  generateShortCode,
+  hashToken,
+  verifyToken,
+} from "@justwant/crypto/token";
+```
+
+## API
+
+### `generateToken(bytes?)`
+
+Generates a cryptographically random hex string. Default: 32 bytes (64 hex characters).
+
+```ts
+const token = generateToken();      // 64-char hex, e.g. "a3f8..."
+const short = generateToken(16);    // 32-char hex
+```
+
+### `generateShortCode(length?, alphabet?)`
+
+Generates a short random code from a given alphabet. Default: 6-digit numeric OTP.
+
+```ts
+const otp = generateShortCode();                  // "482917"
+const code = generateShortCode(8, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"); // "X4K2P9QA"
+```
+
+### `hashToken(token)`
+
+Hashes a token (hex string or `Uint8Array`) with SHA-256. Returns a hex string for database storage.
+
+```ts
+const hash = hashToken(token); // store this in the DB
+```
+
+### `verifyToken(plainToken, storedHash)`
+
+Verifies a plain token against a stored hash in constant time. Returns `true` if they match.
+
+```ts
+const ok = verifyToken(tokenFromUser, storedHash);
+```
+
+## Email verification pattern
+
+```ts title="lib/email-verification.ts"
+import { generateToken, hashToken, verifyToken } from "@justwant/crypto/token";
+
+// Step 1: Generate a token and send it to the user
+export async function sendVerificationEmail(userId: string, email: string) {
+  const token = generateToken();
+  const hash = hashToken(token);
+
+  // Store the hash, not the plain token
+  await db.verificationTokens.create({
+    userId,
+    hash,
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hour
+  });
+
+  // Send the plain token to the user (in a URL or email body)
+  await email.send({
+    to: email,
+    subject: "Verify your email",
+    html: `<a href="https://example.com/verify?token=${token}">Verify email</a>`,
+  });
+}
+
+// Step 2: Verify the token when the user clicks the link
+export async function verifyEmail(tokenFromUrl: string) {
+  const records = await db.verificationTokens.findAll();
+
+  const match = records.find((r) =>
+    verifyToken(tokenFromUrl, r.hash) && r.expiresAt > new Date()
+  );
+
+  if (!match) throw new Error("Invalid or expired token");
+
+  await db.users.markEmailVerified(match.userId);
+  await db.verificationTokens.delete(match.id);
+}
+```
+
+## OTP / short code pattern
+
+```ts title="lib/otp.ts"
+import { generateShortCode } from "@justwant/crypto/token";
+
+export async function sendOtp(userId: string, phone: string) {
+  const code = generateShortCode(6); // "391847"
+
+  await db.otps.create({
+    userId,
+    code, // OTPs are short-lived; storing plain is acceptable if TTL is <5 min
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+  });
+
+  await sms.send({ to: phone, body: `Your code: ${code}` });
+}
+```
+
+## Aliases
+
+The module exports several aliases for convenience:
+
+| Alias | Canonical |
+|-------|-----------|
+| `generateSecretCode` | `generateToken` |
+| `hashForStorage` | `hashToken` |
+| `checkToken` | `verifyToken` |

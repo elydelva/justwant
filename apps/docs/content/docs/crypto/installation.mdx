@@ -1,0 +1,64 @@
+---
+title: Installation
+description: Install @justwant/crypto and import the modules you need.
+icon: Download
+---
+
+## Install the package
+
+```bash
+bun add @justwant/crypto
+```
+
+## Subpath import pattern
+
+`@justwant/crypto` exposes each module as a **subpath export**. There is no top-level entry point — you import directly from the module you need.
+
+```ts
+// Password hashing
+import { hashPassword, verifyPassword } from "@justwant/crypto/password";
+
+// Secure tokens
+import { generateToken, generateShortCode, hashToken, verifyToken } from "@justwant/crypto/token";
+
+// JWT
+import { encodeJwt, decodeJwt } from "@justwant/crypto/jwt";
+
+// JWS payload signing
+import { sign, verify } from "@justwant/crypto/sign";
+
+// AES-256-GCM encryption
+import { encrypt, decrypt } from "@justwant/crypto/encrypt";
+
+// SHA-256 hashing
+import { hashString } from "@justwant/crypto/hash";
+
+// HKDF key derivation
+import { deriveKey } from "@justwant/crypto/derive-key";
+
+// Constant-time comparison
+import { timingSafeEqual, secureCompareStrings } from "@justwant/crypto/compare";
+```
+
+**Note**: Each subpath maps to its own compiled file. Bundlers and Bun will only load what you import.
+
+## Available subpaths
+
+| Import | Module |
+|--------|--------|
+| `@justwant/crypto/password` | Argon2id hashing and verification |
+| `@justwant/crypto/token` | Token generation, hashing, and verification |
+| `@justwant/crypto/jwt` | HS256 JWT encode and decode |
+| `@justwant/crypto/sign` | JWS compact signatures |
+| `@justwant/crypto/encrypt` | AES-256-GCM encryption |
+| `@justwant/crypto/hash` | SHA-256 string hashing |
+| `@justwant/crypto/derive-key` | HKDF-SHA256 key derivation |
+| `@justwant/crypto/compare` | Constant-time comparisons |
+| `@justwant/crypto/rotating-encryption` | Key-ring for rotation |
+| `@justwant/crypto/primitives` | Low-level `@noble` re-exports |
+
+## Next steps
+
+- [Password](/docs/crypto/password) — Hash and verify passwords
+- [Token](/docs/crypto/token) — Generate secure tokens and OTP codes
+- [JWT](/docs/crypto/jwt) — Issue and verify access tokens

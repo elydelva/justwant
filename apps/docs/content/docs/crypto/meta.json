@@ -1,0 +1,19 @@
+{
+  "title": "Crypto",
+  "icon": "Lock",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "---Modules---",
+    "password",
+    "token",
+    "jwt",
+    "sign",
+    "encrypt",
+    "hash",
+    "derive-key",
+    "---Reference---",
+    "api"
+  ]
+}

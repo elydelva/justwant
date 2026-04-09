@@ -1,0 +1,66 @@
+---
+title: Introduction
+description: Crypto primitives for TypeScript apps — passwords, tokens, JWT, signing, encryption, hashing, and key derivation.
+icon: Lock
+---
+
+## What is @justwant/crypto?
+
+`@justwant/crypto` is a **collection of cryptographic primitives** for TypeScript applications. It covers every common security need — password hashing, secure tokens, JWTs, payload signing, symmetric encryption, hashing, and key derivation — with a minimal, auditable dependency tree.
+
+**Use it when** you need to:
+- Hash and verify passwords with Argon2id
+- Generate cryptographically secure tokens, OTP codes, and API keys
+- Issue and verify JWTs (HS256) for access control
+- Sign webhook payloads with a shared secret
+- Encrypt sensitive data at rest (AES-256-GCM)
+- Hash strings and compute HMACs for integrity checks
+- Derive deterministic keys from passwords or secrets
+
+## Audited dependencies
+
+| Dependency | Purpose |
+|-----------|---------|
+| `argon2` | Argon2id password hashing (native, audited) |
+| `jose` | JWT (HS256) and JWS compact signatures |
+| `@noble/hashes` | SHA-256, HMAC, HKDF, random bytes |
+| `@noble/ciphers` | AES-256-GCM encryption |
+
+## Subpath imports
+
+`@justwant/crypto` has **no default export** and **no barrel entry point**. Every module is a separate subpath import. This keeps your bundle lean — you only load what you use.
+
+```ts
+import { hashPassword } from "@justwant/crypto/password";
+import { generateToken } from "@justwant/crypto/token";
+import { encodeJwt } from "@justwant/crypto/jwt";
+import { sign } from "@justwant/crypto/sign";
+import { encrypt } from "@justwant/crypto/encrypt";
+import { hashString } from "@justwant/crypto/hash";
+import { deriveKey } from "@justwant/crypto/derive-key";
+import { timingSafeEqual } from "@justwant/crypto/compare";
+```
+
+## Available subpaths
+
+| Subpath | Description |
+|---------|-------------|
+| `/password` | Argon2id password hashing and verification |
+| `/token` | Secure random tokens, short codes, hash-for-storage |
+| `/jwt` | HS256 JWT encode/decode |
+| `/sign` | JWS compact signatures for arbitrary payloads |
+| `/encrypt` | AES-256-GCM symmetric encryption |
+| `/hash` | SHA-256 string hashing |
+| `/derive-key` | HKDF-SHA256 key derivation |
+| `/compare` | Constant-time string and byte comparisons |
+| `/rotating-encryption` | Key-ring for rotating encryption keys |
+| `/primitives` | Low-level re-exports from `@noble` (advanced use) |
+
+## Next steps
+
+- [Installation](/docs/crypto/installation) — Install and set up subpath imports
+- [Password](/docs/crypto/password) — Hash and verify passwords with Argon2id
+- [Token](/docs/crypto/token) — Generate secure tokens and short codes
+- [JWT](/docs/crypto/jwt) — Issue and verify access tokens
+- [Sign](/docs/crypto/sign) — Sign webhook payloads
+- [Encrypt](/docs/crypto/encrypt) — Encrypt PII at rest
