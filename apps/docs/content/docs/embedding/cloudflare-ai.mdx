@@ -1,5 +1,5 @@
 ---
-title: Cloudflare Workers AI Engine
+title: Cloudflare Workers AI
 description: Embedding engine using the Cloudflare Workers AI binding — no external dependencies.
 icon: Cloud
 ---
@@ -58,7 +58,7 @@ const vectors = await engine.embedMany(["text one", "text two"]);
 
 ## Pairing with Cloudflare Vectorize
 
-Combine the Workers AI engine with the [Cloudflare Vectorize storage](/docs/embedding/storages/cloudflare-vectorize) for a fully Cloudflare-native setup with no external dependencies:
+Combine the Workers AI engine with the [Cloudflare Vectorize storage](/docs/embedding/cloudflare-vectorize) for a fully Cloudflare-native setup with no external dependencies:
 
 ```ts title="worker.ts"
 import { createEmbeddingService } from "@justwant/embedding";

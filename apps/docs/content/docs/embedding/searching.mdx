@@ -1,0 +1,174 @@
+---
+title: Searching
+description: Run semantic similarity searches — by text, by vector, with filters, topK tuning, and score interpretation.
+icon: Search
+---
+
+## Overview
+
+`embedding.similar(universeId, options)` runs a k-nearest-neighbor search against the stored vectors. You can search by text (the service embeds it first) or by a pre-computed vector.
+
+```ts
+const results = await embedding.similar("articles", {
+  text: "how to implement vector search",
+  topK: 5,
+});
+// → Array<{ id: string; score: number; metadata?: Record<string, unknown> }>
+```
+
+---
+
+## Search by text
+
+The most common case. The service embeds the query string using the configured engine, then runs the k-NN search.
+
+```ts
+const results = await embedding.similar("articles", {
+  text: "getting started with embeddings",
+  topK: 10,
+});
+
+for (const result of results) {
+  console.log(result.id, result.score.toFixed(4), result.metadata?.title);
+}
+```
+
+Results are sorted by descending score — the most similar item is first.
+
+---
+
+## Search by vector
+
+Pass a pre-computed vector to skip the embedding step. Useful when you already have a vector (e.g., from a client-side model) or want to reuse one across multiple queries.
+
+```ts
+// Compute once
+const queryVector = await embedding.embed("semantic search patterns");
+
+// Search multiple universes with the same vector
+const articleResults = await embedding.similar("articles", { vector: queryVector, topK: 5 });
+const productResults = await embedding.similar("products", { vector: queryVector, topK: 5 });
+```
+
+`text` and `vector` are mutually exclusive — passing both throws an error.
+
+---
+
+## Filtering by metadata
+
+Narrow results to a subset of documents using `filter`. Only fields listed in `metadataFields` during `defineEmbeddable` are available for filtering.
+
+```ts
+// Only articles by a specific author
+const results = await embedding.similar("articles", {
+  text: "machine learning",
+  topK: 10,
+  filter: { authorId: "user-42" },
+});
+
+// Multiple conditions (AND semantics)
+const results = await embedding.similar("articles", {
+  text: "deployment",
+  topK: 5,
+  filter: { authorId: "user-42", category: "devops" },
+});
+```
+
+Filter support and behavior varies by storage backend:
+
+| Storage | Filter support | Notes |
+|---------|---------------|-------|
+| pgvector | Post-query (in-memory) | Fetches more results then filters; effective for small metadata sets |
+| sqlite-vec | Post-query (in-memory) | Same as pgvector |
+| Cloudflare Vectorize | Native | Passed to the Vectorize API; supported types: `string`, `number`, `boolean` |
+
+---
+
+## topK — number of results
+
+`topK` controls how many results are returned. Defaults to `10`.
+
+```ts
+// Get the single most similar result
+const [best] = await embedding.similar("articles", { text: "...", topK: 1 });
+
+// Get top 20 for re-ranking
+const candidates = await embedding.similar("articles", { text: "...", topK: 20 });
+```
+
+For storages that filter post-query (pgvector, sqlite-vec), request more results than you need when using `filter` — some will be filtered out:
+
+```ts
+// Fetch 50, filter down to ~10 matching author
+const results = await embedding.similar("articles", {
+  text: "...",
+  topK: 50,
+  filter: { authorId: "user-42" },
+});
+const top10 = results.slice(0, 10);
+```
+
+---
+
+## Interpreting scores
+
+Scores are cosine similarity values, normalized to the range `[0, 1]`. Higher is more similar.
+
+| Score range | Interpretation |
+|-------------|---------------|
+| `> 0.90` | Very high similarity — near-duplicate content |
+| `0.75 – 0.90` | High similarity — same topic, closely related |
+| `0.55 – 0.75` | Moderate similarity — related but distinct |
+| `< 0.55` | Low similarity — likely unrelated |
+
+Apply a minimum score threshold to discard weak matches:
+
+```ts
+const results = await embedding.similar("articles", { text: query, topK: 20 });
+const relevant = results.filter((r) => r.score > 0.72);
+```
+
+Thresholds vary by model and dataset — calibrate empirically with representative queries.
+
+---
+
+## Accessing metadata in results
+
+Metadata fields stored during indexing are available on each result:
+
+```ts
+const results = await embedding.similar("articles", { text: "...", topK: 5 });
+
+for (const result of results) {
+  const title = result.metadata?.title as string | undefined;
+  const authorId = result.metadata?.authorId as string | undefined;
+  console.log(`${result.id} — "${title}" by ${authorId} (score: ${result.score.toFixed(3)})`);
+}
+```
+
+Metadata is `Record<string, unknown>` — cast to the expected types after retrieving.
+
+---
+
+## Using `embed` directly
+
+`embedding.embed(text)` returns the raw vector without running a search. Use it to pre-compute vectors, compare them manually, or forward them to another system.
+
+```ts
+const vector = await embedding.embed("serverless deployment strategies");
+// → number[] with length equal to the engine's dimension
+
+// Manual cosine similarity (for example purposes)
+function cosineSimilarity(a: number[], b: number[]): number {
+  const dot = a.reduce((sum, v, i) => sum + v * b[i], 0);
+  const normA = Math.sqrt(a.reduce((sum, v) => sum + v * v, 0));
+  const normB = Math.sqrt(b.reduce((sum, v) => sum + v * v, 0));
+  return dot / (normA * normB);
+}
+```
+
+An optional `model` override is passed through to engines that support per-call model selection:
+
+```ts
+const vector = await embedding.embed("text", { model: "text-embedding-3-large" });
+```

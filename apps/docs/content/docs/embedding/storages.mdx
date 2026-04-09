@@ -1,5 +1,5 @@
 ---
-title: Storages
+title: Which storage?
 description: Available vector storage backends — pgvector, sqlite-vec, Cloudflare Vectorize, and an in-memory test adapter.
 icon: Database
 ---
@@ -10,9 +10,9 @@ A `VectorStorage` stores vectors and provides k-nearest-neighbor search. All sto
 
 | Storage | Technology | Page |
 |---------|-----------|------|
-| [`pgvectorStorageAdapter`](/docs/embedding/storages/pgvector) | PostgreSQL + pgvector extension | [→](/docs/embedding/storages/pgvector) |
-| [`sqliteVectorStorageAdapter`](/docs/embedding/storages/sqlite-vec) | SQLite + sqlite-vec | [→](/docs/embedding/storages/sqlite-vec) |
-| [`vectorizeStorageAdapter`](/docs/embedding/storages/cloudflare-vectorize) | Cloudflare Vectorize | [→](/docs/embedding/storages/cloudflare-vectorize) |
+| [`pgvectorStorageAdapter`](/docs/embedding/pgvector) | PostgreSQL + pgvector extension | [→](/docs/embedding/pgvector) |
+| [`sqliteVectorStorageAdapter`](/docs/embedding/sqlite-vec) | SQLite + sqlite-vec | [→](/docs/embedding/sqlite-vec) |
+| [`vectorizeStorageAdapter`](/docs/embedding/cloudflare-vectorize) | Cloudflare Vectorize | [→](/docs/embedding/cloudflare-vectorize) |
 | `testVectorStorageAdapter` | In-memory (dev only) | — |
 
 ```ts
