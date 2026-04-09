@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { defineResource } from "../resource/defineResource.js";
+import { defineResource } from "@justwant/resource";
 import { defineAtomicPermission } from "./defineAtomicPermission.js";
 
 describe("defineAtomicPermission", () => {

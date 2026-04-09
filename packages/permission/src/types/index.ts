@@ -6,12 +6,13 @@
  */
 
 export type { IdentityLike, Actor } from "@justwant/actor";
+export type { Resource } from "@justwant/resource";
 
-/** Structural interface for reference-like definitions (what) — ResourceDef */
-export interface ReferenceLike {
-  readonly name: string;
-  (id: string): { type: string; id: string };
-}
+/**
+ * ReferenceLike — structural alias for Definable<string>.
+ * Kept for backward compatibility with existing consumers.
+ */
+export type { Definable as ReferenceLike } from "@justwant/meta";
 
 /** Structural interface for scope-like definitions */
 export interface ScopeLike {
@@ -25,11 +26,6 @@ export type OverrideType = "grant" | "deny";
 export interface Scope<T extends string = string> {
   type: T;
   id?: string | null;
-}
-
-export interface Resource {
-  type: string;
-  id: string;
 }
 
 /** Persistence entity — actorType/scopeType are strings (user-defined) */

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { defineResource } from "@justwant/resource";
 import { defineActor } from "../actor/defineActor.js";
 import { defineAtomicPermission } from "../permission/defineAtomicPermission.js";
-import { defineResource } from "../resource/defineResource.js";
 import { defineRole } from "../role/defineRole.js";
 import { defineScope } from "../scope/defineScope.js";
 import { defineRealm } from "./defineRealm.js";

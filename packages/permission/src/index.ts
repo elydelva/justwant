@@ -14,8 +14,8 @@ export type {
   ActorDef,
 } from "./define/actor/defineActor.js";
 
-export { defineResource } from "./define/resource/defineResource.js";
-export type { DefineResourceOptions, ResourceDef } from "./define/resource/defineResource.js";
+export { defineResource } from "@justwant/resource";
+export type { ResourceDef } from "@justwant/resource";
 
 export { defineAtomicPermission } from "./define/permission/defineAtomicPermission.js";
 export type {
