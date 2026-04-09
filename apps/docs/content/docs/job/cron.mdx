@@ -1,0 +1,123 @@
+---
+title: Cron
+description: Scheduling with defineCron — expressions, skip, disable, and enable.
+icon: Clock
+---
+
+## Overview
+
+Cron jobs in `@justwant/job` are defined with `defineCron` and passed to `createJob({ crons })`. The engine registers the schedule and fires the handler at each tick. A handler must be provided in the `handlers` map at startup.
+
+## Define a cron
+
+```ts
+import { defineJob, defineCron } from "@justwant/job";
+
+const generateReport = defineJob({ name: "generate-report" });
+
+const schedule = defineCron({
+  job: generateReport,
+  cron: "0 6 * * *", // daily at 06:00
+  id: "generate-report-daily", // optional unique id
+});
+```
+
+## Multiple crons for the same job
+
+Because `id` is separate from `job.name`, you can schedule the same job on multiple expressions:
+
+```ts
+const morningReport = defineCron({ job: generateReport, cron: "0 8 * * *", id: "report-morning" });
+const eveningReport = defineCron({ job: generateReport, cron: "0 20 * * *", id: "report-evening" });
+```
+
+## Start with crons
+
+```ts
+const jobs = createJob({
+  engine,
+  crons: [morningReport, eveningReport],
+  handlers: {
+    "generate-report": generateReport.handle(async ({ logger }) => {
+      logger.info("Generating report");
+    }),
+  },
+});
+
+await jobs.start();
+```
+
+## Skip next tick
+
+Skip the very next scheduled execution, then resume normally:
+
+```ts
+await jobs.skipNext(schedule);
+// or by id
+await jobs.skipNext("generate-report-daily");
+```
+
+## Skip until a date
+
+Suppress all executions until a given date:
+
+```ts
+const resume = new Date("2026-05-01T00:00:00Z");
+await jobs.skipUntil(schedule, resume);
+```
+
+## Disable a cron
+
+Pause the schedule indefinitely (same as pausing the queue for cron-based engines):
+
+```ts
+await jobs.disableCron(schedule);
+```
+
+## Enable a cron
+
+Re-enable a disabled cron:
+
+```ts
+await jobs.enableCron(schedule);
+```
+
+**Note**: `skipNext`, `skipUntil`, `disableCron`, and `enableCron` require a `repo` with `setSkipNextUntil` (for skip operations) or engine-level `pauseQueue`/`resumeQueue` support (for disable/enable). If neither is available, they throw `UnsupportedCapabilityError`.
+
+## Cron expression format
+
+All engines accept standard 5-field cron expressions (`minute hour day month weekday`). BullMQ and QStash also support 6-field expressions with seconds.
+
+```text
+┌─ minute (0–59)
+│ ┌─ hour (0–23)
+│ │ ┌─ day of month (1–31)
+│ │ │ ┌─ month (1–12)
+│ │ │ │ ┌─ day of week (0–7, 0 and 7 = Sunday)
+│ │ │ │ │
+* * * * *
+```
+
+Common examples:
+
+| Expression | Schedule |
+|-----------|---------|
+| `* * * * *` | Every minute |
+| `0 * * * *` | Every hour |
+| `0 9 * * 1-5` | Weekdays at 09:00 |
+| `0 0 1 * *` | First day of every month |
+| `*/15 * * * *` | Every 15 minutes |
+
+## Timezone
+
+Set timezone via `job.defaults.timezone`:
+
+```ts
+const job = defineJob({
+  name: "morning-task",
+  defaults: { timezone: "America/New_York" },
+});
+
+const cron = defineCron({ job, cron: "0 9 * * *" });
+// Fires at 09:00 New York time
+```

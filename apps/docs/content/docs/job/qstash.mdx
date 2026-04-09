@@ -1,0 +1,160 @@
+---
+title: QStash Engine
+description: HTTP-based serverless job scheduling with Upstash QStash and framework middleware.
+icon: Globe
+---
+
+## Overview
+
+The QStash engine uses [Upstash QStash](https://upstash.com/docs/qstash/overall/getstarted) to deliver jobs via HTTP callbacks. There is no persistent worker process — QStash POSTs to your application's endpoint at each scheduled tick or manual enqueue. This makes it ideal for serverless and edge deployments.
+
+## Install
+
+```bash
+bun add @upstash/qstash
+```
+
+## Setup
+
+```ts title="lib/jobs.ts"
+import { createJob, defineJob, defineQueue } from "@justwant/job";
+import { qstashEngine } from "@justwant/job/engines/qstash";
+import { Client } from "@upstash/qstash";
+
+const engine = qstashEngine({
+  client: new Client({ token: process.env.QSTASH_TOKEN! }),
+  baseUrl: process.env.APP_URL!, // e.g. https://myapp.vercel.app
+  routePrefix: "/api/job",       // QStash will POST to /api/job/:jobId
+  signingKey: process.env.QSTASH_CURRENT_SIGNING_KEY,
+  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY,
+});
+
+const sendNotification = defineJob({ name: "send-notification" });
+const notifyQueue = defineQueue({ job: sendNotification, queue: "notify" });
+
+export const jobs = createJob({ engine, queues: [notifyQueue] });
+```
+
+## QStashEngineOptions
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `client` | `Client` | Yes | `@upstash/qstash` Client instance |
+| `baseUrl` | `string` | Yes | Public base URL of your app |
+| `routePrefix` | `string` | No | Path prefix for job routes (default: `"/job"`) |
+| `signingKey` | `string` | No | Current signing key for signature verification |
+| `nextSigningKey` | `string` | No | Next signing key for key rotation |
+| `aggregateSchedules` | `boolean` | No | Use QStash aggregate schedules |
+
+## Register a handler endpoint
+
+QStash delivers jobs by POSTing to `{baseUrl}/{routePrefix}/{jobId}`. You must expose this route in your application. Use the framework-specific middleware to handle dispatching:
+
+<CodeBlockTabs>
+<CodeBlockTabsList>
+  <CodeBlockTabsTrigger value="next">Next.js App Router</CodeBlockTabsTrigger>
+  <CodeBlockTabsTrigger value="hono">Hono</CodeBlockTabsTrigger>
+  <CodeBlockTabsTrigger value="next-pages">Next.js Pages Router</CodeBlockTabsTrigger>
+  <CodeBlockTabsTrigger value="cloudflare">Cloudflare Workers</CodeBlockTabsTrigger>
+</CodeBlockTabsList>
+<CodeBlockTab value="next">
+
+```ts title="app/api/job/[jobId]/route.ts"
+import { qstashMiddleware } from "@justwant/job/engines/qstash/next";
+import { jobs } from "@/lib/jobs";
+
+// Register handler before exporting
+jobs.handle(notifyQueue, sendNotification.handle(async ({ data, logger }) => {
+  logger.info("Sending notification", { data });
+}));
+
+export const POST = qstashMiddleware(jobs);
+```
+
+</CodeBlockTab>
+<CodeBlockTab value="hono">
+
+```ts title="src/routes/job.ts"
+import { Hono } from "hono";
+import { qstashMiddleware } from "@justwant/job/engines/qstash/hono";
+import { jobs } from "./jobs";
+
+const app = new Hono();
+
+app.post("/job/:jobId", qstashMiddleware(jobs));
+
+export default app;
+```
+
+</CodeBlockTab>
+<CodeBlockTab value="next-pages">
+
+```ts title="pages/api/job/[jobId].ts"
+import type { NextApiRequest, NextApiResponse } from "next";
+import { qstashMiddleware } from "@justwant/job/engines/qstash/next-pages";
+import { jobs } from "@/lib/jobs";
+
+export default qstashMiddleware(jobs);
+```
+
+</CodeBlockTab>
+<CodeBlockTab value="cloudflare">
+
+```ts title="src/worker.ts"
+import { qstashMiddleware } from "@justwant/job/engines/qstash/cloudflare";
+import { jobs } from "./jobs";
+
+export default {
+  async fetch(request: Request) {
+    const url = new URL(request.url);
+    const match = url.pathname.match(/^\/job\/(.+)$/);
+    if (match && request.method === "POST") {
+      return qstashMiddleware(jobs)(request, match[1]);
+    }
+    return new Response("Not found", { status: 404 });
+  },
+};
+```
+
+</CodeBlockTab>
+</CodeBlockTabs>
+
+## Signature verification
+
+Pass `verify: false` to disable signature verification (for local development):
+
+```ts
+export const POST = qstashMiddleware(jobs, { verify: false });
+```
+
+In production, always leave `verify: true` (the default). Provide `signingKey` and `nextSigningKey` to the engine options.
+
+## Cron scheduling
+
+```ts
+import { defineCron } from "@justwant/job";
+
+const hourly = defineCron({
+  job: defineJob({ name: "hourly-sync" }),
+  cron: "0 * * * *",
+});
+
+const jobs = createJob({
+  engine,
+  crons: [hourly],
+  handlers: {
+    "hourly-sync": hourly.job.handle(async ({ logger }) => {
+      logger.info("Syncing");
+    }),
+  },
+});
+
+await jobs.start(); // registers the schedule with QStash
+```
+
+## Manual enqueue
+
+```ts
+await jobs.enqueue(sendNotification, { userId: "u-1", message: "Hello" });
+// → QStash publishes to https://myapp.vercel.app/api/job/notify
+```

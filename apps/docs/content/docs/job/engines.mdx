@@ -1,0 +1,119 @@
+---
+title: Engines
+description: Engine overview — BullMQ, QStash, PostgreSQL, and node-cron. When to use each.
+icon: Cpu
+---
+
+## Overview
+
+`@justwant/job` uses a `JobEngineContract` interface that every engine implements. You pass an engine to `createJob({ engine })` and the service delegates scheduling, enqueueing, and worker management to it.
+
+## Engine comparison
+
+| | BullMQ | QStash | pg | node |
+|--|--------|--------|----|------|
+| **Backend** | Redis | Upstash (HTTP) | PostgreSQL | In-process |
+| **Persistent runtime** | Required | Not required | Required | Required |
+| **TCP connection** | Required | Not required | Required | Not required |
+| **Retry** | Yes | Yes | No | No |
+| **Delay** | Yes | Yes | No | No |
+| **Priority** | Yes | No | No | No |
+| **Concurrency** | Yes | No | No | No |
+| **Pause / resume** | Yes | No | No | Yes (via repo) |
+| **Instance management** | Yes | Partial | No | No |
+| **Edge / serverless** | No | Yes | No | No |
+| **Best for** | Production, high throughput | Serverless, edge, Vercel | Minimal deps, existing pg | Dev, simple apps |
+
+## BullMQ engine
+
+Import from `@justwant/job/engines/bullmq`. Requires `bullmq` package and a Redis connection.
+
+```ts
+import { bullmqEngine } from "@justwant/job/engines/bullmq";
+
+const engine = bullmqEngine({
+  connection: { host: "localhost", port: 6379 },
+  concurrency: 5,
+  prefix: "myapp",
+});
+```
+
+**Use when**: You need retries, backoff, priorities, concurrency control, and full queue introspection in a long-running Node/Bun process.
+
+## QStash engine
+
+Import from `@justwant/job/engines/qstash`. Requires `@upstash/qstash` package.
+
+```ts
+import { qstashEngine } from "@justwant/job/engines/qstash";
+import { Client } from "@upstash/qstash";
+
+const engine = qstashEngine({
+  client: new Client({ token: process.env.QSTASH_TOKEN! }),
+  baseUrl: "https://myapp.vercel.app",
+  routePrefix: "/api/job",
+  signingKey: process.env.QSTASH_CURRENT_SIGNING_KEY,
+  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY,
+});
+```
+
+**Use when**: You are deploying to serverless or edge runtimes (Vercel, Cloudflare Workers) and need reliable delivery without a persistent process.
+
+## pg engine
+
+Import from `@justwant/job/engines/pg`. Uses `Bun.sql` or any pg-compatible pool.
+
+```ts
+import { pgEngine } from "@justwant/job/engines/pg";
+
+const engine = pgEngine({
+  pool: Bun.sql,
+  tableName: "jobs",        // default: "jobs"
+  pollIntervalMs: 60_000,   // default: 60000
+});
+```
+
+**Use when**: You already run PostgreSQL and want to avoid adding Redis or a third-party service. The engine creates a `jobs` table and uses `pg_try_advisory_lock` for distributed scheduling.
+
+## node engine
+
+Import from `@justwant/job/engines/node`. Requires `node-cron` package.
+
+```ts
+import { nodeEngine } from "@justwant/job/engines/node";
+
+const engine = nodeEngine({
+  timezone: "Europe/Paris", // optional global timezone
+});
+```
+
+**Use when**: You are building a local development environment, a simple app, or a CLI that runs scheduled tasks in-process. No persistence — state is lost on restart.
+
+## Custom engine
+
+Implement `JobEngineContract` to bring your own backend:
+
+```ts
+import type { JobEngineContract } from "@justwant/job";
+
+const myEngine: JobEngineContract = {
+  capabilities: {
+    name: "my-engine",
+    hasNativePersistence: false,
+    requires: { persistentRuntime: true, tcpConnection: false, unlimitedDuration: true },
+    supports: {
+      scheduling: true, manualTrigger: true, retry: false,
+      pauseQueue: false, resumeQueue: false,
+      getQueueMetadata: false, listInstances: false, getInstance: false,
+      cancelInstance: false, retryInstance: false, drain: false, getJobCounts: false,
+    },
+  },
+  async register(def, handler) { /* ... */ },
+  async unregister(id) { /* ... */ },
+  async enqueue(id, payload) { /* ... */ },
+  async listQueues() { return []; },
+  async stats(id) { return { runs: 0, failures: 0 }; },
+  async start() { /* ... */ },
+  async stop() { /* ... */ },
+};
+```

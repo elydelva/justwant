@@ -1,0 +1,150 @@
+---
+title: Plugins
+description: Lock, audit, and alert plugins — middleware for job execution.
+icon: Puzzle
+---
+
+## Overview
+
+Plugins are middleware that wrap every job execution. They are passed to `createJob({ plugins })` and form a chain: `beforeExecute` hooks run in order, the handler runs, then `afterExecute` hooks run in reverse. `onError` hooks run on any uncaught error.
+
+```ts
+const jobs = createJob({
+  engine,
+  plugins: [lockPlugin({ ... }), auditPlugin({ ... }), alertPlugin({ ... })],
+});
+```
+
+## Lock plugin
+
+Prevents double execution across distributed instances by acquiring a distributed lock before running the handler. If the lock cannot be acquired (another instance is running the same job), the execution is skipped silently.
+
+```ts
+import { lockPlugin } from "@justwant/job/plugins/lock";
+import { createLock } from "@justwant/lock";
+
+const lock = createLock({ repo: lockRepo });
+
+const plugin = lockPlugin({
+  lock,
+  owner: { type: "job", id: "scheduler-1" }, // optional, default: { type: "job", id: "default" }
+  ttlMs: 60_000,                               // optional, default: 60000
+});
+
+const jobs = createJob({ engine, plugins: [plugin] });
+```
+
+### LockPluginOptions
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `lock` | `LockApi` | Yes | Lock instance from `createLock` |
+| `owner` | `LockOwner` | No | Owner identity (default: `{ type: "job", id: "default" }`) |
+| `ttlMs` | `number` | No | Lock TTL in milliseconds (default: `60000`) |
+
+**Behavior**: The lock key is `job:{jobId}`. If the lock is already held, the plugin returns early without calling the handler. The lock is always released in a `finally` block (release errors are suppressed to avoid masking handler errors).
+
+---
+
+## Audit plugin
+
+Logs a structured audit entry for every job execution, including duration, status, and a payload hash.
+
+```ts
+import { auditPlugin } from "@justwant/job/plugins/audit";
+
+const plugin = auditPlugin({
+  audit: {
+    log(entry) {
+      // entry: { jobId, startedAt, durationMs, status, payloadHash }
+      db.insert("job_audit", entry);
+    },
+  },
+});
+
+const jobs = createJob({ engine, plugins: [plugin] });
+```
+
+### AuditPluginOptions
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `audit.log` | `(entry: AuditEntry) => void \| Promise<void>` | Yes | Audit sink |
+
+### AuditEntry
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `jobId` | `string` | Queue / job identifier |
+| `startedAt` | `Date` | Execution start time |
+| `durationMs` | `number` | Elapsed milliseconds |
+| `status` | `"success" \| "failure"` | Outcome |
+| `payloadHash` | `string \| undefined` | Non-cryptographic hash of the payload |
+
+---
+
+## Alert plugin
+
+Calls a `notify` function whenever a job throws an uncaught error, enabling real-time failure notifications.
+
+```ts
+import { alertPlugin } from "@justwant/job/plugins/alert";
+
+const plugin = alertPlugin({
+  notify({ jobId, error }) {
+    slackClient.postMessage({
+      channel: "#alerts",
+      text: `Job ${jobId} failed: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  },
+});
+
+const jobs = createJob({ engine, plugins: [plugin] });
+```
+
+### AlertPluginOptions
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `notify` | `(payload: AlertPayload) => void \| Promise<void>` | Yes | Notification handler |
+
+### AlertPayload
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `jobId` | `string` | Job identifier |
+| `error` | `unknown` | The thrown error |
+| `runCount` | `number \| undefined` | Execution count (if available) |
+
+---
+
+## Custom plugin
+
+Implement the `JobPlugin` interface:
+
+```ts
+import type { JobPlugin } from "@justwant/job";
+
+const metricsPlugin: JobPlugin = {
+  beforeExecute: async ({ jobId, payload }, next) => {
+    const start = performance.now();
+    try {
+      await next();
+    } finally {
+      metrics.record("job.duration", performance.now() - start, { jobId });
+    }
+  },
+  onError: async ({ jobId, error }) => {
+    metrics.increment("job.error", { jobId });
+  },
+};
+```
+
+### JobPlugin interface
+
+| Hook | Signature | Description |
+|------|-----------|-------------|
+| `init` | `(ctx: JobPluginContext) => void` | Called once on `createJob` |
+| `beforeExecute` | `(ctx, next) => Promise<void>` | Wraps handler execution (before + after) |
+| `afterExecute` | `(ctx, next) => Promise<void>` | Post-execution hook |
+| `onError` | `(ctx: { jobId, error }) => Promise<void>` | Called on uncaught errors |

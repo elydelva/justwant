@@ -1,0 +1,118 @@
+---
+title: Basic Usage
+description: Define a job, create a service with an engine, enqueue, and register a handler.
+icon: PlayCircle
+---
+
+## Full example
+
+This example shows the complete flow: define a job, define a queue, create the service, register a handler, enqueue, and start.
+
+```ts title="lib/jobs.ts"
+import { createJob, defineJob, defineQueue, defineCron } from "@justwant/job";
+import { nodeEngine } from "@justwant/job/engines/node";
+import * as v from "valibot";
+
+// 1. Define the job — name, schema, defaults
+const processOrder = defineJob({
+  name: "process-order",
+  schema: v.object({ orderId: v.string(), amount: v.number() }),
+  defaults: {
+    retry: { attempts: 3, backoff: "exponential" },
+    timezone: "UTC",
+  },
+});
+
+// 2. Define how it queues — queue name, parallelism
+const processOrderQueue = defineQueue({
+  job: processOrder,
+  queue: "orders",
+  parallelism: 5,
+});
+
+// 3. Create a handler
+const handler = processOrder.handle(async ({ data, logger }) => {
+  logger.info("Processing order", { orderId: data.orderId });
+  // do work
+});
+
+// 4. Create the service
+const jobs = createJob({
+  engine: nodeEngine(),
+  queues: [processOrderQueue],
+  handlers: {
+    "process-order": handler,
+  },
+});
+
+// 5. Start — registers queues and attaches workers
+await jobs.start();
+
+// 6. Enqueue manually
+await jobs.enqueue(processOrder, { orderId: "ord-42", amount: 99.99 });
+```
+
+## Cron job
+
+Use `defineCron` for jobs that should run on a schedule without manual enqueue.
+
+```ts title="lib/cronJobs.ts"
+import { createJob, defineJob, defineCron } from "@justwant/job";
+import { nodeEngine } from "@justwant/job/engines/node";
+
+const cleanupExpired = defineJob({ name: "cleanup-expired" });
+
+const schedule = defineCron({
+  job: cleanupExpired,
+  cron: "0 2 * * *", // every day at 02:00
+  id: "cleanup-expired-daily", // optional unique id
+});
+
+const jobs = createJob({
+  engine: nodeEngine(),
+  crons: [schedule],
+  handlers: {
+    "cleanup-expired": cleanupExpired.handle(async ({ logger }) => {
+      logger.info("Cleaning up expired records");
+    }),
+  },
+});
+
+await jobs.start();
+```
+
+## Register a queue at runtime
+
+You can also register queues imperatively after creating the service:
+
+```ts
+await jobs.register(processOrderQueue, handler);
+```
+
+Or attach only a handler (worker mode) without registering the queue definition:
+
+```ts
+await jobs.handle(processOrderQueue, handler);
+```
+
+## Acquire stats
+
+```ts
+const stats = await jobs.getStats(processOrder);
+console.log(stats.runs, stats.failures, stats.lastRun);
+```
+
+## List queues
+
+```ts
+const queues = await jobs.listQueues();
+for (const q of queues) {
+  console.log(q.id, q.status, q.cron);
+}
+```
+
+## Stop the service
+
+```ts
+await jobs.stop();
+```

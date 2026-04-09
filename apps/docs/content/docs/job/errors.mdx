@@ -1,0 +1,131 @@
+---
+title: Errors
+description: All error types exported by @justwant/job.
+icon: AlertCircle
+---
+
+## Error hierarchy
+
+All errors extend `JobError`, which extends `Error`.
+
+```
+JobError
+├── EngineIncompatibleError
+├── JobNotFoundError
+├── JobValidationError
+└── UnsupportedCapabilityError
+```
+
+## JobError
+
+Base class for all job errors. Carries a `code` and optional `metadata`.
+
+```ts
+class JobError extends Error {
+  name: "JobError";
+  code: string;         // machine-readable error code
+  metadata?: Record<string, unknown>;
+}
+```
+
+## EngineIncompatibleError
+
+Thrown by `createJob` (or `checkEngineCompatibility`) when the selected engine cannot run in the current runtime environment. For example, the BullMQ engine (which requires a persistent runtime and TCP connections) throws this when run in an edge runtime.
+
+```ts
+class EngineIncompatibleError extends JobError {
+  name: "EngineIncompatibleError";
+  code: "ENGINE_INCOMPATIBLE";
+  engineName: string;
+  runtime: string;
+}
+```
+
+Suppress the check for testing with:
+
+```ts
+const jobs = createJob({ engine, skipRuntimeCheck: true });
+```
+
+## JobNotFoundError
+
+Thrown when `enqueue` or `dispatch` is called for a queue id that has no registered handler.
+
+```ts
+class JobNotFoundError extends JobError {
+  name: "JobNotFoundError";
+  code: "JOB_NOT_FOUND";
+  jobId: string;
+}
+```
+
+## JobValidationError
+
+Thrown when the job payload fails schema validation (Standard Schema — Zod or Valibot).
+
+```ts
+class JobValidationError extends JobError {
+  name: "JobValidationError";
+  code: "JOB_VALIDATION_ERROR";
+  jobId: string;
+  issues?: Array<{ path: string; message: string }>;
+}
+```
+
+```ts
+try {
+  await jobs.enqueue(processOrder, { orderId: 123 }); // wrong type
+} catch (err) {
+  if (err instanceof JobValidationError) {
+    console.error("Validation failed:", err.issues);
+  }
+}
+```
+
+## UnsupportedCapabilityError
+
+Thrown when a method is called that the current engine does not support (e.g. calling `pauseQueue` on the QStash engine).
+
+```ts
+class UnsupportedCapabilityError extends JobError {
+  name: "UnsupportedCapabilityError";
+  code: "UNSUPPORTED_CAPABILITY";
+  engineName: string;
+  operation: string;
+}
+```
+
+Always check `jobs.supports(operation)` before calling optional methods:
+
+```ts
+if (jobs.supports("pauseQueue")) {
+  await jobs.pauseQueue(queue);
+} else {
+  console.warn("Engine does not support pauseQueue");
+}
+```
+
+## Catching errors
+
+```ts
+import {
+  JobError,
+  JobNotFoundError,
+  JobValidationError,
+  UnsupportedCapabilityError,
+} from "@justwant/job";
+
+try {
+  await jobs.enqueue(myJob, payload);
+} catch (err) {
+  if (err instanceof JobValidationError) {
+    console.error("Bad payload:", err.issues);
+  } else if (err instanceof JobNotFoundError) {
+    console.error("No handler for:", err.jobId);
+  } else if (err instanceof JobError) {
+    console.error("Job error:", err.code, err.message);
+  } else {
+    throw err;
+  }
+}
+```

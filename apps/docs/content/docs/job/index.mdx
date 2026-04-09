@@ -1,0 +1,51 @@
+---
+title: Introduction
+description: Unified job service with interchangeable engines — BullMQ, QStash, PostgreSQL, and node-cron.
+icon: Briefcase
+---
+
+## What is @justwant/job?
+
+`@justwant/job` is a **unified job service** for TypeScript applications. It provides a single API for scheduling, enqueueing, and executing background jobs regardless of the underlying engine — Redis-backed BullMQ, serverless QStash, PostgreSQL polling, or in-process node-cron.
+
+**Use it when** you need to:
+- Run background jobs on a cron schedule or triggered manually
+- Switch between engines without rewriting job logic
+- Add plugins for locking, audit, or alerting across all jobs
+- Test job handlers in isolation without a running queue
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Engine composition** | Swap BullMQ, QStash, pg, or node-cron without changing job code |
+| **defineJob** | Separates job definition (name, schema, defaults) from handler |
+| **defineCron** | Attach a cron expression to a job definition |
+| **defineQueue** | Define queue params — name, parallelism, cron, aggregation |
+| **Plugins** | Middleware chain: lock, audit, alert, and custom plugins |
+| **Schema validation** | Standard Schema (Zod / Valibot) payload validation |
+| **Pause / resume** | Queue management when the engine supports it |
+| **Skip next** | Skip the next cron tick or all ticks until a date |
+
+## How it works
+
+1. **Define** your job with `defineJob` (name, schema, defaults).
+2. **Define** how it runs with `defineCron` (schedule) or `defineQueue` (queue).
+3. **Create** the service with `createJob({ engine, plugins, crons, queues, handlers })`.
+4. **Start** the service — crons register, workers attach.
+5. **Enqueue** jobs manually with `service.enqueue(job, payload)`.
+
+## Core principles
+
+- **Engine-agnostic** — `JobEngineContract` is a minimal interface. Any backend can implement it.
+- **Handler isolation** — Handlers are pure objects with `.run(payload)`. Test them without a queue.
+- **Plugin middleware** — `beforeExecute` / `afterExecute` chains wrap every execution.
+- **Type-safe payloads** — `InferJobPayload<typeof myJob>` extracts the payload type.
+
+## Next steps
+
+- [Installation](/docs/job/installation) — Install and pick an engine
+- [Basic Usage](/docs/job/basic-usage) — Define, register, and enqueue a job
+- [Define Job](/docs/job/define-job) — `defineJob`, `defineCron`, `defineQueue`
+- [Engines](/docs/job/engines) — Choose the right engine
+- [Plugins](/docs/job/plugins) — Lock, audit, and alert plugins
