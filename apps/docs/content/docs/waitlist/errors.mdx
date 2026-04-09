@@ -1,0 +1,97 @@
+---
+title: Errors
+description: Error types thrown by @justwant/waitlist.
+icon: AlertCircle
+---
+
+## Error hierarchy
+
+```
+Error
+└── WaitlistError
+    ├── AlreadySubscribedError
+    ├── NotSubscribedError
+    └── EmptyWaitlistError
+```
+
+All errors extend `WaitlistError` and expose a `code` string.
+
+## WaitlistError
+
+Base class for all waitlist errors.
+
+```ts
+import { WaitlistError } from "@justwant/waitlist";
+
+try {
+  await waitlist.subscribe(list, actor);
+} catch (err) {
+  if (err instanceof WaitlistError) {
+    console.error(err.code, err.metadata);
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `string` | Machine-readable error code |
+| `metadata` | `Record<string, unknown> \| undefined` | Contextual data |
+
+## AlreadySubscribedError
+
+Thrown by `subscribe` when the actor is already subscribed to the list.
+
+```ts
+import { AlreadySubscribedError } from "@justwant/waitlist";
+
+try {
+  await waitlist.subscribe(betaList, actor);
+} catch (err) {
+  if (err instanceof AlreadySubscribedError) {
+    console.error(err.listKey, err.actorKey);
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `"ALREADY_SUBSCRIBED"` | Error code |
+| `listKey` | `string` | The list key |
+| `actorKey` | `string` | The actor key (e.g. `"user:u-1"`) |
+
+## NotSubscribedError
+
+Thrown by `unsubscribe` and `getPosition` when the actor is not subscribed.
+
+```ts
+import { NotSubscribedError } from "@justwant/waitlist";
+
+try {
+  await waitlist.getPosition(betaList, actor);
+} catch (err) {
+  if (err instanceof NotSubscribedError) {
+    console.error(err.listKey, err.actorKey);
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `"NOT_SUBSCRIBED"` | Error code |
+| `listKey` | `string` | The list key |
+| `actorKey` | `string` | The actor key |
+
+## EmptyWaitlistError
+
+Available but not thrown by the default service. Reserved for custom implementations or adapters that detect an empty list condition explicitly.
+
+```ts
+import { EmptyWaitlistError } from "@justwant/waitlist";
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `"EMPTY_WAITLIST"` | Error code |
+| `listKey` | `string` | The list key |
+
+**Note**: `pop` returns `null` rather than throwing `EmptyWaitlistError` when the list is empty.

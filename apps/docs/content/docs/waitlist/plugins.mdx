@@ -1,0 +1,120 @@
+---
+title: Plugins
+description: Extend @justwant/waitlist with audit logging, expiration cleanup, and referral integration.
+icon: Puzzle
+---
+
+## Overview
+
+`@justwant/waitlist` ships three built-in extensions:
+
+| Extension | Export | Purpose |
+|-----------|--------|---------|
+| Audit | `auditPlugin` | Log every subscribe/unsubscribe/pop |
+| Expiration | `cleanupExpired` | Remove entries past their `expiresAt` |
+| Referral invite | `invite` | Low-level invite helper (used internally by `WaitlistService.invite`) |
+
+## auditPlugin
+
+Logs every waitlist operation before it executes.
+
+```ts
+import { createWaitlistService, auditPlugin } from "@justwant/waitlist";
+
+const waitlist = createWaitlistService({
+  repo,
+  plugins: [
+    auditPlugin({
+      audit: {
+        log(entry) {
+          console.log(`[audit] ${entry.operation} ${entry.listKey} ${entry.actorKey ?? ""}`);
+        },
+      },
+    }),
+  ],
+});
+```
+
+### AuditPluginOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `audit.log` | `(entry: AuditEntry) => void \| Promise<void>` | Called before each operation |
+
+### AuditEntry
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `operation` | `string` | Operation name (e.g. `"subscribe"`) |
+| `listKey` | `string` | The list key |
+| `actorKey` | `string \| undefined` | Actor identifier string |
+| `entryId` | `string \| undefined` | Entry id (available after creation) |
+| `timestamp` | `Date` | When the operation was logged |
+
+## cleanupExpired
+
+A utility function (not a plugin) that removes all entries with an `expiresAt` in the past. Call it on a schedule (e.g. a cron job) or on-demand.
+
+```ts
+import { cleanupExpired } from "@justwant/waitlist";
+
+// Remove expired entries from "beta" list
+const removed = await cleanupExpired(repo, "beta");
+console.log(`Removed ${removed} expired entries`);
+```
+
+### Signature
+
+```ts
+function cleanupExpired(repo: WaitlistRepository, listKey: string): Promise<number>
+```
+
+Returns the number of entries removed.
+
+### ExpirationPluginOptions
+
+Pass `repo` directly — the function reads from the repository and calls `unsubscribe` for expired entries.
+
+## Referral invite integration
+
+The `invite` export is a low-level helper used internally by `WaitlistService.invite`. You rarely need to call it directly — instead, pass `referralService` to `createWaitlistService` and use `service.invite(...)`.
+
+```ts
+import { createWaitlistService } from "@justwant/waitlist";
+import { createReferralService } from "@justwant/referral";
+
+const referral = createReferralService({ repo: referralRepo });
+
+const waitlist = createWaitlistService({
+  repo: waitlistRepo,
+  referralService: referral,
+  offerKeyForList: (listKey) => `waitlist:${listKey}`,
+});
+
+// Now invite() automatically records referrals:
+await waitlist.invite(betaList, inviter, invitee);
+```
+
+See [Invitations](/docs/waitlist/invitations) for the full invite flow.
+
+## WaitlistPlugin interface
+
+If you need a custom plugin, implement `WaitlistPlugin`:
+
+```ts
+interface WaitlistPlugin {
+  init?(context: { setContext?(key: string, value: unknown): void }): void;
+  beforeExecute?(ctx: WaitlistPluginContext, next: () => Promise<unknown>): Promise<unknown>;
+  afterExecute?(ctx: WaitlistPluginContext, next: () => Promise<unknown>): Promise<unknown>;
+  onError?(ctx: { operation: string; error: unknown }): Promise<void>;
+}
+```
+
+Pass multiple plugins as an array — they are applied in order for `beforeExecute` and in reverse for `afterExecute`:
+
+```ts
+const waitlist = createWaitlistService({
+  repo,
+  plugins: [auditPlugin({ audit }), myCustomPlugin],
+});
+```

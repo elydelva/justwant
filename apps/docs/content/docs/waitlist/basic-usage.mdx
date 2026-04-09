@@ -1,0 +1,115 @@
+---
+title: Basic Usage
+description: Define a list, subscribe actors, and query positions.
+icon: Play
+---
+
+## Step 1 — Define a list
+
+```ts title="lib/lists.ts"
+import { defineList } from "@justwant/waitlist";
+
+export const betaList = defineList({ name: "beta" });
+```
+
+## Step 2 — Create the service
+
+Use the in-memory adapter for development and testing. In production, use `createWaitlistDbAdapter` from `@justwant/db`.
+
+```ts title="lib/waitlist.ts"
+import { createWaitlistService, createMemoryWaitlistAdapter } from "@justwant/waitlist";
+import { betaList } from "./lists.ts";
+
+export const waitlist = createWaitlistService({
+  repo: createMemoryWaitlistAdapter(),
+});
+```
+
+## Subscribe
+
+```ts
+const actor = { type: "user", id: "u-1" };
+
+const entry = await waitlist.subscribe(betaList, actor);
+// throws AlreadySubscribedError if already subscribed
+```
+
+Subscribe with optional metadata and expiry:
+
+```ts
+await waitlist.subscribe(betaList, actor, {
+  metadata: { source: "landing-page" },
+  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+});
+```
+
+## Check subscription
+
+```ts
+const subscribed = await waitlist.isSubscribed(betaList, actor); // boolean
+```
+
+## Get position
+
+```ts
+const { position, total } = await waitlist.getPosition(betaList, actor);
+// { position: 1, total: 42 }
+// throws NotSubscribedError if not subscribed
+```
+
+## Count subscribers
+
+```ts
+const count = await waitlist.count(betaList); // number
+```
+
+## List subscribers
+
+```ts
+const subscribers = await waitlist.listSubscribers(betaList, {
+  limit: 20,
+  offset: 0,
+  orderBy: "asc", // FIFO order
+});
+```
+
+## Pop the next entry
+
+```ts
+const next = await waitlist.pop(betaList);
+// Returns the earliest WaitlistEntry and removes it, or null if empty
+```
+
+## Unsubscribe
+
+```ts
+await waitlist.unsubscribe(betaList, actor);
+// throws NotSubscribedError if not subscribed
+```
+
+## Bulk operations
+
+```ts
+// Subscribe multiple actors (skips already-subscribed silently)
+const entries = await waitlist.subscribeMany(betaList, [
+  { type: "user", id: "u-2" },
+  { type: "user", id: "u-3" },
+]);
+
+// Unsubscribe multiple actors (skips not-subscribed silently)
+await waitlist.unsubscribeMany(betaList, [
+  { type: "user", id: "u-2" },
+  { type: "user", id: "u-3" },
+]);
+```
+
+## Parameterized lists
+
+For per-product or per-feature waitlists, declare params:
+
+```ts
+const productList = defineList({ name: "product", params: ["productId"] });
+const key = productList.key("prod-123"); // "product:prod-123"
+
+await waitlist.subscribe(key, actor); // use key string directly
+```
