@@ -39,7 +39,7 @@ export interface CreateFlagServiceOptions {
 export function createFlagService(options: CreateFlagServiceOptions): FlagService {
   const { flags, repo } = options;
 
-  const ruleMap = new Map<string, RuleDef<unknown, unknown>>();
+  const ruleMap = new Map<string, RuleDef>();
   for (const flag of flags) {
     for (const rule of flag.rules) {
       ruleMap.set(rule.name, rule);

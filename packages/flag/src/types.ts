@@ -59,7 +59,7 @@ export interface FlagDef<N extends string = string> extends Inspectable<N> {
 }
 
 /** Rule reference for service methods (RuleDef or rule name string). */
-export type RuleRef = Pick<RuleDef, "name"> | string;
+export type RuleRef = RuleDef | string;
 
 /** Config override per ruleId for evaluate (ad-hoc, does not persist). */
 export type EvaluateConfigOverride = Record<string, unknown>;
