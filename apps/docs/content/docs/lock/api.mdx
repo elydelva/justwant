@@ -69,7 +69,7 @@ function defineLockable<N extends string>(
 | `singular` | `boolean` | Yes | `true` = global key, `false` = per-params key |
 | `prefix` | `string` | No | Key prefix |
 
-### LockableDef<N>
+### `LockableDef<N>`
 
 Callable function that returns a `Lockable<N>`. Read-only properties: `name`, `singular`, `prefix`.
 
@@ -90,7 +90,7 @@ function defineLockOwner<N extends string>(
 | `name` | `N` | Yes | Owner type name (literal) |
 | `within` | `string` | No | Parent scope type |
 
-### LockOwnerDef<N>
+### `LockOwnerDef<N>`
 
 Callable function that returns a `LockOwner<N>`. Read-only properties: `name`, `within`.
 
