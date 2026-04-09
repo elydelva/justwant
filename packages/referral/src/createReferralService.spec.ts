@@ -65,7 +65,7 @@ function createMockRepo(): ReferralRepository {
 }
 
 const user = (id: string): Actor => ({ type: "user", id });
-const offer = defineReferralOffer({ id: "waitlist_beta" });
+const offer = defineReferralOffer({ name: "waitlist_beta" });
 
 describe("createReferralService", () => {
   test("refer creates referral and returns it", async () => {
@@ -168,7 +168,7 @@ describe("createReferralService", () => {
 
   test("getReferralCode uses codeGenerator when provided", async () => {
     const customOffer = defineReferralOffer({
-      id: "x",
+      name: "x",
       codeGenerator: (offerKey, referrer) => `${offerKey}-${referrer.id}`,
     });
     const repo = createMockRepo();
@@ -180,7 +180,7 @@ describe("createReferralService", () => {
 
   test("getReferralCode resolves async codeGenerator", async () => {
     const asyncOffer = defineReferralOffer({
-      id: "async-offer",
+      name: "async-offer",
       codeGenerator: async () => "async-code",
     });
     const repo = createMockRepo();
@@ -201,7 +201,7 @@ describe("createReferralService", () => {
 
   test("resolveCode returns referrer via defaultReferrerType when no referral yet", async () => {
     const offerWithDefault = defineReferralOffer({
-      id: "waitlist",
+      name: "waitlist",
       defaultReferrerType: "user",
     });
     const repo = createMockRepo();

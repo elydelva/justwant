@@ -2,41 +2,37 @@ import { describe, expect, test } from "bun:test";
 import { defineReferralOffer } from "./defineReferralOffer.js";
 
 describe("defineReferralOffer", () => {
-  test("returns callable def with id for simple offer", () => {
-    const offer = defineReferralOffer({ id: "waitlist_beta" });
-    expect(offer.id).toBe("waitlist_beta");
-    expect(offer()).toBe("waitlist_beta");
+  test("is callable — returns typed ref", () => {
+    const offer = defineReferralOffer({ name: "waitlist_beta" });
+    expect(offer.name).toBe("waitlist_beta");
+    expect(offer("ref-123")).toEqual({ type: "waitlist_beta", id: "ref-123" });
   });
 
-  test("returns offer key from params when params defined", () => {
-    const offer = defineReferralOffer({
-      id: "waitlist",
-      params: ["listId"],
-    });
-    expect(offer({ listId: "beta" })).toBe("waitlist:listId:beta");
-    expect(offer({ listId: "prod" })).toBe("waitlist:listId:prod");
+  test("key() returns name for simple offer", () => {
+    const offer = defineReferralOffer({ name: "waitlist_beta" });
+    expect(offer.key()).toBe("waitlist_beta");
   });
 
-  test("sorts param keys for deterministic offer key", () => {
-    const offer = defineReferralOffer({
-      id: "multi",
-      params: ["b", "a"],
-    });
-    expect(offer({ a: "1", b: "2" })).toBe("multi:a:1:b:2");
+  test("key() returns offer key from params when params defined", () => {
+    const offer = defineReferralOffer({ name: "waitlist", params: ["listId"] });
+    expect(offer.key({ listId: "beta" })).toBe("waitlist:listId:beta");
+    expect(offer.key({ listId: "prod" })).toBe("waitlist:listId:prod");
   });
 
-  test("returns base id when no params passed", () => {
-    const offer = defineReferralOffer({
-      id: "waitlist",
-      params: ["listId"],
-    });
-    expect(offer()).toBe("waitlist");
+  test("key() sorts param keys for deterministic offer key", () => {
+    const offer = defineReferralOffer({ name: "multi", params: ["b", "a"] });
+    expect(offer.key({ a: "1", b: "2" })).toBe("multi:a:1:b:2");
+  });
+
+  test("key() returns base name when no params passed", () => {
+    const offer = defineReferralOffer({ name: "waitlist", params: ["listId"] });
+    expect(offer.key()).toBe("waitlist");
   });
 
   test("attaches codeGenerator and defaultReferrerType", () => {
     const codeGen = () => "custom-code";
     const offer = defineReferralOffer({
-      id: "x",
+      name: "x",
       codeGenerator: codeGen,
       defaultReferrerType: "user",
     });
