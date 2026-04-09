@@ -1,0 +1,40 @@
+{
+  "name": "@justwant/resource",
+  "version": "0.1.0",
+  "description": "Resource entity definitions for the @justwant ecosystem. defineResource, Resource, ResourceDef.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/resource"
+  },
+  "keywords": ["resource", "entity", "definable", "typescript"],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run typecheck && bun run build && bun test"
+  },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@justwant/meta": "workspace:*"
+  },
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}
