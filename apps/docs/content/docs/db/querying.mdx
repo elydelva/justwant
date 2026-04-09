@@ -1,0 +1,200 @@
+---
+title: Querying
+description: Read operations — findById, findOne, findMany, pagination, sorting, and TypeScript inference.
+icon: Search
+---
+
+## Overview
+
+All read operations live on the `MappedTable` object returned by `adapter.defineTable(...)` or `db.table(...)`. They share the same signatures regardless of adapter (Drizzle, Prisma, or Waddler).
+
+Assuming the following table:
+
+```ts title="tables/users.ts"
+import { users } from "@/tables/users"; // MappedTable<typeof userContract>
+```
+
+---
+
+## `findById`
+
+Fetches a single row by its primary key (`id`). Returns `null` if the row does not exist.
+
+```ts
+const user = await users.findById("usr_1");
+
+if (!user) {
+  throw new Error("User not found");
+}
+
+console.log(user.email); // fully typed
+```
+
+Soft-deleted rows are **excluded** by default — `findById` only returns rows where `deletedAt` is `null`.
+
+---
+
+## `findOne`
+
+Finds the first row matching a partial contract. Returns `null` if none matches.
+
+```ts
+// Single condition
+const user = await users.findOne({ email: "alice@example.com" });
+
+// Multiple conditions (all must match — AND semantics)
+const user = await users.findOne({ email: "alice@example.com", name: "Alice" });
+```
+
+- Conditions use equality (`=`). For range queries or `OR` logic, drop down to the raw adapter.
+- Only returns non-deleted rows (same as `findById`).
+
+---
+
+## `findMany`
+
+Returns all rows matching a partial contract. Passing an empty object (or nothing) returns all rows.
+
+```ts
+// All users
+const all = await users.findMany({});
+
+// All users with a specific name
+const alices = await users.findMany({ name: "Alice" });
+```
+
+### Multiple conditions
+
+All conditions are combined with `AND`:
+
+```ts
+const adminAlices = await users.findMany({ name: "Alice", role: "admin" });
+```
+
+### Soft-deleted rows
+
+`findMany` only returns rows where `deletedAt IS NULL`. To include soft-deleted rows you need to use the raw ORM query directly.
+
+### Note on pagination and sorting
+
+`findMany` does not accept `orderBy`, `limit`, or `offset`. For pagination, use [raw adapter queries](#raw-adapter-queries) or the [Drizzle utility functions](#drizzle-utility-functions).
+
+---
+
+## TypeScript inference
+
+Every table exposes an `infer` property — the TypeScript type of a fully-resolved contract row. Use it to type functions that accept or return table rows without importing the contract manually.
+
+```ts
+import { users } from "@/tables/users";
+
+type User = typeof users.infer;
+// → { id: string; email: string; name: string; createdAt: string; updatedAt: string; deletedAt?: string }
+
+function greet(user: User) {
+  return `Hello, ${user.name}`;
+}
+```
+
+The `contract` property gives access to the raw contract definition:
+
+```ts
+const contract = users.contract;
+```
+
+---
+
+## Pagination and sorting
+
+`MappedTable.findMany` does not support pagination natively. For paginated or sorted queries, use:
+
+### Drizzle utility functions
+
+```ts
+import { buildWhere, buildOrderBy, buildPagination } from "@justwant/db/drizzle/buildWhere";
+import { db } from "@/lib/db"; // raw Drizzle client
+import { usersTable } from "@/tables/users";
+
+const rows = await db
+  .select()
+  .from(usersTable)
+  .where(buildWhere(usersTable, { name: "Alice" }, mapping))
+  .orderBy(...buildOrderBy(usersTable, { createdAt: "desc" }, mapping))
+  .limit(20)
+  .offset(0);
+```
+
+### Drizzle `buildPagination`
+
+```ts
+import { buildPagination } from "@justwant/db/drizzle/buildPagination";
+
+const { limit, offset } = buildPagination({ page: 2, pageSize: 20 });
+// → { limit: 20, offset: 20 }
+```
+
+### Waddler built-in
+
+Waddler's `table()` method accepts query options directly:
+
+```ts
+const rows = await db.table(userContract).findMany(
+  { name: "Alice" },
+  { orderBy: { createdAt: "desc" }, limit: 20, offset: 0 }
+);
+```
+
+---
+
+## Raw adapter queries
+
+For complex queries (joins, `OR`, `LIKE`, subqueries), bypass the `MappedTable` and use the raw client:
+
+### Drizzle
+
+```ts
+import { drizzleClient } from "@/lib/db"; // your raw Drizzle instance
+import { usersTable } from "@/tables/users-schema";
+import { like, or } from "drizzle-orm";
+
+const matches = await drizzleClient
+  .select()
+  .from(usersTable)
+  .where(or(like(usersTable.email, "%@example.com"), like(usersTable.name, "Alice%")));
+```
+
+### Prisma
+
+```ts
+import { prisma } from "@/lib/db";
+
+const matches = await prisma.user.findMany({
+  where: {
+    OR: [{ email: { endsWith: "@example.com" } }, { name: { startsWith: "Alice" } }],
+  },
+  orderBy: { createdAt: "desc" },
+  take: 20,
+  skip: 0,
+});
+```
+
+---
+
+## Error handling
+
+`findById` and `findOne` return `null` on miss — they never throw for missing rows. `findMany` returns an empty array. Use `AdapterError` subclasses only for actual database errors.
+
+```ts
+import { AdapterConnectionError } from "@justwant/db/errors";
+
+try {
+  const user = await users.findById(id);
+} catch (err) {
+  if (err instanceof AdapterConnectionError) {
+    // Database unreachable
+  }
+  throw err;
+}
+```
+
+See the [API reference](/docs/db/api#errors) for the full error hierarchy.

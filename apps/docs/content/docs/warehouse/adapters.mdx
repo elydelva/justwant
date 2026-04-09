@@ -1,0 +1,45 @@
+---
+title: Which adapter?
+description: Choose the right adapter for your warehouse — DuckDB for local and embedded use, ClickHouse for production analytics clusters.
+icon: Database
+---
+
+## What is an adapter?
+
+An adapter wraps a database driver and exposes a `WarehouseConnectionConfig` to `createWarehouse`. It controls which SQL dialect is used, how connections are managed, and how DDL is executed.
+
+```ts
+import { createWarehouse } from "@justwant/warehouse";
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+
+const warehouse = createWarehouse(
+  createDuckDbAdapter({ path: ":memory:" })
+);
+```
+
+## Available adapters
+
+| Adapter | Import | Best for |
+|---------|--------|----------|
+| [DuckDB](/docs/warehouse/duckdb) | `@justwant/warehouse/duckdb` | Local dev, in-process analytics, tests |
+| [ClickHouse](/docs/warehouse/clickhouse) | `@justwant/warehouse/clickhouse` | Production analytics clusters |
+
+## Switching adapters
+
+Because `createWarehouse` accepts a `WarehouseConnectionConfig`, you can switch between adapters without changing any table or query code:
+
+```ts title="warehouse.ts"
+import { createWarehouse } from "@justwant/warehouse";
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+import { createClickHouseAdapter } from "@justwant/warehouse/clickhouse";
+
+const isDev = process.env.NODE_ENV !== "production";
+
+export const warehouse = createWarehouse(
+  isDev
+    ? createDuckDbAdapter({ path: ":memory:" })
+    : createClickHouseAdapter({ connection: process.env.CLICKHOUSE_URL! })
+);
+```
+
+All `table`, `query`, `insert`, and `aggregate` calls work identically — only the DDL syntax and driver behavior differ. See [Dialects](/docs/warehouse/dialects) for a full comparison.

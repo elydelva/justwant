@@ -1,0 +1,207 @@
+---
+title: Schema Management
+description: Create, inspect, and drop tables — DDL lifecycle, startup patterns, and schema evolution.
+icon: TableProperties
+---
+
+## Overview
+
+`@justwant/warehouse` is **contract-first**: you define the table shape with `@justwant/contract` and the warehouse generates the DDL automatically. No raw SQL migrations required for simple schemas.
+
+---
+
+## Creating a table
+
+`createTable()` issues `CREATE TABLE IF NOT EXISTS`. Safe to call on an existing table — it is a no-op if the table already exists.
+
+```ts
+await eventsTable.createTable();
+```
+
+The generated DDL depends on the dialect:
+
+```sql
+-- DuckDB
+CREATE TABLE IF NOT EXISTS "events" (
+  "user_id" TEXT NOT NULL,
+  "event_name" TEXT NOT NULL,
+  "value" REAL,
+  "created_at" TEXT NOT NULL
+)
+
+-- ClickHouse
+CREATE TABLE IF NOT EXISTS "events" (
+  "user_id" String,
+  "event_name" String,
+  "value" Nullable(Float64),
+  "created_at" String
+) ENGINE = MergeTree() ORDER BY tuple()
+```
+
+Optional fields (`real().optional()`) become nullable columns. Required fields get `NOT NULL` (DuckDB) or non-nullable types (ClickHouse).
+
+---
+
+## Checking if a table exists
+
+```ts
+const exists = await eventsTable.exist();
+// → true | false
+```
+
+Use this in startup code or migration scripts to conditionally create tables:
+
+```ts
+if (!(await eventsTable.exist())) {
+  await eventsTable.createTable();
+  console.log("Created events table");
+}
+```
+
+---
+
+## Dropping a table
+
+```ts
+await eventsTable.drop();
+```
+
+Issues `DROP TABLE`. This is permanent — all data is lost. Use in tests or schema reset scripts:
+
+```ts
+// Test teardown
+afterEach(async () => {
+  await eventsTable.drop();
+});
+```
+
+---
+
+## Application startup pattern
+
+A common pattern is to create all tables at startup and skip if they already exist:
+
+```ts title="startup.ts"
+import { eventsTable, pageViewsTable, sessionsTable } from "./tables";
+
+export async function ensureSchema() {
+  await Promise.all([
+    eventsTable.createTable(),
+    pageViewsTable.createTable(),
+    sessionsTable.createTable(),
+  ]);
+}
+```
+
+Call `ensureSchema()` before accepting traffic:
+
+```ts title="server.ts"
+await ensureSchema();
+Bun.serve({ port: 3000, fetch: handler });
+```
+
+---
+
+## Schema evolution
+
+`@justwant/warehouse` does not run migrations automatically. For schema changes, you have two options:
+
+### Option 1 — Drop and recreate (dev / analytics-only tables)
+
+Safe when the table can be rebuilt from source data:
+
+```ts
+await eventsTable.drop();
+await eventsTable.createTable();
+// Re-insert data from source...
+```
+
+### Option 2 — Raw DDL via `warehouse.sql`
+
+For `ALTER TABLE` or other DDL not supported by the contract-first API, run raw SQL through the underlying Waddler `sql` instance:
+
+```ts
+import { warehouse } from "./warehouse";
+
+// Add a column
+await warehouse.sql`ALTER TABLE "events" ADD COLUMN "session_id" TEXT`;
+
+// DuckDB: rename a column
+await warehouse.sql`ALTER TABLE "events" RENAME COLUMN "user_id" TO "actor_id"`;
+```
+
+After altering the table, update your contract to reflect the new shape:
+
+```ts
+export const eventsContract = defineContract("events", {
+  actorId: string().required(), // was: userId
+  sessionId: string().optional(), // new column
+  eventName: string().required(),
+  value: real().optional(),
+  createdAt: string().required(),
+}, { defaultMapping: "camelToSnake" });
+```
+
+---
+
+## Column type mapping
+
+The dialect determines how contract field types translate to SQL column types:
+
+| Contract type | DuckDB | ClickHouse (required) | ClickHouse (optional) |
+|--------------|--------|----------------------|----------------------|
+| `string()` | `TEXT` | `String` | `Nullable(String)` |
+| `integer()` | `INTEGER` | `Int64` | `Nullable(Int64)` |
+| `real()` | `REAL` | `Float64` | `Nullable(Float64)` |
+| optional field | column allows `NULL` | `Nullable(…)` | `Nullable(…)` |
+
+---
+
+## `warehouse.createTable` vs `table.createTable`
+
+| Method | SQL | Safe on existing? |
+|--------|-----|-----------------|
+| `table.createTable()` | `CREATE TABLE IF NOT EXISTS` | Yes — no-op |
+| `warehouse.createTable(contract)` | `CREATE TABLE` (bare) | No — throws if exists |
+
+Prefer `table.createTable()` in all application code. `warehouse.createTable(contract)` is a low-level escape hatch for tools that need to control `IF NOT EXISTS` explicitly.
+
+---
+
+## Testing with an in-memory database
+
+Use DuckDB's `:memory:` path for fast, isolated tests that leave no files on disk:
+
+```ts title="tests/events.test.ts"
+import { test, expect, beforeEach, afterEach } from "bun:test";
+import { createWarehouse } from "@justwant/warehouse";
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+import { eventsContract } from "../contracts/events";
+
+let eventsTable: ReturnType<typeof warehouse.table>;
+let warehouse: ReturnType<typeof createWarehouse>;
+
+beforeEach(async () => {
+  warehouse = createWarehouse(createDuckDbAdapter({ path: ":memory:" }));
+  eventsTable = warehouse.table(eventsContract);
+  await eventsTable.createTable();
+});
+
+afterEach(async () => {
+  await warehouse.close?.();
+});
+
+test("inserts and queries events", async () => {
+  await eventsTable.insert([
+    { userId: "u_1", eventName: "purchase", value: 99, createdAt: new Date().toISOString() },
+  ]);
+
+  const [{ total }] = await eventsTable.aggregate<{ total: number }>({
+    select: { total: 'SUM("value")' },
+  });
+
+  expect(total).toBe(99);
+});
+```
+
+Each test gets a fresh in-memory database — no teardown needed beyond closing the connection.

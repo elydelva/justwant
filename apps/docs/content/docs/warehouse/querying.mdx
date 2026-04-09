@@ -1,0 +1,170 @@
+---
+title: Querying
+description: Read rows with filtering, sorting, pagination, and TypeScript-inferred return types.
+icon: Search
+---
+
+## Overview
+
+`WarehouseMappedTable.query()` returns typed rows from the table. All options are optional — calling `query()` with no arguments returns every row.
+
+Assuming the following table throughout this page:
+
+```ts title="tables/events.ts"
+import { defineContract, string, real } from "@justwant/contract";
+import { warehouse } from "../warehouse";
+
+const eventsContract = defineContract("events", {
+  userId: string().required(),
+  eventName: string().required(),
+  value: real().optional(),
+  createdAt: string().required(),
+}, { defaultMapping: "camelToSnake" });
+
+export const eventsTable = warehouse.table(eventsContract);
+```
+
+---
+
+## All rows
+
+```ts
+const events = await eventsTable.query();
+// → EventRow[]
+```
+
+---
+
+## Filtering with `where`
+
+`where` accepts a partial contract. All conditions are combined with `AND`.
+
+```ts
+// Single condition
+const purchases = await eventsTable.query({
+  where: { eventName: "purchase" },
+});
+
+// Multiple conditions
+const alicePurchases = await eventsTable.query({
+  where: { userId: "u_alice", eventName: "purchase" },
+});
+```
+
+Fields set to `undefined` are ignored — they do not add a condition:
+
+```ts
+async function getEvents(userId?: string, eventName?: string) {
+  return eventsTable.query({
+    where: {
+      userId,      // ignored if undefined
+      eventName,   // ignored if undefined
+    },
+  });
+}
+```
+
+---
+
+## Sorting with `orderBy`
+
+Pass one or more columns with direction `"asc"` or `"desc"`.
+
+```ts
+// Most recent events first
+const recent = await eventsTable.query({
+  orderBy: { createdAt: "desc" },
+});
+
+// Sort by user, then by date
+const sorted = await eventsTable.query({
+  orderBy: { userId: "asc", createdAt: "desc" },
+});
+```
+
+---
+
+## Pagination with `limit` and `offset`
+
+```ts
+const PAGE_SIZE = 50;
+
+// Page 1
+const page1 = await eventsTable.query({ limit: PAGE_SIZE, offset: 0 });
+
+// Page 2
+const page2 = await eventsTable.query({ limit: PAGE_SIZE, offset: 50 });
+
+// Page N
+function getPage(n: number) {
+  return eventsTable.query({ limit: PAGE_SIZE, offset: (n - 1) * PAGE_SIZE });
+}
+```
+
+---
+
+## Combining all options
+
+```ts
+const results = await eventsTable.query({
+  where: { eventName: "purchase" },
+  orderBy: { createdAt: "desc" },
+  limit: 20,
+  offset: 0,
+});
+```
+
+---
+
+## TypeScript inference
+
+Return types are fully inferred from the contract. You don't need to manually annotate:
+
+```ts
+const events = await eventsTable.query(); // Array<{ userId: string; eventName: string; value: number | null; createdAt: string }>
+const first = events[0];
+console.log(first.userId);    // string
+console.log(first.value);     // number | null
+```
+
+Use `typeof eventsTable.infer` to extract the row type for function signatures:
+
+```ts
+// Not available on WarehouseMappedTable directly — use InferContract from @justwant/contract
+import type { InferContract } from "@justwant/contract";
+
+type EventRow = InferContract<typeof eventsContract>;
+
+function processEvent(event: EventRow) {
+  if (event.value !== null) {
+    console.log(`${event.eventName}: ${event.value}`);
+  }
+}
+```
+
+---
+
+## Optional fields in results
+
+Optional fields (`real().optional()`) are returned as `number | null`. Always check before using:
+
+```ts
+const events = await eventsTable.query({ where: { eventName: "purchase" } });
+
+const total = events.reduce((sum, e) => sum + (e.value ?? 0), 0);
+```
+
+---
+
+## Checking if a table exists before querying
+
+In application startup or migration scripts, check before querying to avoid errors:
+
+```ts
+const exists = await eventsTable.exist();
+if (!exists) {
+  await eventsTable.createTable();
+}
+
+const events = await eventsTable.query({ limit: 100 });
+```

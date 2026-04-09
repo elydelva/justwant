@@ -6,7 +6,15 @@
     "---Get Started---",
     "installation",
     "basic-usage",
+    "---Guides---",
+    "querying",
+    "aggregations",
+    "schema",
     "dialects",
+    "---Adapters---",
+    "adapters",
+    "clickhouse",
+    "duckdb",
     "---Reference---",
     "api"
   ]
