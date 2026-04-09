@@ -5,7 +5,14 @@
 
 import { FlagValidationError } from "./errors.js";
 import { evaluate as evaluateStandalone, resolveRuleId } from "./evaluate.js";
-import type { ConfigOverride, FlagConfigRepo, FlagDef, FlagService, RuleDef } from "./types.js";
+import type {
+  ConfigOverride,
+  FlagConfigRepo,
+  FlagDef,
+  FlagService,
+  RuleDef,
+  RuleRef,
+} from "./types.js";
 
 function validateConfig(
   schema: { "~standard"?: { validate: (v: unknown) => unknown } },
@@ -39,7 +46,7 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
     }
   }
 
-  async function getLatest(rule: RuleDef | string): Promise<ConfigOverride | null> {
+  async function getLatest(rule: RuleRef): Promise<ConfigOverride | null> {
     const ruleId = resolveRuleId(rule);
     const ruleDef = typeof rule === "string" ? ruleMap.get(ruleId) : rule;
 
@@ -120,7 +127,7 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
       );
     },
 
-    async setConfigOverride(rule: RuleDef | string, config: unknown): Promise<ConfigOverride> {
+    async setConfigOverride(rule: RuleRef, config: unknown): Promise<ConfigOverride> {
       const ruleId = resolveRuleId(rule);
       const ruleDef = typeof rule === "string" ? ruleMap.get(ruleId) : rule;
 
@@ -144,7 +151,7 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
       });
     },
 
-    async rollbackLastConfig(rule: RuleDef | string): Promise<void> {
+    async rollbackLastConfig(rule: RuleRef): Promise<void> {
       const latest = await getLatest(rule);
       if (latest) {
         await repo.update(latest.id, { rolledBack: true });

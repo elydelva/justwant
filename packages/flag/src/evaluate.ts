@@ -10,7 +10,7 @@ export interface EvaluateParams {
   configByRuleId: Record<string, unknown>;
 }
 
-function resolveRuleId(rule: { id: string } | string): string {
+function resolveRuleId(rule: { name: string } | string): string {
   return typeof rule === "string" ? rule : rule.name;
 }
 
