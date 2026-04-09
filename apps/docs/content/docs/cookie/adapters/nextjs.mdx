@@ -1,0 +1,76 @@
+---
+title: NextJSAdapter
+description: Next.js App Router adapter using cookies() from next/headers.
+icon: Triangle
+---
+
+## When to use
+
+Use `NextJSAdapter` in **Next.js App Router** server components, route handlers, and Server Actions. It wraps the `cookies()` store from `next/headers`.
+
+## Usage
+
+```ts
+import { cookies } from "next/headers";
+import { NextJSAdapter } from "@justwant/cookie";
+
+const cookieStore = await cookies(); // Next.js 15+ requires await
+const adapter = NextJSAdapter(cookieStore);
+```
+
+## Example: Server Action
+
+```ts title="app/actions.ts"
+"use server";
+
+import { cookies } from "next/headers";
+import { NextJSAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+});
+
+export async function setTheme(theme: "light" | "dark") {
+  const cookieStore = await cookies();
+  const adapter = NextJSAdapter(cookieStore);
+  const store = createCookieStore({ theme: themeCookie }, { adapter });
+
+  store.set("theme", theme, {
+    path: "/",
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+}
+```
+
+## Example: Route Handler
+
+```ts title="app/api/preferences/route.ts"
+import { cookies } from "next/headers";
+import { NextJSAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const localeCookie = defineCookie("locale", {
+  schema: z.string().min(2),
+  default: "en",
+});
+
+export async function GET() {
+  const cookieStore = await cookies();
+  const adapter = NextJSAdapter(cookieStore);
+  const store = createCookieStore({ locale: localeCookie }, { adapter });
+
+  const { locale } = store.get();
+  return Response.json({ locale });
+}
+```
+
+## Notes
+
+- Compatible with Next.js 14 (synchronous `cookies()`) and Next.js 15+ (asynchronous `cookies()`).
+- Supports all standard `CookieOptions`, plus Next.js-specific fields `priority` and `partitioned`.
+- The adapter reads all cookies via `cookieStore.getAll()` and serializes them into a `Cookie` header string.

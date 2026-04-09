@@ -1,0 +1,11 @@
+{
+  "title": "Engines",
+  "icon": "Cpu",
+  "collapsible": true,
+  "defaultOpen": true,
+  "pages": [
+    "index",
+    "openai",
+    "cloudflare-ai"
+  ]
+}

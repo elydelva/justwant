@@ -1,0 +1,55 @@
+---
+title: HeaderAdapter
+description: Generic HTTP adapter built from raw header callbacks — for Node.js, Express, and custom frameworks.
+icon: Server
+---
+
+## When to use
+
+Use `HeaderAdapter` in any environment that works with **raw header strings**. Build it from two callbacks: one to read the current `Cookie` header and one to append a `Set-Cookie` value. This is the right choice for Node.js HTTP, Express, Hono, Fastify, or any custom framework.
+
+## Usage
+
+```ts
+import { HeaderAdapter } from "@justwant/cookie";
+
+const adapter = HeaderAdapter({
+  getCookie: () => req.headers["cookie"] ?? "",
+  appendSetCookie: (value) => res.setHeader("Set-Cookie", value),
+});
+```
+
+## Example: Node.js HTTP server
+
+```ts title="server.ts"
+import { createServer } from "node:http";
+import { HeaderAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+});
+
+createServer((req, res) => {
+  const setCookieValues: string[] = [];
+
+  const adapter = HeaderAdapter({
+    getCookie: () => req.headers.cookie ?? "",
+    appendSetCookie: (value) => setCookieValues.push(value),
+  });
+
+  const store = createCookieStore({ theme: themeCookie }, { adapter });
+  const { theme } = store.get();
+
+  store.set("theme", "dark", { path: "/", httpOnly: true });
+
+  res.setHeader("Set-Cookie", setCookieValues);
+  res.end(JSON.stringify({ theme }));
+}).listen(3000);
+```
+
+## Notes
+
+- [`RequestResponseAdapter`](/docs/cookie/adapters/request-response) is built on top of `HeaderAdapter` — use it when you already have a `Request`/`Response` pair.
+- `HeaderAdapter` gives you full control when your framework does not expose standard Web Fetch `Request`/`Response` objects.

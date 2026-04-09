@@ -6,6 +6,14 @@ icon: Cpu
 
 An `EmbeddingEngine` converts text into a vector. You inject an engine into `createEmbeddingService`. All engines implement the same interface:
 
+## Available engines
+
+| Engine | Provider | Page |
+|--------|----------|------|
+| [`openAiEmbeddingEngine`](/docs/embedding/engines/openai) | OpenAI Embeddings API | [→](/docs/embedding/engines/openai) |
+| [`cloudflareAiEmbeddingEngine`](/docs/embedding/engines/cloudflare-ai) | Cloudflare Workers AI | [→](/docs/embedding/engines/cloudflare-ai) |
+| `testEmbeddingEngine` | In-memory hash (dev only) | — |
+
 ```ts
 interface EmbeddingEngine {
   embed(text: string, options?: { model?: string }): Promise<number[]>;

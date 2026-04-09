@@ -1,0 +1,11 @@
+{
+  "title": "Adapters",
+  "icon": "Server",
+  "collapsible": true,
+  "defaultOpen": true,
+  "pages": [
+    "index",
+    "memory",
+    "db"
+  ]
+}

@@ -6,6 +6,13 @@ icon: Server
 
 Both adapters implement the `PreferenceRepository` interface, so you can swap them without changing any application code.
 
+## Available adapters
+
+| Adapter | Use case | Page |
+|---------|----------|------|
+| [`createMemoryPreferenceAdapter`](/docs/preference/memory) | Tests and local development | [→](/docs/preference/memory) |
+| [`createPreferenceDbAdapter`](/docs/preference/db) | Production (backed by `@justwant/db`) | [→](/docs/preference/db) |
+
 ## In-memory adapter
 
 `createMemoryPreferenceAdapter` stores entries in a plain JavaScript array. It is designed for **unit tests and local development** — data does not survive process restarts.

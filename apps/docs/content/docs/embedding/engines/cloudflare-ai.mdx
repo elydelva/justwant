@@ -1,0 +1,79 @@
+---
+title: Cloudflare Workers AI Engine
+description: Embedding engine using the Cloudflare Workers AI binding — no external dependencies.
+icon: Cloud
+---
+
+## When to use
+
+Use the Cloudflare Workers AI engine when you are deploying to **Cloudflare Workers**. It uses the `env.AI` binding — no external npm packages required.
+
+## Setup
+
+No additional installation needed. The engine uses the Workers AI binding provided by the runtime.
+
+```toml title="wrangler.toml"
+[ai]
+binding = "AI"
+```
+
+```ts title="worker.ts"
+import { createEmbeddingService } from "@justwant/embedding";
+import { cloudflareAiEmbeddingEngine } from "@justwant/embedding/engines/cloudflare-ai";
+
+const engine = cloudflareAiEmbeddingEngine({
+  ai: env.AI,
+  model: "@cf/baai/bge-base-en-v1.5",
+  dimension: 768,
+});
+
+export const embedding = createEmbeddingService({ engine, storage });
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `ai` | `CloudflareAiBinding` | Yes | `env.AI` from your Worker's bindings |
+| `model` | `string` | No | Model id. Defaults to `@cf/baai/bge-base-en-v1.5` |
+| `dimension` | `number` | Yes | Expected vector dimension — used for validation |
+
+The engine validates that the returned vector length matches `dimension` and throws if there is a mismatch.
+
+## Models
+
+| Model | Dimensions | Notes |
+|-------|-----------|-------|
+| `@cf/baai/bge-base-en-v1.5` | 768 | Default — fast, compact |
+| `@cf/baai/bge-large-en-v1.5` | 1024 | Higher quality |
+| `@cf/baai/bge-small-en-v1.5` | 384 | Smallest — lowest latency |
+
+## Batch embedding
+
+The Cloudflare AI engine implements `embedMany` — it sends all texts in a single binding call:
+
+```ts
+const vectors = await engine.embedMany(["text one", "text two"]);
+```
+
+## Pairing with Cloudflare Vectorize
+
+Combine the Workers AI engine with the [Cloudflare Vectorize storage](/docs/embedding/storages/cloudflare-vectorize) for a fully Cloudflare-native setup with no external dependencies:
+
+```ts title="worker.ts"
+import { createEmbeddingService } from "@justwant/embedding";
+import { cloudflareAiEmbeddingEngine } from "@justwant/embedding/engines/cloudflare-ai";
+import { vectorizeStorageAdapter } from "@justwant/embedding/storages/vectorize";
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const engine = cloudflareAiEmbeddingEngine({ ai: env.AI, dimension: 768 });
+    const storage = vectorizeStorageAdapter({ vectorize: env.VECTORIZE, dimension: 768 });
+    const embedding = createEmbeddingService({ engine, storage });
+
+    await embedding.upsertFrom("articles", [{ id: "1", text: "Hello world" }]);
+    const results = await embedding.search("articles", "greeting");
+    return Response.json(results);
+  },
+};
+```

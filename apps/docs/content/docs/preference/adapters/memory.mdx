@@ -1,0 +1,59 @@
+---
+title: Memory Adapter
+description: In-memory preference adapter for development and tests.
+icon: FlaskConical
+---
+
+## When to use
+
+Use `createMemoryPreferenceAdapter` in **unit tests and local development**. Data is stored in a plain JavaScript array and does not survive process restarts.
+
+## Usage
+
+```ts
+import { createMemoryPreferenceAdapter } from "@justwant/preference";
+
+const repo = createMemoryPreferenceAdapter();
+```
+
+The adapter supports the full `PreferenceRepository` interface including `orderBy`, `limit`, and `offset` on `findMany` (applied in memory after filtering).
+
+## Use in tests
+
+```ts title="prefs.test.ts"
+import { test, expect } from "bun:test";
+import {
+  definePreference,
+  createPreferenceService,
+  createMemoryPreferenceAdapter,
+} from "@justwant/preference";
+
+const volume = definePreference({ name: "volume", default: 50 });
+
+test("set and get a preference", async () => {
+  const prefs = createPreferenceService({
+    preferences: [volume],
+    repo: createMemoryPreferenceAdapter(),
+  });
+
+  const actor = { type: "user", id: "u-test" };
+
+  await prefs.set(actor, volume, 80);
+  expect(await prefs.get(actor, volume)).toBe(80);
+});
+
+test("reset returns default", async () => {
+  const prefs = createPreferenceService({
+    preferences: [volume],
+    repo: createMemoryPreferenceAdapter(),
+  });
+
+  const actor = { type: "user", id: "u-test" };
+
+  await prefs.set(actor, volume, 80);
+  await prefs.reset(actor, volume);
+  expect(await prefs.get(actor, volume)).toBe(50);
+});
+```
+
+Each test instantiates a fresh adapter, so tests are fully isolated.

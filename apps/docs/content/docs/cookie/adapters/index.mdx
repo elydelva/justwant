@@ -17,6 +17,15 @@ interface CookieAdapter {
 
 You pass an adapter to `createCookieStore` or use it with `setCookie` / `deleteCookie`.
 
+## Available adapters
+
+| Adapter | Environment | Page |
+|---------|-------------|------|
+| [`DocumentAdapter`](/docs/cookie/adapters/document) | Browser (`document.cookie`) | [→](/docs/cookie/adapters/document) |
+| [`NextJSAdapter`](/docs/cookie/adapters/nextjs) | Next.js App Router | [→](/docs/cookie/adapters/nextjs) |
+| [`RequestResponseAdapter`](/docs/cookie/adapters/request-response) | Cloudflare Workers / Deno / Bun | [→](/docs/cookie/adapters/request-response) |
+| [`HeaderAdapter`](/docs/cookie/adapters/header) | Node.js HTTP / Express / custom | [→](/docs/cookie/adapters/header) |
+
 ## DocumentAdapter
 
 For **browser** environments. Reads and writes `document.cookie` directly.

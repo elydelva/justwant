@@ -1,0 +1,11 @@
+{
+  "title": "Dialects",
+  "icon": "Database",
+  "collapsible": true,
+  "defaultOpen": true,
+  "pages": [
+    "index",
+    "clickhouse",
+    "duckdb"
+  ]
+}

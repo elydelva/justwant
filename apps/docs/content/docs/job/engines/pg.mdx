@@ -1,0 +1,59 @@
+---
+title: PostgreSQL Engine
+description: Job engine backed by PostgreSQL using pg_try_advisory_lock — no extra services required.
+icon: Database
+---
+
+## When to use
+
+Use the pg engine when you already run PostgreSQL and want to avoid adding Redis or a third-party service. It creates a `jobs` table and uses `pg_try_advisory_lock` for distributed scheduling.
+
+**Best for**: Minimal dependencies, existing PostgreSQL infrastructure, simple apps.
+
+## Setup
+
+No extra installation needed beyond your existing PostgreSQL client.
+
+```ts title="lib/jobs.ts"
+import { createJob, defineJob, defineQueue } from "@justwant/job";
+import { pgEngine } from "@justwant/job/engines/pg";
+
+const engine = pgEngine({
+  pool: Bun.sql,
+  tableName: "jobs",       // default: "jobs"
+  pollIntervalMs: 60_000,  // default: 60000
+});
+
+const syncJob = defineJob({ name: "sync-data" });
+const syncQueue = defineQueue({ job: syncJob, queue: "sync" });
+
+export const jobs = createJob({
+  engine,
+  queues: [syncQueue],
+  handlers: {
+    "sync-data": syncJob.handle(async ({ data, logger }) => {
+      logger.info("Syncing data", { data });
+    }),
+  },
+});
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `pool` | `BunSql \| PgPool` | Yes | `Bun.sql` or any pg-compatible pool |
+| `tableName` | `string` | No | Table name for job storage (default: `"jobs"`) |
+| `pollIntervalMs` | `number` | No | Polling interval in milliseconds (default: `60000`) |
+
+## Limitations
+
+| Feature | Supported |
+|---------|-----------|
+| Retry | No |
+| Delay | No |
+| Priority | No |
+| Concurrency | No |
+| Edge / serverless | No |
+
+For retry, backoff, and priority support, use [BullMQ](/docs/job/engines/bullmq). For serverless, use [QStash](/docs/job/engines/qstash).

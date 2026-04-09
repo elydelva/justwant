@@ -1,0 +1,78 @@
+---
+title: Cloudflare Vectorize Storage
+description: Managed vector storage via Cloudflare Vectorize — no external dependencies, Workers-native.
+icon: Cloud
+---
+
+## When to use
+
+Use Cloudflare Vectorize when you are deploying to **Cloudflare Workers** and want a managed vector database with no external npm dependencies. Combine it with the [Cloudflare Workers AI engine](/docs/embedding/engines/cloudflare-ai) for a fully Cloudflare-native setup.
+
+## Setup
+
+No additional npm dependencies needed. The binding is provided by the Workers runtime.
+
+### wrangler.toml
+
+```toml title="wrangler.toml"
+[[vectorize]]
+binding = "VECTORIZE_ARTICLES"
+index_name = "articles"
+```
+
+Create the index with Wrangler before deploying:
+
+```bash
+bunx wrangler vectorize create articles --dimensions=768 --metric=cosine
+```
+
+### Usage
+
+```ts title="worker.ts"
+import { createEmbeddingService } from "@justwant/embedding";
+import { vectorizeStorageAdapter } from "@justwant/embedding/storages/vectorize";
+
+const storage = vectorizeStorageAdapter({
+  vectorize: env.VECTORIZE_ARTICLES,
+  dimension: 768,
+});
+
+export const embedding = createEmbeddingService({ engine, storage });
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `vectorize` | `VectorizeIndex` | Yes | Vectorize index binding (`env.VECTORIZE_*`) |
+| `dimension` | `number` | Yes | Vector dimension — validated on upsert |
+
+## Notes
+
+- Vectorize has one index per binding — the `universeId` is not passed to the API (it is ignored). Use one binding per universe.
+- Metadata values must be `string`, `number`, or `boolean`. Complex values are automatically serialized to JSON strings.
+- `deleteByIds` is called if present on the binding; otherwise `delete` is a no-op.
+
+## Full Cloudflare-native example
+
+```ts title="worker.ts"
+import { createEmbeddingService } from "@justwant/embedding";
+import { cloudflareAiEmbeddingEngine } from "@justwant/embedding/engines/cloudflare-ai";
+import { vectorizeStorageAdapter } from "@justwant/embedding/storages/vectorize";
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const engine = cloudflareAiEmbeddingEngine({ ai: env.AI, dimension: 768 });
+    const storage = vectorizeStorageAdapter({ vectorize: env.VECTORIZE_ARTICLES, dimension: 768 });
+    const embedding = createEmbeddingService({ engine, storage });
+
+    await embedding.upsertFrom("articles", [
+      { id: "1", text: "Cloudflare Workers are serverless functions" },
+      { id: "2", text: "Vectorize stores and queries embeddings" },
+    ]);
+
+    const results = await embedding.search("articles", "serverless compute");
+    return Response.json(results);
+  },
+};
+```

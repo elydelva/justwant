@@ -1,13 +1,13 @@
 {
   "title": "Warehouse",
-  "icon": "BarChart3",
+  "icon": "ChartColumn",
   "pages": [
     "index",
     "---Get Started---",
     "installation",
     "basic-usage",
-    "---Reference---",
     "dialects",
+    "---Reference---",
     "api"
   ]
 }

@@ -1,0 +1,82 @@
+---
+title: RequestResponseAdapter
+description: Web Fetch API adapter for Cloudflare Workers, Deno, Bun, and Edge Middleware.
+icon: Cloud
+---
+
+## When to use
+
+Use `RequestResponseAdapter` in environments using the **Web Fetch API** — Cloudflare Workers, Deno, Bun, and Edge Middleware. It reads cookies from `request.headers.get("Cookie")` and appends `Set-Cookie` headers to `response.headers`.
+
+## Usage
+
+```ts
+import { RequestResponseAdapter } from "@justwant/cookie";
+
+const adapter = RequestResponseAdapter(request, response);
+```
+
+## Example: Cloudflare Worker
+
+```ts title="worker.ts"
+import { RequestResponseAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const sessionCookie = defineCookie("session", {
+  schema: z.string().uuid(),
+  onMismatch: "remove",
+});
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    const response = new Response("OK");
+    const adapter = RequestResponseAdapter(request, response);
+    const store = createCookieStore({ session: sessionCookie }, { adapter });
+
+    const { session } = store.get();
+
+    if (!session) {
+      store.set("session", crypto.randomUUID(), {
+        path: "/",
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
+
+    return response;
+  },
+};
+```
+
+## Example: Bun server
+
+```ts title="server.ts"
+import { RequestResponseAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+});
+
+Bun.serve({
+  port: 3000,
+  async fetch(request) {
+    const response = new Response("Hello");
+    const adapter = RequestResponseAdapter(request, response);
+    const store = createCookieStore({ theme: themeCookie }, { adapter });
+
+    const { theme } = store.get();
+    store.set("theme", theme === "light" ? "dark" : "light");
+
+    return response;
+  },
+});
+```
+
+## Notes
+
+- `RequestResponseAdapter` is implemented on top of `HeaderAdapter` — use it when you already have a `Request`/`Response` pair.
+- For environments without a standard `Request`/`Response` pair, use [`HeaderAdapter`](/docs/cookie/adapters/header) instead.

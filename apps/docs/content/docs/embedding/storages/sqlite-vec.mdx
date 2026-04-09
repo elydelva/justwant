@@ -1,0 +1,104 @@
+---
+title: sqlite-vec Storage
+description: Lightweight vector storage using SQLite with the sqlite-vec extension.
+icon: HardDrive
+---
+
+## When to use
+
+Use `sqlite-vec` for **local development**, embedded applications, or lightweight deployments where you want vector search without a server. It runs in-process alongside your app.
+
+## Installation
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Table schema
+
+Create the `vec0` virtual table and load the extension before using the adapter.
+
+```ts title="lib/db.ts"
+import Database from "better-sqlite3";
+import * as sqliteVec from "sqlite-vec";
+
+export const db = new Database("app.db");
+sqliteVec.load(db);
+
+// Create the vec0 table for each universe
+db.exec(`
+  CREATE VIRTUAL TABLE IF NOT EXISTS vec_articles USING vec0(
+    id TEXT PRIMARY KEY,
+    index_id TEXT PARTITION KEY,
+    embedding FLOAT[1536],
+    +metadata TEXT
+  )
+`);
+```
+
+Adjust the dimension (`1536`) and table name to match your setup.
+
+## Setup
+
+```ts title="lib/embedding.ts"
+import { createEmbeddingService } from "@justwant/embedding";
+import { sqliteVectorStorageAdapter } from "@justwant/embedding/storages/sqlite-vec";
+import { db } from "./db.ts";
+
+const storage = sqliteVectorStorageAdapter({
+  db,
+  tableName: "vec_articles",
+  dimension: 1536,
+});
+
+export const embedding = createEmbeddingService({ engine, storage });
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `db` | `SqliteDatabase` | Yes | better-sqlite3 (or compatible) database instance with sqlite-vec loaded |
+| `tableName` | `string` | Yes | `vec0` virtual table name |
+| `dimension` | `number` | Yes | Vector dimension — validated on upsert |
+| `indexIdColumn` | `string` | No | Column for the universe id. Default: `"index_id"` |
+
+## Notes
+
+- Vectors are stored as `Float32Array`.
+- Scores are computed as `1 - distance` (cosine distance).
+- Metadata is stored as a JSON string in the `+metadata` auxiliary column.
+- Metadata filtering is performed in application code after the `MATCH` query — for large datasets, prefer [pgvector](/docs/embedding/storages/pgvector) with indexed metadata.
