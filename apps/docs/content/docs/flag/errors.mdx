@@ -1,0 +1,97 @@
+---
+title: Errors
+description: FlagError, FlagValidationError, and RuleNotFoundError.
+icon: AlertTriangle
+---
+
+## Error hierarchy
+
+```
+Error
+└── FlagError
+    ├── FlagValidationError
+    └── RuleNotFoundError
+```
+
+All errors extend `FlagError` and carry a `code` string and optional `metadata` object.
+
+## `FlagError`
+
+Base class for all flag errors.
+
+```ts
+import { FlagError } from "@justwant/flag";
+
+class FlagError extends Error {
+  readonly code: string;
+  readonly metadata?: Record<string, unknown>;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `string` | Machine-readable error code. Default: `"FLAG_ERROR"`. |
+| `metadata` | `Record<string, unknown>` | Optional structured data attached to the error. |
+
+## `FlagValidationError`
+
+Thrown when a config or context value fails schema validation.
+
+```ts
+import { FlagValidationError } from "@justwant/flag";
+```
+
+| Property | Value |
+|----------|-------|
+| `name` | `"FlagValidationError"` |
+| `code` | `"FLAG_VALIDATION_ERROR"` |
+
+**When it is thrown:**
+- `setConfigOverride` — the new config fails `rule.config` validation
+- `evaluate` — the merged config fails `rule.config` validation
+- `evaluate` — the context fails `rule.context` validation (if schema is defined)
+
+The `metadata` includes `ruleId` and an `issues` array with per-field messages.
+
+### Handling
+
+```ts
+import { FlagValidationError } from "@justwant/flag";
+
+try {
+  await flagService.setConfigOverride(betaRule, { enabled: "yes" }); // wrong type
+} catch (err) {
+  if (err instanceof FlagValidationError) {
+    console.error(err.code);     // "FLAG_VALIDATION_ERROR"
+    console.error(err.metadata); // { ruleId: "beta-access", issues: [...] }
+  }
+}
+```
+
+## `RuleNotFoundError`
+
+Thrown when a rule name is used as a string reference but no matching `RuleDef` is registered in the service.
+
+```ts
+import { RuleNotFoundError } from "@justwant/flag";
+```
+
+| Property | Value |
+|----------|-------|
+| `name` | `"RuleNotFoundError"` |
+| `code` | `"RULE_NOT_FOUND"` |
+| `ruleId` | The rule name that was not found |
+
+### Handling
+
+```ts
+import { RuleNotFoundError } from "@justwant/flag";
+
+try {
+  await flagService.getLatest("unknown-rule");
+} catch (err) {
+  if (err instanceof RuleNotFoundError) {
+    console.error(err.ruleId); // "unknown-rule"
+  }
+}
+```

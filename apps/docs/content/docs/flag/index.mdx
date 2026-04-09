@@ -1,0 +1,42 @@
+---
+title: Introduction
+description: Feature flags with typed rules, config overrides, and time-based rollout diffusion.
+icon: Flag
+---
+
+## What is @justwant/flag?
+
+`@justwant/flag` is a **type-safe feature flag engine** for TypeScript applications. It lets you define flags with evaluation rules, gradually roll out features, and remotely override rule configuration — all without vendor lock-in.
+
+**Use it when** you need to:
+- Enable features for specific users, orgs, or contexts
+- Gradually roll out to a percentage of users
+- Override flag behavior at runtime without redeploying
+- Define time-based diffusion curves (Bézier, stepped)
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Typed rules** | `defineRule` with config schema, context schema, and logic function |
+| **Typed flags** | `defineFlag` attaches rules to a feature and defines evaluation strategy |
+| **Config overrides** | Remote config stored in a repo, updateable at runtime |
+| **Rollout** | `rollout(hash, threshold)` — deterministic percentage rollout |
+| **Diffusion** | `diffusionBezier` — smooth time-based rollout via Bézier curves |
+| **Memory repo** | `createMemoryFlagConfigRepo` for tests and development |
+
+## How it works
+
+1. **Define rules** — Each rule has a logic function, optional config schema (remote), and optional context schema (request data).
+2. **Define flags** — Attach rules to a feature. Set `strategy: "any"` (default) or `"all"`.
+3. **Create a service** — Inject a flag config repo and your flag definitions.
+4. **Evaluate** — Call `service.evaluate(flag, context)` to get a boolean.
+
+## Next steps
+
+- [Installation](/docs/flag/installation) — Install and wire up
+- [Basic Usage](/docs/flag/basic-usage) — Define a flag and evaluate it
+- [Rules](/docs/flag/rules) — `defineRule` in depth
+- [Flags](/docs/flag/flags) — `defineFlag` options and strategies
+- [Rollout](/docs/flag/rollout) — Percentage-based rollout helpers
+- [Diffusion](/docs/flag/diffusion) — Time-based Bézier diffusion

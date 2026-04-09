@@ -1,0 +1,106 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/flag.
+icon: BookOpen
+---
+
+## Core functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `defineRule(config)` | `RuleDef` | Define a typed evaluation rule |
+| `defineFlag(feature, config)` | `FlagDef` | Attach rules to a feature definition |
+| `createFlagService(options)` | `FlagService` | Create the service that evaluates flags |
+| `createMemoryFlagConfigRepo()` | `FlagConfigRepo` | In-memory repo for dev/tests |
+
+## Helper functions
+
+Imported from `@justwant/flag/helpers`.
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `hashContext(context)` | `number` | Hash a string or object to `[0, 1]` |
+| `rollout(input, threshold)` | `boolean` | Return `true` if `input < threshold` |
+| `diffusionBezier(options)` | `number` | Time-based percentage via Bézier curve |
+| `diffusionStepped(options)` | `number` | Time-based percentage via discrete steps |
+
+## `defineRule` options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Unique rule name |
+| `config` | `StandardSchemaV1` | No | Remote config schema |
+| `context` | `StandardSchemaV1` | No | Request context schema |
+| `defaultConfig` | `CConfig` | No | Fallback config |
+| `logic` | `({ config, context }) => boolean \| Promise<boolean>` | Yes | Evaluation function |
+
+## `defineFlag` options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `default` | `boolean` | `undefined` | Fallback result |
+| `rules` | `RuleDef[]` | — | Rules to evaluate |
+| `strategy` | `"any" \| "all"` | `"any"` | Combination strategy |
+
+## `createFlagService` options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `flags` | `FlagDef[]` | All flag definitions the service manages |
+| `repo` | `FlagConfigRepo` | Config override repository |
+
+## `FlagService` methods
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `evaluate` | `(flag, context, override?) => Promise<boolean>` | Evaluate a flag |
+| `getLatest` | `(rule: RuleRef) => Promise<ConfigOverride \| null>` | Get latest active override |
+| `listConfigHistory` | `(rule, opts?) => Promise<ConfigOverride[]>` | List all overrides, newest first |
+| `setConfigOverride` | `(rule, config) => Promise<ConfigOverride>` | Persist a new config override |
+| `rollbackLastConfig` | `(rule) => Promise<void>` | Roll back the latest active override |
+
+## `FlagConfigRepo` interface
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `create` | `(data) => Promise<ConfigOverride>` | Persist a new override |
+| `findOne` | `(where) => Promise<ConfigOverride \| null>` | Find one by partial match |
+| `findMany` | `(where, opts?) => Promise<ConfigOverride[]>` | Find multiple with optional order/limit |
+| `count` | `(where) => Promise<number>` | Count matching entries |
+| `update` | `(id, data) => Promise<ConfigOverride>` | Update `rolledBack` flag |
+
+## `ConfigOverride` shape
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier |
+| `ruleId` | `string` | Matches `rule.name` |
+| `config` | `Record<string, unknown>` | Stored config object |
+| `rolledBack` | `boolean` | Soft-delete flag |
+| `createdAt` | `Date` | Creation timestamp |
+
+## `diffusionBezier` options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `curve` | `BezierCurve` | Yes | Curve shape |
+| `start` | `Date` | Yes | Rollout start |
+| `end` | `Date` | Yes | Rollout end |
+| `at` | `Date` | No | Evaluation time (default: `new Date()`) |
+
+## `diffusionStepped` options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `steps` | `number[]` | Yes | Percentage at each step boundary |
+| `start` | `Date` | Yes | Rollout start |
+| `end` | `Date` | Yes | Rollout end |
+| `at` | `Date` | No | Evaluation time (default: `new Date()`) |
+
+## Errors
+
+| Class | Code | When |
+|-------|------|------|
+| `FlagError` | `FLAG_ERROR` | Base error |
+| `FlagValidationError` | `FLAG_VALIDATION_ERROR` | Config or context schema validation fails |
+| `RuleNotFoundError` | `RULE_NOT_FOUND` | Rule name not registered in service |

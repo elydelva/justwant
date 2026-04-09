@@ -1,0 +1,110 @@
+---
+title: Config Overrides
+description: Remote config management — setConfigOverride, getLatest, listConfigHistory, rollbackLastConfig.
+icon: Settings
+---
+
+## Overview
+
+Config overrides let you change flag behavior at runtime without redeploying. Each override is persisted in a `FlagConfigRepo` and applied the next time a flag is evaluated.
+
+This is the remote config pattern: rules carry a schema and default values, while the live values are stored in your database and fetched on every evaluation.
+
+## Service methods
+
+### `setConfigOverride(rule, config)`
+
+Persist a new config for a rule. Validates against `rule.config` schema if one is defined.
+
+```ts
+const override = await flagService.setConfigOverride(betaRule, {
+  enabled: true,
+  allowList: ["user_vip1", "user_vip2"],
+});
+// override.id, override.createdAt are populated
+```
+
+### `getLatest(rule)`
+
+Fetch the most recent non-rolled-back override for a rule.
+
+```ts
+const latest = await flagService.getLatest(betaRule);
+if (latest) {
+  console.log(latest.config); // { enabled: true, allowList: [...] }
+}
+```
+
+**Note**: If the latest override fails schema validation, it is automatically marked as rolled back and the next one is tried. This loop continues until a valid override is found or the list is exhausted.
+
+### `listConfigHistory(rule, opts?)`
+
+List all overrides for a rule, newest first. Includes rolled-back entries.
+
+```ts
+const history = await flagService.listConfigHistory(betaRule, { limit: 10 });
+for (const entry of history) {
+  console.log(entry.createdAt, entry.rolledBack, entry.config);
+}
+```
+
+### `rollbackLastConfig(rule)`
+
+Mark the latest active override as rolled back. The previous override (if any) becomes active on the next evaluation.
+
+```ts
+await flagService.rollbackLastConfig(betaRule);
+```
+
+## `FlagConfigRepo` interface
+
+To use a database-backed repo, implement this interface:
+
+```ts
+interface FlagConfigRepo {
+  create(data: CreateInput<ConfigOverride>): Promise<ConfigOverride>;
+  findOne(where: Partial<ConfigOverride>): Promise<ConfigOverride | null>;
+  findMany(where: Partial<ConfigOverride>, opts?: FindManyOptions): Promise<ConfigOverride[]>;
+  count(where: Partial<ConfigOverride>): Promise<number>;
+  update(id: string, data: { rolledBack: boolean }): Promise<ConfigOverride>;
+}
+```
+
+The `ConfigOverride` entity shape:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier |
+| `ruleId` | `string` | Matches `rule.name` |
+| `config` | `Record<string, unknown>` | The stored config object |
+| `rolledBack` | `boolean` | Soft-delete flag |
+| `createdAt` | `Date` | Creation timestamp |
+
+## Memory repo (dev/test)
+
+`createMemoryFlagConfigRepo` is a zero-dependency in-memory implementation:
+
+```ts
+import { createMemoryFlagConfigRepo } from "@justwant/flag";
+
+const repo = createMemoryFlagConfigRepo();
+```
+
+Use it in tests to pre-seed overrides:
+
+```ts
+await repo.create({
+  ruleId: "beta-access",
+  config: { enabled: true, allowList: [] },
+  rolledBack: false,
+});
+```
+
+## Rollback flow
+
+Overrides use soft deletes (`rolledBack: true`) so the history is always preserved. The resolution order for `getLatest` is:
+
+1. Fetch latest override where `rolledBack = false`
+2. Validate its config against the rule schema
+3. If invalid — mark rolled back, retry with the next newest
+4. Return `null` if no valid override exists
