@@ -1,9 +1,16 @@
 {
   "name": "@justwant/feature",
-  "private": true,
-  "version": "0.0.0",
-  "description": "Session replay, heatmaps, surveys, breadcrumbs",
+  "version": "0.1.0",
+  "description": "Feature entity definitions for the @justwant ecosystem. defineFeature, Feature, FeatureDef.",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/feature"
+  },
+  "keywords": ["feature", "entity", "definable", "typescript"],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -15,12 +22,19 @@
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@justwant/meta": "workspace:*"
+  },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
     "typescript": "^5.7.0"
-  },
-  "publishConfig": {}
+  }
 }
