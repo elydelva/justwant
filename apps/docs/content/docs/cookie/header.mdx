@@ -1,5 +1,5 @@
 ---
-title: HeaderAdapter
+title: Header
 description: Generic HTTP adapter built from raw header callbacks — for Node.js, Express, and custom frameworks.
 icon: Server
 ---
@@ -51,5 +51,5 @@ createServer((req, res) => {
 
 ## Notes
 
-- [`RequestResponseAdapter`](/docs/cookie/adapters/request-response) is built on top of `HeaderAdapter` — use it when you already have a `Request`/`Response` pair.
+- [`RequestResponseAdapter`](/docs/cookie/request-response) is built on top of `HeaderAdapter` — use it when you already have a `Request`/`Response` pair.
 - `HeaderAdapter` gives you full control when your framework does not expose standard Web Fetch `Request`/`Response` objects.

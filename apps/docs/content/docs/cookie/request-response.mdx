@@ -1,5 +1,5 @@
 ---
-title: RequestResponseAdapter
+title: Request / Response
 description: Web Fetch API adapter for Cloudflare Workers, Deno, Bun, and Edge Middleware.
 icon: Cloud
 ---
@@ -79,4 +79,4 @@ Bun.serve({
 ## Notes
 
 - `RequestResponseAdapter` is implemented on top of `HeaderAdapter` — use it when you already have a `Request`/`Response` pair.
-- For environments without a standard `Request`/`Response` pair, use [`HeaderAdapter`](/docs/cookie/adapters/header) instead.
+- For environments without a standard `Request`/`Response` pair, use [`HeaderAdapter`](/docs/cookie/header) instead.
