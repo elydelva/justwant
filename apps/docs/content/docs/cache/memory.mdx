@@ -1,0 +1,49 @@
+---
+title: Memory Adapter
+description: In-process, volatile cache for development and tests.
+icon: Cpu
+---
+
+## When to use
+
+Use the memory adapter during development and in tests. It stores entries in a JavaScript `Map`, requires no external infrastructure, and is reset when the process exits.
+
+**Do not use** in production if you need persistence or shared state across multiple instances.
+
+## Installation
+
+```bash
+bun add @justwant/cache
+```
+
+No additional packages required.
+
+## Setup
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { createMemoryAdapter } from "@justwant/cache/adapters/memory";
+
+export const cache = createCache({
+  adapter: createMemoryAdapter(),
+});
+```
+
+## Options
+
+```ts
+createMemoryAdapter({
+  maxSize?: number;   // Maximum number of entries (LRU eviction)
+})
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `maxSize` | `number` | Limit entries. Oldest entries evicted when limit is reached. |
+
+## Behavior
+
+- TTL is enforced via `Date.now()` comparison on read — no background timer.
+- `clear()` removes all entries.
+- `keys()` returns all non-expired keys.
+- `invalidateTag()` is emulated via an internal reverse-index.

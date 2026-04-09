@@ -1,0 +1,27 @@
+{
+  "title": "Cache",
+  "icon": "Database",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "ttl",
+    "tags",
+    "namespace",
+    "---Adapters---",
+    "adapters",
+    "memory",
+    "redis",
+    "upstash",
+    "cf-kv",
+    "vercel-kv",
+    "tiered",
+    "---Plugins---",
+    "plugins",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

@@ -1,0 +1,62 @@
+---
+title: Tiered Adapter
+description: L1 (memory) + L2 (Redis) with promotion and write-through.
+icon: Layers
+---
+
+## What is tiered caching?
+
+The tiered adapter combines a fast **L1 in-memory** layer with a durable **L2 remote** layer (Redis, Upstash, etc.). On a read, it checks L1 first. If the entry is missing, it reads L2 and promotes the result into L1 for subsequent requests.
+
+## Installation
+
+```bash
+bun add @justwant/cache ioredis
+```
+
+## Setup
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { createMemoryAdapter } from "@justwant/cache/adapters/memory";
+import { createRedisAdapter } from "@justwant/cache/adapters/redis";
+import { createTieredAdapter } from "@justwant/cache/adapters/tiered";
+import Redis from "ioredis";
+
+const redis = new Redis(process.env.REDIS_URL!);
+
+export const cache = createCache({
+  adapter: createTieredAdapter({
+    l1: createMemoryAdapter({ maxSize: 1000 }),
+    l2: createRedisAdapter({ client: redis }),
+  }),
+});
+```
+
+## Options
+
+```ts
+createTieredAdapter({
+  l1: CacheAdapter;               // Fast local layer (required)
+  l2: CacheAdapter;               // Durable remote layer (required)
+  promote?: boolean;              // Promote L2 hits to L1 (default: true)
+  writeThrough?: boolean;         // Write to both layers on set (default: true)
+})
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `l1` | — | L1 adapter (memory) |
+| `l2` | — | L2 adapter (Redis, Upstash…) |
+| `promote` | `true` | Promote L2 hits to L1 on read |
+| `writeThrough` | `true` | Write to both L1 and L2 on `set` |
+
+## Read path
+
+1. Check L1 — return if found and not expired.
+2. Check L2 — if found, optionally promote to L1 and return.
+3. Return `null` on miss.
+
+## Write path
+
+With `writeThrough: true` (default), every `set` writes to both L1 and L2. With `writeThrough: false`, only L2 is written — L1 is populated lazily on the next read.

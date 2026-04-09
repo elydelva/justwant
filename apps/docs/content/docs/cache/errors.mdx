@@ -1,0 +1,45 @@
+---
+title: Errors
+description: Error types thrown by @justwant/cache.
+icon: AlertTriangle
+---
+
+## Error types
+
+```ts
+import { CacheError, CacheAdapterError } from "@justwant/cache";
+```
+
+| Class | When thrown |
+|-------|-------------|
+| `CacheError` | Base class for all cache errors |
+| `CacheAdapterError` | The underlying adapter threw an error |
+
+## CacheAdapterError
+
+Thrown when an adapter operation fails (e.g. Redis connection lost). Wraps the original error:
+
+```ts
+import { CacheAdapterError } from "@justwant/cache";
+
+try {
+  await cache.get("key");
+} catch (err) {
+  if (err instanceof CacheAdapterError) {
+    console.error("Adapter failed:", err.cause);
+  }
+}
+```
+
+## Suppress errors
+
+To avoid throwing on adapter failures, set `onError` at cache creation time:
+
+```ts
+const cache = createCache({
+  adapter: createRedisAdapter({ client: redis }),
+  onError: "silent", // Return null instead of throwing
+});
+```
+
+See [Basic Usage](/docs/cache/basic-usage) for all `onError` values.

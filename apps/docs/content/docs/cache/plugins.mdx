@@ -1,0 +1,112 @@
+---
+title: Plugins
+description: Extend cache behavior with the plugin pipeline.
+icon: Puzzle
+---
+
+## What are plugins?
+
+Plugins are middleware functions that wrap the adapter's operations. They are applied in order and can intercept reads, writes, and deletes.
+
+```ts
+const cache = createCache({
+  adapter: createMemoryAdapter(),
+  plugins: [namespacePlugin({ prefix: "app" }), statsPlugin()],
+});
+```
+
+## Available plugins
+
+| Plugin | Subpath | Description |
+|--------|---------|-------------|
+| Namespace | `/plugins/namespace` | Prefix all keys |
+| Serialize | `/plugins/serialize` | Custom serializer (superjson, msgpack) |
+| Encrypt | `/plugins/encrypt` | Encrypt values at rest (AES-256-GCM) |
+| Stats | `/plugins/stats` | Track hit/miss ratio via `cache.stats()` |
+| Stale | `/plugins/stale` | Stale-while-revalidate |
+| Dedupe | `/plugins/dedupe` | Deduplicate concurrent `wrap` calls |
+| Prefetch | `/plugins/prefetch` | Prefetch related keys on cache hit |
+| Audit | `/plugins/audit` | Log cache operations to `@justwant/audit` |
+
+## Namespace plugin
+
+```ts
+import { namespacePlugin } from "@justwant/cache/plugins/namespace";
+
+const cache = createCache({
+  adapter: createMemoryAdapter(),
+  plugins: [namespacePlugin({ prefix: "v1", separator: ":" })],
+});
+```
+
+## Serialize plugin
+
+```ts
+import { serializePlugin } from "@justwant/cache/plugins/serialize";
+import { superjsonSerializer } from "@justwant/cache/serializers/superjson";
+
+const cache = createCache({
+  adapter: createRedisAdapter({ client: redis }),
+  plugins: [serializePlugin({ serializer: superjsonSerializer() })],
+});
+```
+
+Supports `Date`, `Map`, `Set`, `BigInt` and other non-JSON types via SuperJSON or MessagePack.
+
+## Encrypt plugin
+
+Encrypts every cached value using AES-256-GCM. Requires a derived key from `@justwant/crypto/derive-key`:
+
+```ts
+import { encryptPlugin } from "@justwant/cache/plugins/encrypt";
+import { deriveKey } from "@justwant/crypto/derive-key";
+
+const key = await deriveKey(process.env.CACHE_SECRET!, "cache", "salt", 32);
+
+const cache = createCache({
+  adapter: createRedisAdapter({ client: redis }),
+  plugins: [encryptPlugin({ key })],
+});
+```
+
+## Stats plugin
+
+Exposes a `cache.stats()` method that returns hit/miss counts:
+
+```ts
+import { statsPlugin } from "@justwant/cache/plugins/stats";
+
+const cache = createCache({
+  adapter: createMemoryAdapter(),
+  plugins: [statsPlugin()],
+});
+
+const stats = cache.stats?.();
+// → { hits: 42, misses: 8, hitRate: 0.84 }
+```
+
+## Stale plugin
+
+Returns a stale (expired) value while triggering a background revalidation:
+
+```ts
+import { stalePlugin } from "@justwant/cache/plugins/stale";
+
+const cache = createCache({
+  adapter: createRedisAdapter({ client: redis }),
+  plugins: [stalePlugin({ staleTtl: "1m" })],
+});
+```
+
+## Dedupe plugin
+
+Collapses concurrent `wrap` calls for the same key into a single fetch:
+
+```ts
+import { dedupePlugin } from "@justwant/cache/plugins/dedupe";
+
+const cache = createCache({
+  adapter: createRedisAdapter({ client: redis }),
+  plugins: [dedupePlugin()],
+});
+```

@@ -1,0 +1,148 @@
+---
+title: Installation
+description: Install @justwant/cache and an adapter for your runtime.
+icon: Download
+---
+
+## Step 1: Install the core and an adapter
+
+Install `@justwant/cache` along with the adapter for your storage backend. For development, start with the in-memory adapter.
+
+<CodeBlockTabs defaultValue="memory">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="memory">Memory (dev)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="redis">Redis</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="upstash">Upstash</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="cf-kv">Cloudflare KV</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="vercel-kv">Vercel KV</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="memory">
+
+```bash
+bun add @justwant/cache
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="redis">
+
+```bash
+bun add @justwant/cache ioredis
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="upstash">
+
+```bash
+bun add @justwant/cache @upstash/redis
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="cf-kv">
+
+```bash
+bun add @justwant/cache
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="vercel-kv">
+
+```bash
+bun add @justwant/cache @vercel/kv
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Step 2: Create the cache
+
+Create a shared cache instance in a module (e.g. `lib/cache.ts`).
+
+<CodeBlockTabs defaultValue="memory">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="memory">Memory</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="redis">Redis</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="upstash">Upstash</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="cf-kv">Cloudflare KV</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="vercel-kv">Vercel KV</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="memory">
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { createMemoryAdapter } from "@justwant/cache/adapters/memory";
+
+export const cache = createCache({
+  adapter: createMemoryAdapter(),
+});
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="redis">
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { createRedisAdapter } from "@justwant/cache/adapters/redis";
+import Redis from "ioredis";
+
+const redis = new Redis(process.env.REDIS_URL!);
+
+export const cache = createCache({
+  adapter: createRedisAdapter({ client: redis }),
+});
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="upstash">
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { createUpstashAdapter } from "@justwant/cache/adapters/upstash";
+import { Redis } from "@upstash/redis";
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+export const cache = createCache({
+  adapter: createUpstashAdapter({ client: redis }),
+});
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="cf-kv">
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { createCfKvAdapter } from "@justwant/cache/adapters/cf-kv";
+
+// In a Cloudflare Worker — KV_NAMESPACE is bound in wrangler.toml
+export function createWorkerCache(env: Env) {
+  return createCache({
+    adapter: createCfKvAdapter({ namespace: env.KV_NAMESPACE }),
+  });
+}
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="vercel-kv">
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { createVercelKvAdapter } from "@justwant/cache/adapters/vercel-kv";
+import { kv } from "@vercel/kv";
+
+export const cache = createCache({
+  adapter: createVercelKvAdapter({ client: kv }),
+});
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Next steps
+
+- [Basic Usage](/docs/cache/basic-usage) — set, get, wrap, delete
+- [TTL](/docs/cache/ttl) — Time-to-live options
+- [Adapters](/docs/cache/adapters) — All available adapters
+- [Plugins](/docs/cache/plugins) — Extend with plugins
