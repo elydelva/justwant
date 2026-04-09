@@ -4,6 +4,7 @@
  */
 
 import type { FeatureDef } from "@justwant/feature";
+import type { Inspectable } from "@justwant/meta";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 /** Config override — persisted entity. Soft delete via rolledBack. */
@@ -36,8 +37,9 @@ export interface FlagConfigRepo {
 }
 
 /** Rule definition — config schema, context schema, logic. */
-export interface RuleDef<CConfig = unknown, CContext = unknown> {
-  readonly id: string;
+export interface RuleDef<N extends string = string, CConfig = unknown, CContext = unknown>
+  extends Inspectable<N> {
+  readonly name: N;
   readonly config?: StandardSchemaV1<unknown, CConfig>;
   readonly context?: StandardSchemaV1<unknown, CContext>;
   readonly defaultConfig?: CConfig;
@@ -48,17 +50,16 @@ export interface RuleDef<CConfig = unknown, CContext = unknown> {
 }
 
 /** Flag definition — feature entity + rules + strategy. */
-export interface FlagDef {
-  readonly feature: FeatureDef;
-  /** Convenience alias for feature.name. */
-  readonly id: string;
+export interface FlagDef<N extends string = string> extends Inspectable<N> {
+  readonly feature: FeatureDef<N>;
+  readonly name: N;
   readonly default?: boolean;
   readonly rules: readonly RuleDef[];
   readonly strategy?: "all" | "any";
 }
 
-/** Rule reference for service methods (RuleDef or ruleId string). */
-export type RuleRef = Pick<RuleDef, "id"> | string;
+/** Rule reference for service methods (RuleDef or rule name string). */
+export type RuleRef = Pick<RuleDef, "name"> | string;
 
 /** Config override per ruleId for evaluate (ad-hoc, does not persist). */
 export type EvaluateConfigOverride = Record<string, unknown>;

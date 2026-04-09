@@ -35,7 +35,7 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
   const ruleMap = new Map<string, RuleDef<unknown, unknown>>();
   for (const flag of flags) {
     for (const rule of flag.rules) {
-      ruleMap.set(rule.id, rule);
+      ruleMap.set(rule.name, rule);
     }
   }
 
@@ -79,7 +79,7 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
         const remote = await getLatest(rule);
         const defaultConfig = rule.defaultConfig ?? {};
         const remoteConfig = remote?.config ?? {};
-        const override = configOverride?.[rule.id] as Record<string, unknown> | undefined;
+        const override = configOverride?.[rule.name] as Record<string, unknown> | undefined;
         const merged = {
           ...defaultConfig,
           ...remoteConfig,
@@ -92,13 +92,13 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
           );
           if (!valid) {
             throw new FlagValidationError(
-              `Config validation failed for rule ${rule.id}: ${(issues ?? []).map((i) => i.message).join(", ")}`,
-              { ruleId: rule.id, issues }
+              `Config validation failed for rule ${rule.name}: ${(issues ?? []).map((i) => i.message).join(", ")}`,
+              { ruleId: rule.name, issues }
             );
           }
-          configByRuleId[rule.id] = value ?? merged;
+          configByRuleId[rule.name] = value ?? merged;
         } else {
-          configByRuleId[rule.id] = merged;
+          configByRuleId[rule.name] = merged;
         }
       }
       return evaluateStandalone(flag, { context, configByRuleId });

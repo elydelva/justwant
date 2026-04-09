@@ -27,7 +27,7 @@ describe("createFlagService", () => {
   const newDashboardFeature = defineFeature({ name: "new-dashboard" });
 
   const betaRule = defineRule({
-    id: "beta-rollout",
+    name: "beta-rollout",
     config: strictPctSchema,
     defaultConfig: { pct: 0.2 },
     logic: ({ config, context }) => {
@@ -80,8 +80,8 @@ describe("createFlagService", () => {
 
   test("evaluate strategy any: at least one rule true", async () => {
     const feature = defineFeature({ name: "any-flag" });
-    const ruleT = defineRule({ id: "t", logic: () => true });
-    const ruleF = defineRule({ id: "f", logic: () => false });
+    const ruleT = defineRule({ name: "t", logic: () => true });
+    const ruleF = defineRule({ name: "f", logic: () => false });
     const flag = defineFlag(feature, { rules: [ruleT, ruleF], strategy: "any" });
     const repo = createMemoryFlagConfigRepo();
     const service = createFlagService({ flags: [flag], repo });
@@ -90,8 +90,8 @@ describe("createFlagService", () => {
 
   test("evaluate strategy all: all rules must be true", async () => {
     const feature = defineFeature({ name: "all-flag" });
-    const ruleT = defineRule({ id: "t", logic: () => true });
-    const ruleF = defineRule({ id: "f", logic: () => false });
+    const ruleT = defineRule({ name: "t", logic: () => true });
+    const ruleF = defineRule({ name: "f", logic: () => false });
     const flag = defineFlag(feature, { rules: [ruleT, ruleF], strategy: "all" });
     const repo = createMemoryFlagConfigRepo();
     const service = createFlagService({ flags: [flag], repo });
@@ -163,7 +163,7 @@ describe("createFlagService", () => {
       },
     };
     const rule = defineRule({
-      id: "async-rule",
+      name: "async-rule",
       config: asyncSchema,
       defaultConfig: { pct: 0.5 },
       logic: ({ config }) => (config.pct ?? 0) > 0.3,

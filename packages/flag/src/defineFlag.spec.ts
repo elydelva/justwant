@@ -5,12 +5,12 @@ import { defineRule } from "./defineRule.js";
 
 describe("defineFlag", () => {
   const testFeature = defineFeature({ name: "test" });
-  const ruleA = defineRule({ id: "a", logic: () => true });
-  const ruleB = defineRule({ id: "b", logic: () => false });
+  const ruleA = defineRule({ name: "a", logic: () => true });
+  const ruleB = defineRule({ name: "b", logic: () => false });
 
   test("returns FlagDef with id derived from feature name", () => {
     const flag = defineFlag(testFeature, { rules: [ruleA] });
-    expect(flag.id).toBe("test");
+    expect(flag.name).toBe("test");
     expect(flag.feature).toBe(testFeature);
     expect(flag.rules).toHaveLength(1);
     expect(flag.rules[0]).toBe(ruleA);

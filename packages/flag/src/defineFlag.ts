@@ -15,10 +15,10 @@ export interface DefineFlagConfig {
 export function defineFlag<N extends string>(
   feature: FeatureDef<N>,
   config: DefineFlagConfig
-): FlagDef {
+): FlagDef<N> {
   return {
     feature,
-    id: feature.name,
+    name: feature.name,
     default: config.default,
     rules: config.rules,
     strategy: config.strategy ?? "any",

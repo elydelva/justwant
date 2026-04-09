@@ -11,11 +11,11 @@ export interface EvaluateParams {
 }
 
 function resolveRuleId(rule: { id: string } | string): string {
-  return typeof rule === "string" ? rule : rule.id;
+  return typeof rule === "string" ? rule : rule.name;
 }
 
 function getConfigForRule(rule: RuleDef, configByRuleId: Record<string, unknown>): unknown {
-  const override = configByRuleId[rule.id];
+  const override = configByRuleId[rule.name];
   const defaultConfig = rule.defaultConfig ?? {};
   if (override == null) return defaultConfig;
   return { ...defaultConfig, ...(override as Record<string, unknown>) };

@@ -5,16 +5,16 @@ import { defineRule } from "./defineRule.js";
 describe("defineRule", () => {
   test("returns RuleDef with id and logic", () => {
     const rule = defineRule({
-      id: "test",
+      name: "test",
       logic: ({ config, context }) => (context as { enabled: boolean }).enabled,
     });
-    expect(rule.id).toBe("test");
+    expect(rule.name).toBe("test");
     expect(rule.logic).toBeDefined();
   });
 
   test("logic can be sync", async () => {
     const rule = defineRule({
-      id: "sync",
+      name: "sync",
       logic: () => true,
     });
     const result = await rule.logic({ config: {}, context: {} });
@@ -23,7 +23,7 @@ describe("defineRule", () => {
 
   test("logic can be async", async () => {
     const rule = defineRule({
-      id: "async",
+      name: "async",
       logic: async () => false,
     });
     const result = await rule.logic({ config: {}, context: {} });
@@ -32,7 +32,7 @@ describe("defineRule", () => {
 
   test("defaultConfig is used when no override", () => {
     const rule = defineRule({
-      id: "with-default",
+      name: "with-default",
       defaultConfig: { pct: 0.5 },
       logic: ({ config }) => (config as { pct: number }).pct > 0.3,
     });
@@ -61,7 +61,7 @@ describe("defineRule", () => {
       },
     };
     const rule = defineRule({
-      id: "with-schema",
+      name: "with-schema",
       config: configSchema,
       context: contextSchema,
       logic: ({ config }) => config.pct > 0,
