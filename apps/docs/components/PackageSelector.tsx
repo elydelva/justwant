@@ -1,6 +1,6 @@
 "use client";
 
-import { PACKAGES } from "@/lib/sources";
+import { PACKAGES } from "@/lib/packages";
 import { usePathname, useRouter } from "next/navigation";
 
 export function PackageSelector() {

@@ -1,4 +1,4 @@
-import { PACKAGES } from "@/lib/sources";
+import { PACKAGES } from "@/lib/packages";
 import Link from "next/link";
 
 export default function Home() {
