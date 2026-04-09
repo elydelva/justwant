@@ -6,7 +6,7 @@
 import type { CronDefinition, JobDefinition } from "./types.js";
 
 export interface DefineCronConfig<T = unknown> {
-  job: JobDefinition<T>;
+  job: JobDefinition<string, T>;
   cron: string;
   /** Unique id (default: job.id). Allows multiple crons for same job. */
   id?: string;

@@ -6,7 +6,7 @@
 import type { JobDefinition, QueueDefinition } from "./types.js";
 
 export interface DefineQueueConfig<T = unknown> {
-  job: JobDefinition<T>;
+  job: JobDefinition<string, T>;
   cron?: string;
   /** Queue name. Alias: name. */
   queue?: string;

@@ -22,7 +22,7 @@ export function createMemoryJobRepository(): JobRepository {
     },
 
     async saveDefinition(def: JobDefinition): Promise<void> {
-      definitions.set(def.id, def);
+      definitions.set(def.name, def);
     },
 
     async deleteDefinition(id: string): Promise<void> {

@@ -41,16 +41,16 @@ export function createStandardOrganisationPermission<N extends string>(
 
   const prefix = `${name}:`;
   const permissions = {
-    organisationRead: defineAtomicPermission({ action: `${prefix}read` }),
-    organisationUpdate: defineAtomicPermission({ action: `${prefix}update` }),
-    organisationDelete: defineAtomicPermission({ action: `${prefix}delete` }),
-    organisationTransfer: defineAtomicPermission({ action: `${prefix}transfer` }),
-    memberList: defineAtomicPermission({ action: "member:list" }),
-    memberInvite: defineAtomicPermission({ action: "member:invite" }),
-    memberRemove: defineAtomicPermission({ action: "member:remove" }),
-    memberUpdateRole: defineAtomicPermission({ action: "member:updateRole" }),
-    settingsView: defineAtomicPermission({ action: "settings:view" }),
-    settingsEdit: defineAtomicPermission({ action: "settings:edit" }),
+    organisationRead: defineAtomicPermission({ name: `${prefix}read` }),
+    organisationUpdate: defineAtomicPermission({ name: `${prefix}update` }),
+    organisationDelete: defineAtomicPermission({ name: `${prefix}delete` }),
+    organisationTransfer: defineAtomicPermission({ name: `${prefix}transfer` }),
+    memberList: defineAtomicPermission({ name: "member:list" }),
+    memberInvite: defineAtomicPermission({ name: "member:invite" }),
+    memberRemove: defineAtomicPermission({ name: "member:remove" }),
+    memberUpdateRole: defineAtomicPermission({ name: "member:updateRole" }),
+    settingsView: defineAtomicPermission({ name: "settings:view" }),
+    settingsEdit: defineAtomicPermission({ name: "settings:edit" }),
   } as const;
 
   const allPermissions = Object.values(permissions);

@@ -35,7 +35,7 @@ function resolveId(x: JobOrId): string {
       (x as QueueDefinition).queue ?? (x as QueueDefinition).name ?? (x as QueueDefinition).job.name
     );
   if ("cron" in x) return (x as CronDefinition).id ?? (x as CronDefinition).job.name;
-  return (x as JobDefinition).name;
+  return (x as unknown as JobDefinition).name;
 }
 
 export interface JobService {

@@ -158,7 +158,7 @@ export function createOrganisationService(
       }
       const def = getOrgDef(organisation.type);
       if (member) {
-        const updatePerm = def.realm.permissionById.get(`${organisation.type}:update`);
+        const updatePerm = def.realm.permissionByName.get(`${organisation.type}:update`);
         if (updatePerm) {
           const canUpdate = await permission.can({
             actor: toMember(member),
@@ -195,7 +195,7 @@ export function createOrganisationService(
       }
       const def = getOrgDef(organisation.type);
       if (member) {
-        const deletePerm = def.realm.permissionById.get(`${organisation.type}:delete`);
+        const deletePerm = def.realm.permissionByName.get(`${organisation.type}:delete`);
         if (deletePerm) {
           const canDelete = await permission.can({
             actor: toMember(member),
