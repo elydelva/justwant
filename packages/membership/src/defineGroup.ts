@@ -4,6 +4,7 @@
  * Returns a function that produces Group instances.
  */
 
+import type { Definable } from "@justwant/meta";
 import type { Group, MemberLike } from "./types/index.js";
 
 export interface DefineGroupOptions<N extends string = string> {
@@ -11,7 +12,7 @@ export interface DefineGroupOptions<N extends string = string> {
   member: MemberLike;
 }
 
-export interface GroupDef<N extends string = string> {
+export interface GroupDef<N extends string = string> extends Definable<N> {
   readonly name: N;
   readonly member: MemberLike;
   (id: string): Group<N>;
