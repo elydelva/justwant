@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "@justwant/membership": "workspace:*",
+    "@justwant/meta": "workspace:*",
     "@justwant/permission": "workspace:*"
   },
   "devDependencies": {

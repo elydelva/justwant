@@ -5,6 +5,8 @@
  * OrganisationsRepo: aligned with @justwant/db MappedTable.
  */
 
+import type { RefLike } from "@justwant/meta";
+
 export interface Organisation<T extends string = string> {
   id: string;
   type: T;
@@ -14,10 +16,7 @@ export interface Organisation<T extends string = string> {
   updatedAt?: Date;
 }
 
-export interface OrgRef<N extends string = string> {
-  type: N;
-  id: string;
-}
+export interface OrgRef<N extends string = string> extends RefLike<N> {}
 
 export type CreateInput<T> = Omit<T, "id" | "createdAt" | "updatedAt">;
 
