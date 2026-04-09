@@ -1,0 +1,48 @@
+---
+title: Introduction
+description: User entity and identity management with a repository-backed CRUD service.
+icon: User
+---
+
+## What is @justwant/user?
+
+`@justwant/user` is the canonical **user identity layer** for the `@justwant` ecosystem. It defines the `User` entity, the `UserRef` identity reference used across other packages (membership, permission), and a full CRUD service backed by a `UsersRepo` interface you implement.
+
+**Use it when** you need to:
+- Persist user accounts with email uniqueness enforcement
+- Produce typed `UserRef` values for use in `@justwant/membership` and `@justwant/permission`
+- Keep user persistence logic decoupled from your database choice
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **`defineUser()`** | Returns the canonical `user` factory — call it with an id to get a `UserRef` |
+| **`createUserService()`** | Full CRUD API: find, create, update, delete |
+| **Email uniqueness** | `create` and `update` guard against duplicate emails |
+| **Repository pattern** | Implement `UsersRepo` once; swap databases without touching application code |
+| **Typed errors** | `UserNotFoundError`, `DuplicateEmailError` — catch by class |
+
+## How it works
+
+1. Call `defineUser()` once at application startup. This produces the `user` factory used everywhere a `UserRef` is required.
+2. Implement `UsersRepo` (or use `@justwant/db` for a ready-made adapter).
+3. Pass the repo to `createUserService({ repo })` to get a fully typed CRUD API.
+
+```ts
+import { defineUser, createUserService } from "@justwant/user";
+
+const User = defineUser();
+const users = createUserService({ repo: myRepo });
+
+const user = await users.create({ email: "ada@example.com", name: "Ada" });
+const ref = User(user.id); // UserRef { type: "user", id: "..." }
+```
+
+## Next steps
+
+- [Installation](/docs/user/installation) — Add the package
+- [Basic Usage](/docs/user/basic-usage) — End-to-end CRUD example
+- [defineUser](/docs/user/define-user) — What `defineUser` produces
+- [Repositories](/docs/user/repositories) — Implement `UsersRepo`
+- [Errors](/docs/user/errors) — Error types reference

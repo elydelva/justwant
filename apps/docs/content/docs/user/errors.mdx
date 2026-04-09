@@ -1,0 +1,80 @@
+---
+title: Errors
+description: Error types thrown by @justwant/user.
+icon: AlertCircle
+---
+
+## Error hierarchy
+
+```
+Error
+└── UserError
+    ├── UserNotFoundError
+    └── DuplicateEmailError
+```
+
+All errors extend `UserError`, so you can catch the entire family with a single `instanceof UserError` check.
+
+## UserError
+
+Base error class. Thrown directly only in edge cases; most code throws a subclass.
+
+```ts
+import { UserError } from "@justwant/user";
+
+try {
+  await users.create({ email: "..." });
+} catch (err) {
+  if (err instanceof UserError) {
+    // any user-related error
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `"UserError"` | Error name |
+| `message` | `string` | Human-readable description |
+
+## UserNotFoundError
+
+Thrown by `update` and `delete` when no user exists with the given `id`.
+
+```ts
+import { UserNotFoundError } from "@justwant/user";
+
+try {
+  await users.update("missing-id", { name: "Ada" });
+} catch (err) {
+  if (err instanceof UserNotFoundError) {
+    console.error(err.userId); // "missing-id"
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `"UserNotFoundError"` | Error name |
+| `userId` | `string \| undefined` | The id that was looked up |
+| `email` | `string \| undefined` | The email that was looked up (if applicable) |
+
+## DuplicateEmailError
+
+Thrown by `create` when a user with the same email already exists, and by `update` when the new email conflicts with an existing user.
+
+```ts
+import { DuplicateEmailError } from "@justwant/user";
+
+try {
+  await users.create({ email: "ada@example.com" });
+} catch (err) {
+  if (err instanceof DuplicateEmailError) {
+    console.error(err.email); // "ada@example.com"
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `"DuplicateEmailError"` | Error name |
+| `email` | `string` | The conflicting email address |

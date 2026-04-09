@@ -1,0 +1,148 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/user.
+icon: BookOpen
+---
+
+## defineUser
+
+```ts
+function defineUser(): UserDef
+```
+
+Returns the canonical `user` identity factory. Call it once at module level.
+
+**Returns** `UserDef` — a callable with `.name === "user"`.
+
+```ts
+const User = defineUser();
+const ref = User("user-123"); // { type: "user", id: "user-123" }
+```
+
+---
+
+## createUserService
+
+```ts
+function createUserService(options: CreateUserServiceOptions): UsersApi
+```
+
+Creates the CRUD service.
+
+### CreateUserServiceOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `repo` | `UsersRepo` | Storage implementation |
+
+### UsersApi
+
+#### findById
+
+```ts
+findById(id: string): Promise<User | null>
+```
+
+Returns the user with the given `id`, or `null` if not found.
+
+#### findByEmail
+
+```ts
+findByEmail(email: string): Promise<User | null>
+```
+
+Returns the user with the given `email`, or `null`.
+
+#### findOne
+
+```ts
+findOne(where: Partial<User>): Promise<User | null>
+```
+
+Returns the first user matching all fields in `where`, or `null`.
+
+#### findMany
+
+```ts
+findMany(where: Partial<User>): Promise<User[]>
+```
+
+Returns all users matching `where`. Pass `{}` to list all.
+
+#### create
+
+```ts
+create(data: CreateInput<User>): Promise<User>
+```
+
+Persists a new user. Throws `DuplicateEmailError` if the email is already taken.
+
+`CreateInput<User>` = `{ email: string; name?: string }`.
+
+#### update
+
+```ts
+update(id: string, data: Partial<User>): Promise<User>
+```
+
+Applies a partial patch. Throws `UserNotFoundError` if `id` does not exist. Throws `DuplicateEmailError` if the new email conflicts.
+
+#### delete
+
+```ts
+delete(id: string): Promise<void>
+```
+
+Removes the user. Throws `UserNotFoundError` if `id` does not exist.
+
+---
+
+## Types
+
+### User
+
+```ts
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
+```
+
+### UserRef
+
+```ts
+interface UserRef {
+  type: "user";
+  id: string;
+}
+```
+
+### UsersRepo
+
+```ts
+interface UsersRepo {
+  findById(id: string): Promise<User | null>;
+  findOne(where: Partial<User>): Promise<User | null>;
+  findMany(where: Partial<User>): Promise<User[]>;
+  create(data: CreateInput<User>): Promise<User>;
+  update(id: string, data: Partial<User>): Promise<User>;
+  delete(id: string): Promise<void>;
+}
+```
+
+### CreateInput
+
+```ts
+type CreateInput<T> = Omit<T, "id" | "createdAt" | "updatedAt">
+```
+
+---
+
+## Errors
+
+| Class | Code | When |
+|-------|------|------|
+| `UserError` | — | Base class |
+| `UserNotFoundError` | — | `update` / `delete` with unknown id |
+| `DuplicateEmailError` | — | `create` / `update` with duplicate email |

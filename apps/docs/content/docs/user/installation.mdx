@@ -1,0 +1,33 @@
+---
+title: Installation
+description: Install @justwant/user and its peer dependencies.
+icon: Package
+---
+
+## Install
+
+```bash
+bun add @justwant/user
+```
+
+`@justwant/user` has no required runtime dependencies beyond `@justwant/meta` (automatically installed as a transitive dependency).
+
+## TypeScript
+
+The package ships with full TypeScript types. No `@types/*` package is needed.
+
+Ensure your `tsconfig.json` targets at least ES2020 and uses `"moduleResolution": "bundler"` or `"node16"`:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "moduleResolution": "bundler",
+    "strict": true
+  }
+}
+```
+
+## Next step
+
+[Basic Usage](/docs/user/basic-usage) — define your user, wire up a repo, and start creating accounts.

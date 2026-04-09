@@ -1,0 +1,116 @@
+---
+title: Basic Usage
+description: Define a user, wire a repository, and perform CRUD operations.
+icon: Play
+---
+
+## Overview
+
+The typical flow is:
+
+1. Call `defineUser()` once at startup to get the `User` factory.
+2. Implement (or inject) a `UsersRepo`.
+3. Call `createUserService({ repo })` to get the CRUD API.
+
+## Step 1 — Define the user factory
+
+```ts title="lib/user.ts"
+import { defineUser } from "@justwant/user";
+
+export const User = defineUser();
+// User("abc") → { type: "user", id: "abc" }
+```
+
+## Step 2 — Implement a repository
+
+For development you can use an in-memory implementation. In production, use your database adapter (e.g. `@justwant/db`).
+
+```ts title="lib/user-repo.ts"
+import type { UsersRepo, User, CreateInput } from "@justwant/user";
+
+const store = new Map<string, User>();
+
+export const memoryUsersRepo: UsersRepo = {
+  async findById(id) {
+    return store.get(id) ?? null;
+  },
+  async findOne(where) {
+    return [...store.values()].find((u) =>
+      Object.entries(where).every(([k, v]) => (u as Record<string, unknown>)[k] === v)
+    ) ?? null;
+  },
+  async findMany(where) {
+    return [...store.values()].filter((u) =>
+      Object.entries(where).every(([k, v]) => (u as Record<string, unknown>)[k] === v)
+    );
+  },
+  async create(data) {
+    const user: User = { id: crypto.randomUUID(), ...data };
+    store.set(user.id, user);
+    return user;
+  },
+  async update(id, data) {
+    const existing = store.get(id);
+    if (!existing) throw new Error("Not found");
+    const updated = { ...existing, ...data };
+    store.set(id, updated);
+    return updated;
+  },
+  async delete(id) {
+    store.delete(id);
+  },
+};
+```
+
+## Step 3 — Create the service
+
+```ts title="lib/user-service.ts"
+import { createUserService } from "@justwant/user";
+import { memoryUsersRepo } from "./user-repo.ts";
+
+export const users = createUserService({ repo: memoryUsersRepo });
+```
+
+## Step 4 — Use the API
+
+### Create
+
+```ts
+const user = await users.create({ email: "ada@example.com", name: "Ada" });
+// throws DuplicateEmailError if email already exists
+```
+
+### Find
+
+```ts
+const byId    = await users.findById(user.id);
+const byEmail = await users.findByEmail("ada@example.com");
+const one     = await users.findOne({ name: "Ada" });
+const many    = await users.findMany({ name: "Ada" });
+```
+
+### Update
+
+```ts
+const updated = await users.update(user.id, { name: "Ada Lovelace" });
+// throws UserNotFoundError if id does not exist
+// throws DuplicateEmailError if new email is already taken
+```
+
+### Delete
+
+```ts
+await users.delete(user.id);
+// throws UserNotFoundError if id does not exist
+```
+
+## Producing a UserRef
+
+Use the factory from `defineUser()` to produce a `UserRef` — the identity reference consumed by `@justwant/membership` and `@justwant/permission`:
+
+```ts
+import { User } from "./lib/user.ts";
+
+const ref = User(user.id);
+// { type: "user", id: "..." }
+```
