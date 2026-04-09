@@ -4,9 +4,10 @@
  * No parameters — defines "user" as the canonical identity.
  */
 
+import type { Definable } from "@justwant/meta";
 import type { UserRef } from "./types/index.js";
 
-export interface UserDef {
+export interface UserDef extends Definable<"user"> {
   readonly name: "user";
   (id: string): UserRef;
 }
