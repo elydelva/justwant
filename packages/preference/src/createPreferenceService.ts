@@ -37,10 +37,10 @@ export type PreferenceSetEntry = {
 };
 
 export interface PreferenceService {
-  /** Returns Record<pref.id, value> — all preferences with stored or default value. */
+  /** Returns Record<pref.name, value> — all preferences with stored or default value. */
   list(actor: Actor): Promise<Record<string, unknown>>;
-  get<T>(actor: Actor, pref: PreferenceDef<T>): Promise<T | undefined>;
-  set<T>(actor: Actor, pref: PreferenceDef<T>, value: T): Promise<PreferenceEntry>;
+  get<T>(actor: Actor, pref: PreferenceDef<string, T>): Promise<T | undefined>;
+  set<T>(actor: Actor, pref: PreferenceDef<string, T>, value: T): Promise<PreferenceEntry>;
   setMany(actor: Actor, entries: PreferenceSetEntry[]): Promise<void>;
   reset(actor: Actor, pref: PreferenceDef): Promise<void>;
 }
@@ -67,7 +67,7 @@ export function createPreferenceService(
       const result: Record<string, unknown> = {};
       for (const pref of preferences) {
         const entry = storedByKey.get(pref.key);
-        result[pref.id] = entry?.value ?? pref.default;
+        result[pref.name] = entry?.value ?? pref.default;
       }
       return result;
     },

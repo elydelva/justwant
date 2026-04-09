@@ -19,7 +19,7 @@ const themeSchemaStandard: StandardSchemaV1<unknown, "light" | "dark" | "system"
 };
 
 const themePref = definePreference({
-  id: "theme",
+  name: "theme",
   schema: themeSchemaStandard,
   default: "system",
 });
@@ -38,7 +38,7 @@ const emailSchemaStandard: StandardSchemaV1<unknown, boolean> = {
 };
 
 const emailPref = definePreference({
-  id: "notifications.email",
+  name: "notifications.email",
   key: "notifications.email",
   schema: emailSchemaStandard,
   default: true,
@@ -47,7 +47,7 @@ const emailPref = definePreference({
 const actor = { type: "user" as const, id: "u1" };
 
 describe("createPreferenceService", () => {
-  test("list returns Record<id, value> with defaults when none set", async () => {
+  test("list returns Record<name, value> with defaults when none set", async () => {
     const service = createPreferenceService({
       preferences: [themePref, emailPref],
       repo: createMemoryPreferenceAdapter(),
@@ -94,7 +94,7 @@ describe("createPreferenceService", () => {
       preferences: [themePref],
       repo: createMemoryPreferenceAdapter(),
     });
-    const unknownPref = definePreference({ id: "unknown" });
+    const unknownPref = definePreference({ name: "unknown" });
     await expect(service.get(actor, unknownPref)).rejects.toThrow(/Unknown preference/);
   });
 
