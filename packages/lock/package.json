@@ -71,7 +71,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@justwant/actor": "workspace:*"
+    "@justwant/actor": "workspace:*",
+    "@justwant/meta": "workspace:*"
   },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",

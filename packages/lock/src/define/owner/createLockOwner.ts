@@ -4,6 +4,7 @@
  * Produces Actor with optional within (e.g. org, team).
  */
 
+import type { Definable } from "@justwant/meta";
 import type { LockOwner } from "../../types/index.js";
 
 export interface CreateLockOwnerOptions<N extends string = string> {
@@ -11,7 +12,7 @@ export interface CreateLockOwnerOptions<N extends string = string> {
   within?: string;
 }
 
-export interface LockOwnerDef<N extends string = string> {
+export interface LockOwnerDef<N extends string = string> extends Definable<N> {
   readonly name: N;
   readonly within?: string;
   (id: string): LockOwner<N>;
