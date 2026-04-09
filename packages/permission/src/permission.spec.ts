@@ -72,8 +72,8 @@ describe("createPermissionService", () => {
 
     const userActor = defineActor({ name: "user" });
 
-    const documentRead = defineAtomicPermission({ action: "document:read" });
-    const documentWrite = defineAtomicPermission({ action: "document:write" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
+    const documentWrite = defineAtomicPermission({ name: "document:write" });
 
     const appMember = defineRole({
       name: "member",
@@ -144,7 +144,7 @@ describe("createPermissionService", () => {
     const userActor = defineActor({ name: "user" });
     const documentResource = defineResource({ name: "document" });
     const documentRead = defineAtomicPermission({
-      action: "document:read",
+      name: "document:read",
       resource: documentResource,
     });
 
@@ -212,7 +212,7 @@ describe("createPermissionService", () => {
     const orgScope = defineScope({ name: "org" });
 
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const orgAdmin = defineRole({
       name: "admin",
       permissions: [documentRead],
@@ -260,7 +260,7 @@ describe("createPermissionService", () => {
   test("assert throws PermissionDeniedError when can returns false", async () => {
     const orgScope = defineScope({ name: "org" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const orgAdmin = defineRole({ name: "admin", permissions: [documentRead], realm: "org" });
     const orgRealm = defineRealm({
       name: "org",
@@ -293,7 +293,7 @@ describe("createPermissionService", () => {
     const userActor = defineActor({ name: "user" });
     const documentResource = defineResource({ name: "document" });
     const documentRead = defineAtomicPermission({
-      action: "document:read",
+      name: "document:read",
       resource: documentResource,
     });
     const orgViewer = defineRole({ name: "viewer", permissions: [documentRead], realm: "org" });
@@ -379,8 +379,8 @@ describe("createPermissionService", () => {
   test("canAll returns true only when all actions allowed", async () => {
     const orgScope = defineScope({ name: "org" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
-    const documentWrite = defineAtomicPermission({ action: "document:write" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
+    const documentWrite = defineAtomicPermission({ name: "document:write" });
     const orgAdmin = defineRole({
       name: "admin",
       permissions: [documentRead, documentWrite],
@@ -430,8 +430,8 @@ describe("createPermissionService", () => {
   test("canAny returns true when at least one action allowed", async () => {
     const orgScope = defineScope({ name: "org" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
-    const documentWrite = defineAtomicPermission({ action: "document:write" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
+    const documentWrite = defineAtomicPermission({ name: "document:write" });
     const orgViewer = defineRole({ name: "viewer", permissions: [documentRead], realm: "org" });
     const orgRealm = defineRealm({
       name: "org",
@@ -470,7 +470,7 @@ describe("createPermissionService", () => {
   test("canMany returns map of actor id to allowed", async () => {
     const orgScope = defineScope({ name: "org" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const orgAdmin = defineRole({ name: "admin", permissions: [documentRead], realm: "org" });
     const orgRealm = defineRealm({
       name: "org",
@@ -503,7 +503,7 @@ describe("createPermissionService", () => {
   test("revokeScope removes all assignments and overrides for scope", async () => {
     const orgScope = defineScope({ name: "org" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const orgAdmin = defineRole({ name: "admin", permissions: [documentRead], realm: "org" });
     const orgRealm = defineRealm({
       name: "org",
@@ -542,7 +542,7 @@ describe("createPermissionService", () => {
   test("revokeAll removes all assignments and overrides for actor", async () => {
     const orgScope = defineScope({ name: "org" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const orgAdmin = defineRole({ name: "admin", permissions: [documentRead], realm: "org" });
     const orgRealm = defineRealm({
       name: "org",
@@ -577,7 +577,7 @@ describe("createPermissionService", () => {
     const appScope = defineScope({ name: "app" });
     const orgScope = defineScope({ name: "org" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const appRealm = defineRealm({
       name: "app",
       scope: appScope,
@@ -607,7 +607,7 @@ describe("createPermissionService", () => {
   test("throws when realms have duplicate scope name", () => {
     const orgScope = defineScope({ name: "org" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const orgRealm1 = defineRealm({
       name: "org",
       scope: orgScope,
@@ -636,7 +636,7 @@ describe("createPermissionService", () => {
   test("assign throws when scope type unknown", async () => {
     const appScope = defineScope({ name: "app" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const orgAdmin = defineRole({ name: "admin", permissions: [documentRead], realm: "org" });
     const unknownScope = defineScope({ name: "unknown" });
     const appRealm = defineRealm({
@@ -665,7 +665,7 @@ describe("createPermissionService", () => {
     const userActor = defineActor({ name: "user" });
     const documentResource = defineResource({ name: "document" });
     const documentRead = defineAtomicPermission({
-      action: "document:read",
+      name: "document:read",
       resource: documentResource,
     });
     const orgViewer = defineRole({ name: "viewer", permissions: [documentRead], realm: "org" });
@@ -709,7 +709,7 @@ describe("createPermissionService", () => {
     const userActor = defineActor({ name: "user" });
     const documentResource = defineResource({ name: "document" });
     const documentRead = defineAtomicPermission({
-      action: "document:read",
+      name: "document:read",
       resource: documentResource,
     });
     const orgRealm = defineRealm({

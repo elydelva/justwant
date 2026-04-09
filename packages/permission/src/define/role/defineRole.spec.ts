@@ -4,9 +4,9 @@ import { defineRole } from "./defineRole.js";
 
 describe("defineRole", () => {
   test("resolved excludes except permissions", () => {
-    const docRead = defineAtomicPermission({ action: "document:read" });
-    const docWrite = defineAtomicPermission({ action: "document:write" });
-    const dangerZone = defineAtomicPermission({ action: "settings:dangerZone" });
+    const docRead = defineAtomicPermission({ name: "document:read" });
+    const docWrite = defineAtomicPermission({ name: "document:write" });
+    const dangerZone = defineAtomicPermission({ name: "settings:dangerZone" });
 
     const role = defineRole({
       name: "admin",
@@ -20,8 +20,8 @@ describe("defineRole", () => {
   });
 
   test("exposes realm, name, permissions, except", () => {
-    const docRead = defineAtomicPermission({ action: "document:read" });
-    const docWrite = defineAtomicPermission({ action: "document:write" });
+    const docRead = defineAtomicPermission({ name: "document:read" });
+    const docWrite = defineAtomicPermission({ name: "document:write" });
     const orgOwner = defineRole({
       name: "owner",
       permissions: [docRead, docWrite],

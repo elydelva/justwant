@@ -3,23 +3,24 @@
  * Composes scope + actors + resources + permissions + roles.
  */
 
+import type { Inspectable } from "@justwant/meta";
 import type { IdentityLike, ReferenceLike, ScopeLike } from "../../types/index.js";
 import type { AtomicPermission } from "../permission/defineAtomicPermission.js";
 import type { RoleDef } from "../role/defineRole.js";
 
-export interface RealmDef {
-  readonly name: string;
+export interface RealmDef<N extends string = string> extends Inspectable<N> {
+  readonly name: N;
   readonly scope: ScopeLike;
   readonly actors: readonly IdentityLike[];
   readonly resources: readonly ReferenceLike[];
   readonly permissions: readonly AtomicPermission[];
   readonly roles: readonly RoleDef[];
   readonly roleByName: Map<string, RoleDef>;
-  readonly permissionById: Map<string, AtomicPermission>;
+  readonly permissionByName: Map<string, AtomicPermission>;
 }
 
-export interface DefineRealmOptions {
-  name: string;
+export interface DefineRealmOptions<N extends string = string> {
+  name: N;
   scope: ScopeLike;
   actors: readonly IdentityLike[];
   resources?: readonly ReferenceLike[];
@@ -27,7 +28,7 @@ export interface DefineRealmOptions {
   roles: readonly RoleDef[];
 }
 
-export function defineRealm(options: DefineRealmOptions): RealmDef {
+export function defineRealm<N extends string>(options: DefineRealmOptions<N>): RealmDef<N> {
   const { name, scope, actors, resources = [], permissions, roles } = options;
 
   const roleByName = new Map<string, RoleDef>();
@@ -35,9 +36,9 @@ export function defineRealm(options: DefineRealmOptions): RealmDef {
     roleByName.set(role.name, role);
   }
 
-  const permissionById = new Map<string, AtomicPermission>();
+  const permissionByName = new Map<string, AtomicPermission>();
   for (const perm of permissions) {
-    permissionById.set(perm.id, perm);
+    permissionByName.set(perm.name, perm);
   }
 
   return {
@@ -62,8 +63,8 @@ export function defineRealm(options: DefineRealmOptions): RealmDef {
     get roleByName() {
       return roleByName;
     },
-    get permissionById() {
-      return permissionById;
+    get permissionByName() {
+      return permissionByName;
     },
   };
 }

@@ -153,7 +153,7 @@ export function createPermission<ScopeNames extends string = string>(
       return { allowed: false, reason: "unknown_scope" };
     }
 
-    if (!realm.permissionById.has(action.id)) {
+    if (!realm.permissionByName.has(action.name)) {
       return { allowed: false, reason: "permission_not_in_realm" };
     }
 
@@ -188,7 +188,7 @@ export function createPermission<ScopeNames extends string = string>(
     }
 
     const permissions = getRolePermissions(role);
-    if (permissions.has(action.id)) {
+    if (permissions.has(action.name)) {
       return { allowed: true, reason: "role", role: role.name };
     }
 
@@ -217,9 +217,9 @@ export function createPermission<ScopeNames extends string = string>(
     const allowed = await can({ actor, action, scope, resource });
     if (!allowed) {
       throw new PermissionDeniedError(
-        message ?? `Permission denied: ${action.id}`,
+        message ?? `Permission denied: ${action.name}`,
         actor.id,
-        action.id,
+        action.name,
         scope.id ?? undefined
       );
     }
@@ -289,7 +289,7 @@ export function createPermission<ScopeNames extends string = string>(
       type: "grant",
       actorType: actor.type,
       actorId: actor.id,
-      permission: action.id,
+      permission: action.name,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
       resourceType: resource?.type,
@@ -301,7 +301,7 @@ export function createPermission<ScopeNames extends string = string>(
         type: "grant",
         actorType: actor.type,
         actorId: actor.id,
-        permission: action.id,
+        permission: action.name,
         scopeType: scope.type,
         scopeId: scope.id ?? null,
         resourceType: resource?.type,
@@ -321,7 +321,7 @@ export function createPermission<ScopeNames extends string = string>(
       type: "deny",
       actorType: actor.type,
       actorId: actor.id,
-      permission: action.id,
+      permission: action.name,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
       resourceType: resource?.type,
@@ -333,7 +333,7 @@ export function createPermission<ScopeNames extends string = string>(
         type: "deny",
         actorType: actor.type,
         actorId: actor.id,
-        permission: action.id,
+        permission: action.name,
         scopeType: scope.type,
         scopeId: scope.id ?? null,
         resourceType: resource?.type,
@@ -353,7 +353,7 @@ export function createPermission<ScopeNames extends string = string>(
       type: "grant",
       actorType: actor.type,
       actorId: actor.id,
-      permission: action.id,
+      permission: action.name,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
       resourceType: resource?.type,
@@ -375,7 +375,7 @@ export function createPermission<ScopeNames extends string = string>(
       type: "deny",
       actorType: actor.type,
       actorId: actor.id,
-      permission: action.id,
+      permission: action.name,
       scopeType: scope.type,
       scopeId: scope.id ?? null,
       resourceType: resource?.type,

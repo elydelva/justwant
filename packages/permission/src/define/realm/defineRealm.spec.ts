@@ -11,7 +11,7 @@ describe("defineRealm", () => {
     const appScope = defineScope({ name: "app" });
     const userActor = defineActor({ name: "user" });
     const documentResource = defineResource({ name: "document" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const member = defineRole({
       name: "member",
       permissions: [documentRead],
@@ -38,7 +38,7 @@ describe("defineRealm", () => {
   test("roleByName maps role names to role defs", () => {
     const appScope = defineScope({ name: "app" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const member = defineRole({ name: "member", permissions: [documentRead], realm: "app" });
     const admin = defineRole({ name: "admin", permissions: [documentRead], realm: "app" });
 
@@ -54,11 +54,11 @@ describe("defineRealm", () => {
     expect(realm.roleByName.get("admin")).toBe(admin);
   });
 
-  test("permissionById maps permission ids to atomic permissions", () => {
+  test("permissionByName maps permission ids to atomic permissions", () => {
     const appScope = defineScope({ name: "app" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
-    const documentWrite = defineAtomicPermission({ action: "document:write" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
+    const documentWrite = defineAtomicPermission({ name: "document:write" });
     const member = defineRole({
       name: "member",
       permissions: [documentRead, documentWrite],
@@ -73,14 +73,14 @@ describe("defineRealm", () => {
       roles: [member],
     });
 
-    expect(realm.permissionById.get("document:read")).toBe(documentRead);
-    expect(realm.permissionById.get("document:write")).toBe(documentWrite);
+    expect(realm.permissionByName.get("document:read")).toBe(documentRead);
+    expect(realm.permissionByName.get("document:write")).toBe(documentWrite);
   });
 
   test("defaults resources to empty array when omitted", () => {
     const appScope = defineScope({ name: "app" });
     const userActor = defineActor({ name: "user" });
-    const documentRead = defineAtomicPermission({ action: "document:read" });
+    const documentRead = defineAtomicPermission({ name: "document:read" });
     const member = defineRole({ name: "member", permissions: [documentRead], realm: "app" });
 
     const realm = defineRealm({
