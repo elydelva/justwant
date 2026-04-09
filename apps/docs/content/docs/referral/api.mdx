@@ -1,0 +1,163 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/referral.
+icon: BookOpen
+---
+
+## defineReferralOffer
+
+```ts
+function defineReferralOffer<N extends string>(
+  config: DefineReferralOfferConfig<N>
+): ReferralOfferDef<N>
+```
+
+See [Offers](/docs/referral/offers) for full configuration options.
+
+---
+
+## createReferralService
+
+```ts
+function createReferralService(
+  options: CreateReferralServiceOptions
+): ReferralService
+```
+
+### CreateReferralServiceOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `repo` | `ReferralRepository` | Storage implementation |
+| `plugins` | `ReferralPlugin[]` (optional) | Plugins (e.g. `auditPlugin`) |
+| `defaults.orderBy` | `"asc" \| "desc"` (optional) | Default order for `getRecipients` |
+
+### ReferralService
+
+#### refer
+
+```ts
+refer(
+  offer: ReferralOfferDef | string,
+  referrer: Actor,
+  recipient: Actor,
+  metadata?: Record<string, unknown>
+): Promise<Referral>
+```
+
+Records that `referrer` referred `recipient` for `offer`. Throws `AlreadyReferredError` if the recipient was already referred.
+
+#### getReferrer
+
+```ts
+getReferrer(offer: ReferralOfferDef | string, recipient: Actor): Promise<Actor | null>
+```
+
+Returns the actor who referred `recipient`, or `null`.
+
+#### getRecipients
+
+```ts
+getRecipients(
+  offer: ReferralOfferDef | string,
+  referrer: Actor,
+  opts?: { limit?: number; offset?: number; orderBy?: "asc" | "desc" }
+): Promise<Referral[]>
+```
+
+Lists all referrals made by `referrer` for `offer`.
+
+#### getReferral
+
+```ts
+getReferral(
+  offer: ReferralOfferDef | string,
+  referrer: Actor,
+  recipient: Actor
+): Promise<Referral | null>
+```
+
+Returns the specific referral record, or `null`.
+
+#### countByReferrer
+
+```ts
+countByReferrer(offer: ReferralOfferDef | string, referrer: Actor): Promise<number>
+```
+
+#### countByOffer
+
+```ts
+countByOffer(offer: ReferralOfferDef | string): Promise<number>
+```
+
+Total referrals across all referrers for the offer.
+
+#### getReferralCode
+
+```ts
+getReferralCode(offer: ReferralOfferDef | string, referrer: Actor): Promise<string>
+```
+
+Returns the referral code for `referrer`. Uses `codeGenerator` if provided, otherwise returns the referrer's `id` (or a UUID).
+
+#### resolveCode
+
+```ts
+resolveCode(offer: ReferralOfferDef | string, code: string): Promise<Actor | null>
+```
+
+Resolves a referral code to the referrer actor. Returns `null` if unresolvable. Falls back to `defaultReferrerType` if set on the offer.
+
+---
+
+## Types
+
+### Actor
+
+```ts
+interface Actor {
+  type: string;
+  id: string;
+}
+```
+
+### Referral
+
+```ts
+interface Referral {
+  id: string;
+  offerKey: string;
+  referrerType: string;
+  referrerId: string;
+  recipientType: string;
+  recipientId: string;
+  referralCode?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: Date;
+}
+```
+
+### ReferralRepository
+
+```ts
+interface ReferralRepository {
+  create(data: CreateInput<Referral>): Promise<Referral>;
+  findOne(where: Partial<Referral>): Promise<Referral | null>;
+  findMany(
+    where: Partial<Referral>,
+    opts?: { limit?: number; offset?: number; orderBy?: { field: string; direction: "asc" | "desc" } }
+  ): Promise<Referral[]>;
+  count(where: Partial<Referral>): Promise<number>;
+}
+```
+
+---
+
+## Errors
+
+| Class | Code | When |
+|-------|------|------|
+| `ReferralError` | `REFERRAL_ERROR` | Base class |
+| `AlreadyReferredError` | `ALREADY_REFERRED` | `refer` — recipient already referred |
+| `InvalidReferralCodeError` | `INVALID_REFERRAL_CODE` | Reserved for custom use |

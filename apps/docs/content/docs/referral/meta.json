@@ -1,0 +1,17 @@
+{
+  "title": "Referral",
+  "icon": "Share2",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "offers",
+    "---Extend---",
+    "plugins",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

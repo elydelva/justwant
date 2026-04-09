@@ -1,0 +1,63 @@
+---
+title: Introduction
+description: Referral and affiliation system — referral codes, stats, and plugin-extensible tracking.
+icon: Share2
+---
+
+## What is @justwant/referral?
+
+`@justwant/referral` is a **headless referral engine** for TypeScript applications. It tracks who referred whom, generates and resolves referral codes, and exposes stats — all backed by a `ReferralRepository` you provide.
+
+**Use it when** you need to:
+- Let users share referral codes and track signups
+- Build a waitlist invite system (integrates with `@justwant/waitlist`)
+- Count referrals per user and per offer
+- Audit every referral event
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **`defineReferralOffer()`** | Portable offer definition — name, optional params, custom code generator |
+| **`createReferralService()`** | Full referral API: refer, getReferrer, getRecipients, getReferral, stats, codes |
+| **Code generation** | Default: uses referrer id as code. Custom: provide `codeGenerator` |
+| **Code resolution** | `resolveCode` maps a code back to the referrer actor |
+| **Parameterized offers** | One offer definition per product or list (e.g. `beta:listId:prod-1`) |
+| **Duplicate guard** | `refer` throws `AlreadyReferredError` if recipient already referred for offer |
+| **Plugins** | `auditPlugin` — log each referral |
+
+## How it works
+
+1. Define an offer with `defineReferralOffer({ name: "beta" })`.
+2. Create the service with `createReferralService({ repo })`.
+3. Generate a code for a referrer with `service.getReferralCode(offer, referrer)`.
+4. Apply the code when a new user signs up: `service.refer(offer, referrer, recipient)`.
+5. Query stats with `service.countByReferrer(offer, referrer)`.
+
+```ts
+import { defineReferralOffer, createReferralService } from "@justwant/referral";
+
+const betaOffer = defineReferralOffer({ name: "beta" });
+const referral = createReferralService({ repo: myReferralRepo });
+
+const referrer = { type: "user", id: "u-1" };
+const code = await referral.getReferralCode(betaOffer, referrer);
+// "u-1" (default: referrer id)
+
+// Later, when u-2 signs up with the code:
+const resolvedReferrer = await referral.resolveCode(betaOffer, code);
+// { type: "user", id: "u-1" }
+
+await referral.refer(betaOffer, resolvedReferrer, { type: "user", id: "u-2" });
+
+const count = await referral.countByReferrer(betaOffer, referrer);
+// 1
+```
+
+## Next steps
+
+- [Installation](/docs/referral/installation)
+- [Basic Usage](/docs/referral/basic-usage)
+- [Offers](/docs/referral/offers)
+- [Plugins](/docs/referral/plugins)
+- [Errors](/docs/referral/errors)

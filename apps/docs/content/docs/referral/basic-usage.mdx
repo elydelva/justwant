@@ -1,0 +1,111 @@
+---
+title: Basic Usage
+description: Define an offer, generate referral codes, apply them, and query stats.
+icon: Play
+---
+
+## Step 1 — Define an offer
+
+```ts title="lib/offers.ts"
+import { defineReferralOffer } from "@justwant/referral";
+
+export const betaOffer = defineReferralOffer({ name: "beta" });
+```
+
+## Step 2 — Create the service
+
+```ts title="lib/referral.ts"
+import { createReferralService } from "@justwant/referral";
+import { betaOffer } from "./offers.ts";
+
+export const referral = createReferralService({
+  repo: myReferralRepo, // implement ReferralRepository
+});
+```
+
+## Step 3 — Generate a referral code for a referrer
+
+```ts
+const referrer = { type: "user", id: "u-1" };
+
+const code = await referral.getReferralCode(betaOffer, referrer);
+// "u-1" (default: uses referrer.id)
+// Share this code with the referrer to distribute
+```
+
+## Step 4 — Apply the code when a new user signs up
+
+```ts
+// Resolve the code back to a referrer
+const resolvedReferrer = await referral.resolveCode(betaOffer, code);
+// { type: "user", id: "u-1" } or null if invalid
+
+if (resolvedReferrer) {
+  const newUser = { type: "user", id: "u-2" };
+  await referral.refer(betaOffer, resolvedReferrer, newUser);
+  // throws AlreadyReferredError if u-2 was already referred
+}
+```
+
+## Step 5 — Query stats
+
+```ts
+// How many people has u-1 referred?
+const count = await referral.countByReferrer(betaOffer, referrer);
+// 1
+
+// Who referred u-2?
+const referredBy = await referral.getReferrer(betaOffer, { type: "user", id: "u-2" });
+// { type: "user", id: "u-1" }
+
+// List all recipients referred by u-1
+const recipients = await referral.getRecipients(betaOffer, referrer, { limit: 20 });
+// Referral[]
+
+// Total referrals across the entire offer
+const total = await referral.countByOffer(betaOffer);
+```
+
+## Implementing a repository
+
+```ts title="lib/referral-repo.ts"
+import type { ReferralRepository, Referral, CreateInput } from "@justwant/referral";
+
+export function createMemoryReferralRepo(): ReferralRepository {
+  const store = new Map<string, Referral>();
+
+  function matches(r: Referral, where: Partial<Referral>): boolean {
+    return Object.entries(where).every(
+      ([k, v]) => (r as Record<string, unknown>)[k] === v
+    );
+  }
+
+  return {
+    async create(data: CreateInput<Referral>) {
+      const r: Referral = { id: crypto.randomUUID(), ...data, createdAt: data.createdAt ?? new Date() };
+      store.set(r.id, r);
+      return r;
+    },
+    async findOne(where) {
+      return [...store.values()].find((r) => matches(r, where)) ?? null;
+    },
+    async findMany(where, opts) {
+      let rows = [...store.values()].filter((r) => matches(r, where));
+      if (opts?.orderBy) {
+        const { field, direction } = opts.orderBy;
+        rows.sort((a, b) => {
+          const av = (a as Record<string, unknown>)[field] ?? "";
+          const bv = (b as Record<string, unknown>)[field] ?? "";
+          const cmp = av < bv ? -1 : Number(av > bv);
+          return direction === "desc" ? -cmp : cmp;
+        });
+      }
+      const offset = opts?.offset ?? 0;
+      return opts?.limit ? rows.slice(offset, offset + opts.limit) : rows.slice(offset);
+    },
+    async count(where) {
+      return [...store.values()].filter((r) => matches(r, where)).length;
+    },
+  };
+}
+```
