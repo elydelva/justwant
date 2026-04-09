@@ -1,0 +1,145 @@
+---
+title: Errors
+description: All error types exported by @justwant/lock.
+icon: AlertCircle
+---
+
+## Error hierarchy
+
+All errors extend `LockError`, which extends `Error`.
+
+```
+LockError
+├── LockNotHeldError
+├── LockAlreadyHeldError
+├── SemaphoreCapacityExceededError
+├── LockExpiredError
+├── LockableParamsError
+└── LockRepositoryError
+```
+
+## LockError
+
+Base class for all lock errors.
+
+```ts
+class LockError extends Error {
+  name: "LockError";
+}
+```
+
+## LockNotHeldError
+
+Thrown when `release` or `extend` is called but the owner does not hold the lock. Also thrown by `createSemaphore` when releasing more units than held.
+
+```ts
+class LockNotHeldError extends LockError {
+  name: "LockNotHeldError";
+  lockableKey: string;
+  ownerType: string;
+  ownerId: string;
+}
+```
+
+**When it occurs:**
+- `lock.release(owner, lockable)` — owner does not hold the lock
+- `lock.extend(owner, lockable, ttlMs)` — owner does not hold the lock
+- `semaphore.release(owner, lockable, count)` — owner holds fewer units than `count`
+
+## LockAlreadyHeldError
+
+Indicates an acquire failed because another owner holds the lock. **Note**: `createLock.acquire` returns `false` rather than throwing this error. This error is available for use by custom `LockRepository` implementations or higher-level wrappers.
+
+```ts
+class LockAlreadyHeldError extends LockError {
+  name: "LockAlreadyHeldError";
+  lockableKey: string;
+  currentOwnerType: string;
+  currentOwnerId: string;
+}
+```
+
+## SemaphoreCapacityExceededError
+
+Available for custom implementations. `createSemaphore.acquire` returns `false` rather than throwing when capacity is exceeded.
+
+```ts
+class SemaphoreCapacityExceededError extends LockError {
+  name: "SemaphoreCapacityExceededError";
+  lockableKey: string;
+  requested: number;
+  available: number;
+  max: number;
+}
+```
+
+## LockExpiredError
+
+Available for use by `LockRepository` implementations that detect a lock has expired at the storage layer.
+
+```ts
+class LockExpiredError extends LockError {
+  name: "LockExpiredError";
+  lockableKey: string;
+  expiresAt: Date;
+}
+```
+
+## LockableParamsError
+
+Thrown by `defineLockable` when called incorrectly:
+- Singular lockable called with params
+- Plural lockable called without params
+
+```ts
+class LockableParamsError extends LockError {
+  name: "LockableParamsError";
+  lockableName: string;
+  reason: "singular_with_params" | "plural_without_params" | string;
+}
+```
+
+```ts
+const billing = defineLockable({ name: "billing", singular: true });
+
+billing("extra-param"); // throws LockableParamsError
+// reason: "singular_with_params"
+
+const user = defineLockable({ name: "user", singular: false });
+user(); // throws LockableParamsError
+// reason: "plural_without_params"
+```
+
+## LockRepositoryError
+
+Intended for use by `LockRepository` implementations to wrap storage failures.
+
+```ts
+class LockRepositoryError extends LockError {
+  name: "LockRepositoryError";
+  operation: string;
+  cause?: unknown;
+}
+```
+
+## Catching errors
+
+```ts
+import {
+  LockNotHeldError,
+  LockableParamsError,
+  LockError,
+} from "@justwant/lock";
+
+try {
+  await lock.release(owner, lockable);
+} catch (err) {
+  if (err instanceof LockNotHeldError) {
+    console.warn(`Not held: ${err.lockableKey}`);
+  } else if (err instanceof LockError) {
+    console.error("Lock error:", err.message);
+  } else {
+    throw err;
+  }
+}
+```

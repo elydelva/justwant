@@ -1,0 +1,73 @@
+---
+title: Installation
+description: Install @justwant/lock and create your first lock and semaphore.
+icon: Package
+---
+
+## Install
+
+```bash
+bun add @justwant/lock
+```
+
+## Create a lock
+
+A `LockRepository` is required. The example below uses an in-memory implementation for illustration — in production, use a Redis or PostgreSQL repository.
+
+```ts title="lib/lock.ts"
+import { createLock } from "@justwant/lock";
+import type { LockRepository } from "@justwant/lock";
+
+// Minimal in-memory repository (for development / testing)
+const store = new Map<string, import("@justwant/lock").Lock>();
+let counter = 0;
+
+const repo: LockRepository = {
+  async findOne(where) {
+    for (const lock of store.values()) {
+      if (Object.entries(where).every(([k, v]) => (lock as Record<string, unknown>)[k] === v)) {
+        return lock;
+      }
+    }
+    return null;
+  },
+  async findMany(where) {
+    return [...store.values()].filter((lock) =>
+      Object.entries(where).every(([k, v]) => (lock as Record<string, unknown>)[k] === v)
+    );
+  },
+  async create(data) {
+    const lock = { ...data, id: String(++counter) };
+    store.set(lock.id, lock);
+    return lock;
+  },
+  async update(id, data) {
+    const existing = store.get(id);
+    if (!existing) throw new Error(`Lock ${id} not found`);
+    const updated = { ...existing, ...data };
+    store.set(id, updated);
+    return updated;
+  },
+  async delete(id) {
+    store.delete(id);
+  },
+};
+
+export const lock = createLock({ repo });
+```
+
+## Create a semaphore
+
+```ts title="lib/semaphore.ts"
+import { createSemaphore } from "@justwant/lock";
+import { repo } from "./lock";
+
+// Allow up to 3 concurrent holders
+export const semaphore = createSemaphore({ repo, max: 3 });
+```
+
+## Next steps
+
+- [Basic Usage](/docs/lock/basic-usage) — define a lockable resource and acquire a lock
+- [Mutex](/docs/lock/mutex) — full `createLock` API reference
+- [Semaphore](/docs/lock/semaphore) — full `createSemaphore` API reference

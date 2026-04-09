@@ -1,0 +1,129 @@
+---
+title: Hooks
+description: LockHooks lifecycle interface and auditLockHooks for audit integration.
+icon: Zap
+---
+
+## Overview
+
+Both `createLock` and `createSemaphore` accept a `hooks` option. Hooks run at specific points in the lock lifecycle, enabling audit trails, metrics collection, alerting, and observability without modifying core logic.
+
+## LockHooks interface
+
+```ts
+interface LockHooks {
+  beforeAcquire?(ctx: LockHookContext): void | Promise<void>;
+  afterAcquire?(ctx: LockHookContext, result: { acquired: boolean }): void | Promise<void>;
+  beforeRelease?(ctx: LockHookContext): void | Promise<void>;
+  afterRelease?(ctx: LockHookContext, result: { released: boolean }): void | Promise<void>;
+  beforeExtend?(ctx: LockHookContext): void | Promise<void>;
+  afterExtend?(ctx: LockHookContext, result: { extended: boolean }): void | Promise<void>;
+  beforeForceRelease?(ctx: LockHookContext): void | Promise<void>;
+  afterForceRelease?(ctx: LockHookContext): void | Promise<void>;
+}
+```
+
+### LockHookContext
+
+```ts
+interface LockHookContext {
+  owner: LockOwner;
+  lockable: Lockable;
+  operation: "acquire" | "release" | "extend" | "forceRelease";
+  ttlMs?: number;   // set for acquire and extend
+  count?: number;   // set for semaphore operations
+}
+```
+
+### Hook reference
+
+| Hook | When | Result |
+|------|------|--------|
+| `beforeAcquire` | Before attempting to acquire | — |
+| `afterAcquire` | After acquire attempt | `{ acquired: boolean }` |
+| `beforeRelease` | Before releasing | — |
+| `afterRelease` | After releasing | `{ released: boolean }` |
+| `beforeExtend` | Before extending TTL | — |
+| `afterExtend` | After extending TTL | `{ extended: boolean }` |
+| `beforeForceRelease` | Before force release | — |
+| `afterForceRelease` | After force release | — |
+
+## Custom hooks
+
+```ts
+import { createLock } from "@justwant/lock";
+
+const lock = createLock({
+  repo,
+  hooks: {
+    afterAcquire(ctx, result) {
+      if (!result.acquired) {
+        console.warn(`[lock] Acquire failed for ${ctx.lockable.key} by ${ctx.owner.id}`);
+      }
+    },
+    afterRelease(ctx) {
+      console.log(`[lock] Released ${ctx.lockable.key}`);
+    },
+    afterForceRelease(ctx) {
+      console.warn(`[lock] Force-released ${ctx.lockable.key}`);
+    },
+  },
+});
+```
+
+## auditLockHooks
+
+`auditLockHooks` is a convenience factory that wires result-phase hooks (`afterAcquire`, `afterRelease`, `afterExtend`, `afterForceRelease`) to named callbacks. Use it to integrate with an audit service without writing the full `LockHooks` object manually.
+
+```ts
+import { auditLockHooks, createLock } from "@justwant/lock";
+
+const hooks = auditLockHooks({
+  onAcquire(ctx, result) {
+    auditService.log({
+      event: "lock.acquire",
+      lockableKey: ctx.lockable.key,
+      ownerType: ctx.owner.type,
+      ownerId: ctx.owner.id,
+      acquired: result.acquired,
+      ttlMs: ctx.ttlMs,
+    });
+  },
+  onRelease(ctx, result) {
+    auditService.log({
+      event: "lock.release",
+      lockableKey: ctx.lockable.key,
+      ownerType: ctx.owner.type,
+      ownerId: ctx.owner.id,
+      released: result.released,
+    });
+  },
+  onExtend(ctx, result) {
+    auditService.log({
+      event: "lock.extend",
+      lockableKey: ctx.lockable.key,
+      ttlMs: ctx.ttlMs,
+      extended: result.extended,
+    });
+  },
+  onForceRelease(ctx) {
+    auditService.log({
+      event: "lock.forceRelease",
+      lockableKey: ctx.lockable.key,
+    });
+  },
+});
+
+const lock = createLock({ repo, hooks });
+```
+
+### AuditLockHooksOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `onAcquire` | `(ctx, { acquired }) => void \| Promise<void>` | Called after every acquire attempt |
+| `onRelease` | `(ctx, { released }) => void \| Promise<void>` | Called after every release |
+| `onExtend` | `(ctx, { extended }) => void \| Promise<void>` | Called after every extend |
+| `onForceRelease` | `(ctx) => void \| Promise<void>` | Called after every force release |
+
+**Note**: `auditLockHooks` only registers `after*` hooks. Use raw `LockHooks` if you need `before*` hooks (e.g. to block an operation or inject context).

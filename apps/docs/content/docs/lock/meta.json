@@ -1,0 +1,19 @@
+{
+  "title": "Lock",
+  "icon": "Lock",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "mutex",
+    "semaphore",
+    "define",
+    "---Extend---",
+    "hooks",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

@@ -1,0 +1,132 @@
+---
+title: Semaphore
+description: createSemaphore — counting semaphore with unit-level acquire and release.
+icon: Layers
+---
+
+## Overview
+
+`createSemaphore` creates a **counting semaphore**: up to `max` units may be held concurrently, distributed across any number of owners. Each owner can hold multiple units. Acquiring more units than are available returns `false` without throwing.
+
+## Create a semaphore
+
+```ts
+import { createSemaphore } from "@justwant/lock";
+
+const semaphore = createSemaphore({
+  repo,   // LockRepository — required
+  max: 5, // maximum concurrent units — required
+  hooks,  // LockHooks — optional
+});
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `repo` | `LockRepository` | Yes | Storage backend |
+| `max` | `number` | Yes | Maximum total units held at once |
+| `hooks` | `LockHooks` | No | Lifecycle hooks |
+
+## API
+
+### `acquire`
+
+```ts
+acquire(owner: LockOwner, lockable: Lockable, count?: number): Promise<boolean>
+```
+
+Tries to acquire `count` units (default `1`). Returns `true` on success, `false` if `count` exceeds available capacity.
+
+- If the owner already holds units for this lockable, the count is incremented.
+- Expired lock records are cleaned up on acquire.
+
+```ts
+// Acquire 1 unit (default)
+const ok = await semaphore.acquire(owner, lockable);
+
+// Acquire 3 units at once
+const ok = await semaphore.acquire(owner, lockable, 3);
+```
+
+### `release`
+
+```ts
+release(owner: LockOwner, lockable: Lockable, count?: number): Promise<void>
+```
+
+Releases `count` units (default `1`). Throws `LockNotHeldError` if the owner does not hold enough units.
+
+```ts
+// Release 1 unit
+await semaphore.release(owner, lockable);
+
+// Release 3 units
+await semaphore.release(owner, lockable, 3);
+```
+
+### `available`
+
+```ts
+available(lockable: Lockable): Promise<number>
+```
+
+Returns the number of free units (`max - currentHeld`). Non-expired records are counted.
+
+```ts
+const free = await semaphore.available(lockable);
+console.log(`${free} / ${max} slots available`);
+```
+
+## Counting semaphore pattern
+
+A semaphore is the right tool when you need to limit concurrency to a fixed N rather than a strict one-at-a-time mutex.
+
+```ts title="lib/rate-limit.ts"
+import { createSemaphore, defineLockable, defineLockOwner } from "@justwant/lock";
+
+const ApiSlot = defineLockable({ name: "external-api", singular: true });
+const Service = defineLockOwner({ name: "service" });
+
+// Allow at most 10 concurrent calls to the external API
+const semaphore = createSemaphore({ repo, max: 10 });
+
+async function callExternalApi(serviceId: string) {
+  const resource = ApiSlot();
+  const owner = Service(serviceId);
+  const available = await semaphore.available(resource);
+
+  if (available === 0) {
+    throw new Error("Rate limit reached — try again later");
+  }
+
+  const acquired = await semaphore.acquire(owner, resource);
+  if (!acquired) {
+    throw new Error("Could not acquire semaphore slot");
+  }
+
+  try {
+    return await fetch("https://external.api/endpoint");
+  } finally {
+    await semaphore.release(owner, resource);
+  }
+}
+```
+
+## Multi-unit allocation
+
+When a job needs more than one slot (e.g. a heavy GPU job that consumes 4 units):
+
+```ts
+const acquired = await semaphore.acquire(gpuWorker, gpuSlot, 4);
+
+if (acquired) {
+  try {
+    await runHeavyJob();
+  } finally {
+    await semaphore.release(gpuWorker, gpuSlot, 4);
+  }
+}
+```
+
+**Note**: Always release the same number of units you acquired. Releasing more than held throws `LockNotHeldError`.

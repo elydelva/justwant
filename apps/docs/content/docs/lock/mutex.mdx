@@ -1,0 +1,123 @@
+---
+title: Mutex
+description: createLock — exclusive locks with TTL, extend, and force release.
+icon: ShieldCheck
+---
+
+## Overview
+
+`createLock` creates a **mutex**: at most one owner may hold the lock at a time. Attempting to acquire a lock that is already held (by a different owner) returns `false` without throwing. Re-acquiring the same lock as the same owner returns `true` immediately.
+
+## Create a lock
+
+```ts
+import { createLock } from "@justwant/lock";
+
+const lock = createLock({
+  repo,           // LockRepository — required
+  hooks,          // LockHooks — optional
+});
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `repo` | `LockRepository` | Yes | Storage backend |
+| `hooks` | `LockHooks` | No | Lifecycle hooks |
+
+## API
+
+### `acquire`
+
+```ts
+acquire(owner: LockOwner, lockable: Lockable, opts?: { ttlMs?: number }): Promise<boolean>
+```
+
+Tries to acquire the lock. Returns `true` on success, `false` if already held by another owner.
+
+- If the existing lock is **expired** (`expiresAt < now`), it is deleted and re-acquired.
+- If the existing lock belongs to the **same owner**, it returns `true` immediately (re-entrant).
+- `ttlMs` — optional TTL in milliseconds. After TTL, the lock expires and can be reclaimed.
+
+```ts
+// Without TTL — held until explicitly released
+const acquired = await lock.acquire(owner, lockable);
+
+// With TTL — expires after 30 seconds
+const acquired = await lock.acquire(owner, lockable, { ttlMs: 30_000 });
+```
+
+### `release`
+
+```ts
+release(owner: LockOwner, lockable: Lockable): Promise<void>
+```
+
+Releases the lock. Throws `LockNotHeldError` if the owner does not hold the lock.
+
+```ts
+await lock.release(owner, lockable);
+```
+
+### `isLocked`
+
+```ts
+isLocked(lockable: Lockable): Promise<boolean>
+```
+
+Returns `true` if the lock is currently held by any owner and has not expired.
+
+```ts
+const locked = await lock.isLocked(lockable);
+```
+
+### `forceRelease`
+
+```ts
+forceRelease(lockable: Lockable): Promise<void>
+```
+
+Removes all lock records for the given lockable, regardless of owner. Useful for administrative cleanup. Triggers `beforeForceRelease` / `afterForceRelease` hooks.
+
+```ts
+await lock.forceRelease(lockable);
+```
+
+### `extend`
+
+```ts
+extend(owner: LockOwner, lockable: Lockable, ttlMs: number): Promise<boolean>
+```
+
+Extends an existing lock's TTL. Throws `LockNotHeldError` if the owner does not hold the lock. Returns `true` on success.
+
+```ts
+// Extend by 60 more seconds
+await lock.extend(owner, lockable, 60_000);
+```
+
+## TTL usage pattern
+
+Use TTL to ensure locks are released even if a process crashes.
+
+```ts
+// Acquire with TTL
+const acquired = await lock.acquire(owner, lockable, { ttlMs: 60_000 });
+
+if (acquired) {
+  // Periodically extend while work continues
+  const extendInterval = setInterval(async () => {
+    await lock.extend(owner, lockable, 60_000);
+  }, 45_000);
+
+  try {
+    await doLongRunningWork();
+  } finally {
+    clearInterval(extendInterval);
+    await lock.release(owner, lockable);
+  }
+}
+```
+
+**Note**: If you do not call `release` and the TTL expires, the lock becomes available for reacquisition on the next `acquire` call.
