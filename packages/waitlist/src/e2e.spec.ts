@@ -102,7 +102,7 @@ async function createE2ESetup() {
 describe("E2E (Waddler SQLite)", () => {
   test("full CRUD: subscribe, isSubscribed, count, listSubscribers, getPosition, pop, unsubscribe", async () => {
     const { service } = await createE2ESetup();
-    const list = defineList({ id: "e2e-crud" })();
+    const list = defineList({ name: "e2e-crud" });
 
     await service.subscribe(list, { type: "user", id: "u1" });
     expect(await service.isSubscribed(list, { type: "user", id: "u1" })).toBe(true);
@@ -126,9 +126,9 @@ describe("E2E (Waddler SQLite)", () => {
 
   test("parameterized list: 2 listKeys isolate data", async () => {
     const { service } = await createE2ESetup();
-    const launchList = defineList({ id: "launch", params: ["productId"] });
-    const list1 = launchList("prod-1");
-    const list2 = launchList("prod-2");
+    const launchList = defineList({ name: "launch", params: ["productId"] });
+    const list1 = launchList.key("prod-1");
+    const list2 = launchList.key("prod-2");
 
     await service.subscribe(list1, { type: "user", id: "u1" });
     await service.subscribe(list2, { type: "user", id: "u1" });
@@ -139,7 +139,7 @@ describe("E2E (Waddler SQLite)", () => {
 
   test("FIFO: 5 subscribe, 5 pop in order", async () => {
     const { service } = await createE2ESetup();
-    const list = defineList({ id: "e2e-fifo" })();
+    const list = defineList({ name: "e2e-fifo" });
 
     for (let i = 1; i <= 5; i++) {
       await service.subscribe(list, { type: "user", id: `u${i}` });
@@ -162,7 +162,7 @@ describe("E2E (Waddler SQLite)", () => {
         },
       },
     });
-    const list = defineList({ id: "e2e-invite" })();
+    const list = defineList({ name: "e2e-invite" });
 
     await serviceWithReferral.invite(
       list,
@@ -177,7 +177,7 @@ describe("E2E (Waddler SQLite)", () => {
 
   test("listSubscribers pagination: 10 entries, limit 3, offset 2", async () => {
     const { service } = await createE2ESetup();
-    const list = defineList({ id: "e2e-paginate" })();
+    const list = defineList({ name: "e2e-paginate" });
 
     for (let i = 1; i <= 10; i++) {
       await service.subscribe(list, { type: "user", id: `u${i}` });
@@ -189,7 +189,7 @@ describe("E2E (Waddler SQLite)", () => {
 
   test("cleanupExpired: removes expired entries", async () => {
     const { repo, service } = await createE2ESetup();
-    const list = defineList({ id: "e2e-expire" })();
+    const list = defineList({ name: "e2e-expire" });
     const past = new Date(Date.now() - 86400000);
 
     await service.subscribe(list, { type: "user", id: "e1" }, { expiresAt: past });
@@ -198,7 +198,7 @@ describe("E2E (Waddler SQLite)", () => {
 
     expect(await service.count(list)).toBe(3);
 
-    const removed = await cleanupExpired(repo, list.listKey);
+    const removed = await cleanupExpired(repo, list.key());
     expect(removed).toBe(2);
     expect(await service.count(list)).toBe(1);
   });

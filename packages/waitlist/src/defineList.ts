@@ -3,64 +3,56 @@
  * Portable list definition without runtime dependencies.
  */
 
+import type { Definable } from "@justwant/meta";
 import type { WaitlistMetadataSchema } from "./types.js";
 
-export interface DefineListConfig<TMetadata = unknown> {
-  id: string;
-  name?: string;
-  /** Parameters for parameterized lists (e.g. ["productId"]). */
+export interface DefineListConfig<N extends string = string, TMetadata = unknown> {
+  name: N;
+  /** Parameters for parameterized listKeys (e.g. ["productId"]). */
   params?: string[];
-  /** Optional schema for metadata validation. */
   schema?: WaitlistMetadataSchema<TMetadata>;
   defaults?: Record<string, unknown>;
 }
 
-/** List definition — portable. Callable when params are defined. */
-export interface WaitlistDef<TMetadata = unknown> {
-  readonly id: string;
-  readonly name?: string;
+/**
+ * List definition — portable, extends Definable<N>.
+ * Callable: list(actorId) → { type: N; id: actorId }
+ * .key(...paramValues) → resolves listKey string ("name" or "name:param1:param2")
+ */
+export interface WaitlistDef<N extends string = string, TMetadata = unknown> extends Definable<N> {
+  readonly name: N;
   readonly params?: string[];
   readonly schema?: WaitlistMetadataSchema<TMetadata>;
   readonly defaults?: Record<string, unknown>;
+  key(...paramValues: string[]): string;
 }
 
-/** Resolved list reference (id or id:param1:param2). */
-export type WaitlistList<TMetadata = unknown> = WaitlistDef<TMetadata> & {
-  listKey: string;
-};
+export function defineList<N extends string, TMetadata = unknown>(
+  config: DefineListConfig<N, TMetadata>
+): WaitlistDef<N, TMetadata> {
+  const { name, schema } = config;
 
-/**
- * Define a waitlist. Returns a portable definition.
- * When params are provided, the result is callable: list("prod-1") → WaitlistList.
- */
-export function defineList<TMetadata = unknown>(
-  config: DefineListConfig<TMetadata>
-): WaitlistDef<TMetadata> & ((...paramValues: string[]) => WaitlistList<TMetadata>) {
-  const def: WaitlistDef<TMetadata> = {
-    id: config.id,
-    name: config.name,
-    params: config.params,
-    schema: config.schema,
-    defaults: config.defaults,
-  };
+  const listDef = ((actorId: string) => ({ type: name, id: actorId })) as WaitlistDef<N, TMetadata>;
 
-  const callable = (...paramValues: string[]) => {
+  const keyFn = (...paramValues: string[]): string => {
     if (config.params?.length) {
       if (paramValues.length !== config.params.length) {
         throw new Error(
-          `defineList "${config.id}" expects ${config.params.length} params, got ${paramValues.length}`
+          `defineList "${name}" expects ${config.params.length} params, got ${paramValues.length}`
         );
       }
-      const listKey = [config.id, ...paramValues].join(":");
-      return { ...def, listKey } as WaitlistList<TMetadata>;
+      return [name, ...paramValues].join(":");
     }
-    return { ...def, listKey: config.id } as WaitlistList<TMetadata>;
+    return name;
   };
 
-  return new Proxy(callable, {
-    get(_target, prop) {
-      if (prop in def) return (def as unknown as Record<string | symbol, unknown>)[prop];
-      return Reflect.get(callable as object, prop);
-    },
-  }) as WaitlistDef<TMetadata> & ((...paramValues: string[]) => WaitlistList<TMetadata>);
+  Object.defineProperties(listDef, {
+    name: { value: name, enumerable: true },
+    params: { value: config.params, enumerable: true },
+    schema: { value: schema, enumerable: true },
+    defaults: { value: config.defaults, enumerable: true },
+    key: { value: keyFn, enumerable: false },
+  });
+
+  return listDef;
 }

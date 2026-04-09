@@ -9,9 +9,9 @@ describe("integration", () => {
   test("parameterized list: subscribe on 2 lists, count and position distinct", async () => {
     const repo = createMemoryWaitlistAdapter();
     const service = createWaitlistService({ repo });
-    const launchList = defineList({ id: "launch", params: ["productId"] });
-    const list1 = launchList("prod-1");
-    const list2 = launchList("prod-2");
+    const launchList = defineList({ name: "launch", params: ["productId"] });
+    const list1 = launchList.key("prod-1");
+    const list2 = launchList.key("prod-2");
 
     await service.subscribe(list1, { type: "user", id: "u1" });
     await service.subscribe(list1, { type: "user", id: "u2" });
@@ -36,7 +36,7 @@ describe("integration", () => {
         },
       },
     });
-    const list = defineList({ id: "referral-int" })();
+    const list = defineList({ name: "referral-int" });
 
     await service.invite(list, { type: "user", id: "inviter" }, { type: "user", id: "invitee" });
 
@@ -49,7 +49,7 @@ describe("integration", () => {
   test("bulk and position: subscribeMany, getPosition for each, unsubscribeMany", async () => {
     const repo = createMemoryWaitlistAdapter();
     const service = createWaitlistService({ repo });
-    const list = defineList({ id: "bulk-int" })();
+    const list = defineList({ name: "bulk-int" });
     const actors = [
       { type: "user", id: "b1" },
       { type: "user", id: "b2" },
@@ -81,7 +81,7 @@ describe("integration", () => {
         }),
       ],
     });
-    const list = defineList({ id: "audit-int" })();
+    const list = defineList({ name: "audit-int" });
 
     await service.subscribe(list, { type: "user", id: "u1" });
 
@@ -91,7 +91,7 @@ describe("integration", () => {
   test("cleanupExpired: entries with past expiresAt removed", async () => {
     const repo = createMemoryWaitlistAdapter();
     const service = createWaitlistService({ repo });
-    const list = defineList({ id: "exp-int" })();
+    const list = defineList({ name: "exp-int" });
     const past = new Date(Date.now() - 86400000);
 
     await service.subscribe(list, { type: "user", id: "e1" }, { expiresAt: past });
@@ -100,7 +100,7 @@ describe("integration", () => {
 
     expect(await service.count(list)).toBe(3);
 
-    const removed = await cleanupExpired(repo, list.listKey);
+    const removed = await cleanupExpired(repo, list.key());
     expect(removed).toBe(2);
     expect(await service.count(list)).toBe(1);
     expect(await service.isSubscribed(list, { type: "user", id: "e3" })).toBe(true);

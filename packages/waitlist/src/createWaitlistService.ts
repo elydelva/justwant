@@ -4,15 +4,15 @@
  */
 
 import { actorKey, fromRepo, toRepo } from "@justwant/actor";
-import type { WaitlistList } from "./defineList.js";
+import type { WaitlistDef } from "./defineList.js";
 import { AlreadySubscribedError, NotSubscribedError } from "./errors.js";
 import type { Actor, WaitlistEntry, WaitlistPlugin, WaitlistRepository } from "./types.js";
 
-function toListKey(list: WaitlistList | string): string {
-  return typeof list === "string" ? list : list.listKey;
+function toListKey(list: WaitlistDef | string): string {
+  return typeof list === "string" ? list : list.key();
 }
 
-function validateMetadata<T>(schema: WaitlistList["schema"], value: unknown, listKey: string): T {
+function validateMetadata<T>(schema: WaitlistDef["schema"], value: unknown, listKey: string): T {
   if (!schema) return (value ?? {}) as T;
   const std = (schema as { "~standard"?: { validate: (v: unknown) => unknown } })["~standard"];
   if (!std?.validate) return (value ?? {}) as T;
@@ -53,34 +53,34 @@ export interface CreateWaitlistServiceOptions {
 
 export interface WaitlistService {
   invite(
-    list: WaitlistList | string,
+    list: WaitlistDef | string,
     inviter: Actor,
     invitee: Actor,
     metadata?: Record<string, unknown>
   ): Promise<WaitlistEntry>;
   subscribe(
-    list: WaitlistList | string,
+    list: WaitlistDef | string,
     actor: Actor,
     opts?: { metadata?: Record<string, unknown>; priority?: number; expiresAt?: Date }
   ): Promise<WaitlistEntry>;
-  unsubscribe(list: WaitlistList | string, actor: Actor): Promise<void>;
-  isSubscribed(list: WaitlistList | string, actor: Actor): Promise<boolean>;
-  count(list: WaitlistList | string): Promise<number>;
+  unsubscribe(list: WaitlistDef | string, actor: Actor): Promise<void>;
+  isSubscribed(list: WaitlistDef | string, actor: Actor): Promise<boolean>;
+  count(list: WaitlistDef | string): Promise<number>;
   listSubscribers(
-    list: WaitlistList | string,
+    list: WaitlistDef | string,
     opts?: { limit?: number; offset?: number; orderBy?: "asc" | "desc" }
   ): Promise<WaitlistEntry[]>;
   getPosition(
-    list: WaitlistList | string,
+    list: WaitlistDef | string,
     actor: Actor
   ): Promise<{ position: number; total: number }>;
-  pop(list: WaitlistList | string): Promise<WaitlistEntry | null>;
+  pop(list: WaitlistDef | string): Promise<WaitlistEntry | null>;
   subscribeMany(
-    list: WaitlistList | string,
+    list: WaitlistDef | string,
     actors: Actor[],
     opts?: { metadata?: Record<string, unknown> }
   ): Promise<WaitlistEntry[]>;
-  unsubscribeMany(list: WaitlistList | string, actors: Actor[]): Promise<void>;
+  unsubscribeMany(list: WaitlistDef | string, actors: Actor[]): Promise<void>;
 }
 
 export function createWaitlistService(options: CreateWaitlistServiceOptions): WaitlistService {
