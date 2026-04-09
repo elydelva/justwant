@@ -4,13 +4,13 @@ import { defineJob } from "./defineJob.js";
 
 describe("defineJob", () => {
   test("creates job definition with id only", () => {
-    const job = defineJob({ id: "test" });
-    expect(job.id).toBe("test");
+    const job = defineJob({ name: "test" });
+    expect(job.name).toBe("test");
     expect("cron" in job).toBe(false);
   });
 
   test("handler.run executes without schema", async () => {
-    const job = defineJob({ id: "test" });
+    const job = defineJob({ name: "test" });
     let ran = false;
     const handler = job.handle(async () => {
       ran = true;
@@ -40,14 +40,14 @@ describe("defineJob", () => {
   });
 
   test("handler.run exposes job context (id, runCount, startedAt, logger)", async () => {
-    const job = defineJob({ id: "ctx-test" });
+    const job = defineJob({ name: "ctx-test" });
     let ctx: unknown;
     const handler = job.handle(async (c) => {
       ctx = c;
     });
     await handler.run({});
     const c = ctx as { job: { id: string; runCount: number; startedAt: Date }; logger: object };
-    expect(c.job.id).toBe("ctx-test");
+    expect(c.job.name).toBe("ctx-test");
     expect(c.job.runCount).toBe(1);
     expect(c.job.startedAt).toBeInstanceOf(Date);
     expect(typeof c.logger.info).toBe("function");
@@ -65,7 +65,7 @@ describe("defineJob", () => {
       },
     }) as unknown as import("@standard-schema/spec").StandardSchemaV1;
 
-    const job = defineJob({ id: "valibot-fallback", schema });
+    const job = defineJob({ name: "valibot-fallback", schema });
     const handler = job.handle(async () => {});
     await expect(handler.run({ n: 42 })).resolves.toBeUndefined();
   });
@@ -81,7 +81,7 @@ describe("defineJob", () => {
       },
     }) as unknown as import("@standard-schema/spec").StandardSchemaV1;
 
-    const job = defineJob({ id: "valibot-err", schema });
+    const job = defineJob({ name: "valibot-err", schema });
     const handler = job.handle(async () => {});
     await expect(handler.run({ n: "not-a-number" })).rejects.toThrow(JobValidationError);
   });
@@ -97,7 +97,7 @@ describe("defineJob", () => {
       },
     }) as unknown as import("@standard-schema/spec").StandardSchemaV1;
 
-    const job = defineJob({ id: "valibot-catch", schema });
+    const job = defineJob({ name: "valibot-catch", schema });
     const handler = job.handle(async () => {});
     await expect(handler.run({})).rejects.toThrow(JobValidationError);
   });
@@ -112,7 +112,7 @@ describe("defineJob", () => {
       },
     } as unknown as import("@standard-schema/spec").StandardSchemaV1;
 
-    const job = defineJob({ id: "async-schema", schema: asyncSchema });
+    const job = defineJob({ name: "async-schema", schema: asyncSchema });
     const handler = job.handle(async () => {});
     await expect(handler.run({})).rejects.toThrow(JobValidationError);
     await expect(handler.run({})).rejects.toThrow("Async validation not supported");

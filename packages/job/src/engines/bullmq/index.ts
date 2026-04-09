@@ -64,7 +64,7 @@ interface Worker {
 }
 
 function queueId(def: QueueDefinition): string {
-  return def.queue ?? def.job.id;
+  return def.queue ?? def.job.name;
 }
 
 function toInstanceStatus(bullStatus: string): InstanceStatus {
@@ -150,7 +150,7 @@ export function bullmqEngine(options: BullMQEngineOptions): JobEngineContract {
         const repeatOpts = tz ? { pattern: cronExpr, tz } : { pattern: cronExpr };
         const jobTemplate = {
           data: {},
-          name: queueDef.job.id,
+          name: queueDef.job.name,
           opts: {
             attempts: queueDef.job.defaults?.retry?.attempts ?? 3,
             backoff:

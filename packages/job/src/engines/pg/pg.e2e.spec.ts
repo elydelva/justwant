@@ -24,7 +24,7 @@ describe("pg engine E2E", () => {
       engine: pgEngine({ pool, tableName }),
       skipRuntimeCheck: true,
     });
-    const job = defineJob({ id: `pg-trigger-${Date.now()}` });
+    const job = defineJob({ name: `pg-trigger-${Date.now()}` });
     const queue = defineQueue({ job, cron: "0 0 1 1 *" });
     let ran = false;
     const handler = job.handle(async () => {
@@ -32,10 +32,10 @@ describe("pg engine E2E", () => {
     });
 
     await jobService.register(queue, handler);
-    await jobService.enqueue(queue.job.id, {});
+    await jobService.enqueue(queue.job.name, {});
     expect(ran).toBe(true);
 
-    await jobService.unregister(queue.job.id);
+    await jobService.unregister(queue.job.name);
     await jobService.stop();
     await pool.end();
   });
@@ -55,7 +55,7 @@ describe("pg engine E2E", () => {
       engine: pgEngine({ pool, tableName }),
       skipRuntimeCheck: true,
     });
-    const job = defineJob({ id: jobId });
+    const job = defineJob({ name: jobId });
     const queue = defineQueue({ job, cron: "0 0 1 1 *" });
     const handler = job.handle(async () => {});
 
@@ -64,7 +64,7 @@ describe("pg engine E2E", () => {
     expect(list).toHaveLength(1);
     expect(list[0].id).toBe(jobId);
 
-    await jobService.unregister(queue.job.id);
+    await jobService.unregister(queue.job.name);
     await jobService.stop();
     await pool.end();
   });
@@ -84,14 +84,14 @@ describe("pg engine E2E", () => {
       engine: pgEngine({ pool, tableName }),
       skipRuntimeCheck: true,
     });
-    const job = defineJob({ id: jobId });
+    const job = defineJob({ name: jobId });
     const queue = defineQueue({ job, cron: "0 0 1 1 *" });
     const handler = job.handle(async () => {});
 
     await jobService.register(queue, handler);
     expect(await jobService.listQueues()).toHaveLength(1);
 
-    await jobService.unregister(queue.job.id);
+    await jobService.unregister(queue.job.name);
     expect(await jobService.listQueues()).toHaveLength(0);
 
     await jobService.stop();

@@ -29,7 +29,7 @@ export interface PgEngineOptions {
 const DEFAULT_TABLE = "jobs";
 
 function queueId(def: QueueDefinition): string {
-  return def.queue ?? def.job.id;
+  return def.queue ?? def.job.name;
 }
 
 export function pgEngine(options: PgEngineOptions): JobEngineContract {

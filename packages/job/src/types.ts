@@ -2,6 +2,7 @@
  * @justwant/job — Core types
  */
 
+import type { Definable } from "@justwant/meta";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 /** Retry configuration for job execution. */
@@ -21,24 +22,24 @@ export interface JobDefaults {
 /** Schema for job payload validation. Uses Standard Schema for valibot/zod compatibility. */
 export type JobSchema<T = unknown> = StandardSchemaV1<unknown, T>;
 
-/** Definition of work — handler + schema. No cron/queue. Portable between processes. */
-export interface JobDefinition<T = unknown> {
-  readonly id: string;
+/** Definition of work — extends Definable<N>. Callable: job(instanceId) → { type: N; id: instanceId }. */
+export interface JobDefinition<N extends string = string, T = unknown> extends Definable<N> {
+  readonly name: N;
   readonly schema?: JobSchema<T>;
   readonly defaults?: JobDefaults;
 }
 
 /** Cron definition — scheduled only, no enqueue. */
 export interface CronDefinition<T = unknown> {
-  readonly job: JobDefinition<T>;
+  readonly job: JobDefinition<string, T>;
   readonly cron: string;
-  /** Unique id (default: job.id). Allows multiple crons for same job. */
+  /** Unique id (default: job.name). Allows multiple crons for same job. */
   readonly id?: string;
 }
 
 /** Queue definition — how a job executes (cron, queue name, parallelism). */
 export interface QueueDefinition<T = unknown> {
-  readonly job: JobDefinition<T>;
+  readonly job: JobDefinition<string, T>;
   readonly cron?: string;
   readonly queue?: string;
   /** Alias for queue. */
@@ -51,7 +52,7 @@ export interface QueueDefinition<T = unknown> {
 export interface JobHandlerContext<T = unknown> {
   data: T;
   job: {
-    id: string;
+    name: string;
     runCount: number;
     startedAt: Date;
   };
