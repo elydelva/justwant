@@ -39,7 +39,8 @@
   "files": ["dist", "README.md"],
   "dependencies": {
     "@justwant/bezier": "workspace:*",
-    "@justwant/crypto": "workspace:*"
+    "@justwant/crypto": "workspace:*",
+    "@justwant/feature": "workspace:*"
   },
   "peerDependencies": {
     "@standard-schema/spec": "^1.0.0"

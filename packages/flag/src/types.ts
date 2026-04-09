@@ -3,6 +3,7 @@
  * FlagDef, RuleDef, FlagConfigRepo, ConfigOverride.
  */
 
+import type { FeatureDef } from "@justwant/feature";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 /** Config override — persisted entity. Soft delete via rolledBack. */
@@ -46,8 +47,10 @@ export interface RuleDef<CConfig = unknown, CContext = unknown> {
   }) => boolean | Promise<boolean>;
 }
 
-/** Flag definition — rules + strategy. */
+/** Flag definition — feature entity + rules + strategy. */
 export interface FlagDef {
+  readonly feature: FeatureDef;
+  /** Convenience alias for feature.name. */
   readonly id: string;
   readonly default?: boolean;
   readonly rules: readonly RuleDef[];
