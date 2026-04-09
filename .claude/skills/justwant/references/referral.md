@@ -1,6 +1,6 @@
 # @justwant/referral
 
-Referral system. defineReferralOffer, createReferralService. auditPlugin.
+Referral system. `defineReferralOffer`, `createReferralService`. `auditPlugin`.
 
 ## Usage
 
@@ -8,21 +8,29 @@ Referral system. defineReferralOffer, createReferralService. auditPlugin.
 import { defineReferralOffer, createReferralService } from "@justwant/referral";
 import { auditPlugin } from "@justwant/referral/plugins/audit";
 
+// name: is the identifier (extends Definable<N>)
 const waitlistOffer = defineReferralOffer({
-  id: "waitlist_beta",
-  name: "Waitlist Beta",
+  name: "waitlist-beta",
   defaultReferrerType: "user",
   codeGenerator: (offerKey, referrer) => `ref-${referrer.id}`,
 });
 
-const listOffer = defineReferralOffer({ id: "waitlist", params: ["listId"] });
-listOffer({ listId: "beta" }); // "waitlist:listId:beta"
+// Parameterized offer — key() method
+const listOffer = defineReferralOffer({ name: "waitlist", params: ["listId"] });
+listOffer.key({ listId: "beta" }); // "waitlist:listId:beta"
+listOffer("ref_1")                 // { type: "waitlist", id: "ref_1" }
 
 const service = createReferralService({ repo: myRepo, plugins: [auditPlugin({ audit: { log } })] });
 
-await service.refer(offer, referrer, recipient, metadata);
-await service.getReferrer(offer, recipient);
-await service.getRecipients(offer, referrer, { limit, offset });
-await service.getReferralCode(offer, referrer);
-await service.resolveCode(offer, code);
+await service.refer(waitlistOffer, referrer, recipient, metadata);
+await service.getReferrer(waitlistOffer, recipient);
+await service.getRecipients(waitlistOffer, referrer, { limit, offset });
+await service.getReferralCode(waitlistOffer, referrer);
+await service.resolveCode(waitlistOffer, code);
 ```
+
+`ReferralOfferDef<N>` extends `Definable<N>` + has `.key(params?)` method.
+
+## API
+
+`refer`, `getReferrer`, `getRecipients`, `getReferralCode`, `resolveCode`

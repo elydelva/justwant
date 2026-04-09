@@ -25,6 +25,7 @@ Complete reference for the @justwant monorepo. When working with a package, read
 
 | Package | Reference | Key exports |
 |---------|-----------|-------------|
+| meta | [references/meta.md](references/meta.md) | Inspectable, Definable, RefLike |
 | actor | [references/actor.md](references/actor.md) | defineActor, actorKey, toRepo |
 | bezier | [references/bezier.md](references/bezier.md) | createBezierCurve, presets |
 | cache | [references/cache.md](references/cache.md) | createCache, adapters, plugins |
@@ -39,7 +40,7 @@ Complete reference for the @justwant monorepo. When working with a package, read
 | flag | [references/flag.md](references/flag.md) | defineFlag, defineRule |
 | id | [references/id.md](references/id.md) | createId |
 | job | [references/job.md](references/job.md) | createJob, engines, plugins |
-| lock | [references/lock.md](references/lock.md) | createLock, createSemaphore |
+| lock | [references/lock.md](references/lock.md) | defineLockable, defineLockOwner, createLock, createSemaphore |
 | notify | [references/notify.md](references/notify.md) | createNotify, createTemplate, createCanal, channels, plugins |
 | membership | [references/membership.md](references/membership.md) | createMembershipService |
 | organisation | [references/organisation.md](references/organisation.md) | createOrganisationService |
