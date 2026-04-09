@@ -6,11 +6,13 @@
  */
 
 /**
- * Inspectable — anything with a stable name for introspection/debugging.
+ * Inspectable<N> — anything with a stable literal name for introspection/debugging.
  * Satisfied structurally — no import needed by implementers.
+ * Used directly by config descriptors (RoleDef, RuleDef, …) that are named
+ * but not callable. Callable factories extend Definable<N> instead.
  */
-export interface Inspectable {
-  readonly name: string;
+export interface Inspectable<N extends string = string> {
+  readonly name: N;
 }
 
 /**
@@ -23,7 +25,7 @@ export interface Inspectable {
  *   MemberDef<N>     satisfies Definable<N>
  *   FeatureDef<N>    satisfies Definable<N>
  */
-export interface Definable<K extends string = string> extends Inspectable {
+export interface Definable<K extends string = string> extends Inspectable<K> {
   (id: string): { type: K; id: string };
 }
 
