@@ -34,6 +34,9 @@
     "packages/actor": {
       "name": "@justwant/actor",
       "version": "0.2.0",
+      "dependencies": {
+        "@justwant/meta": "workspace:*",
+      },
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
@@ -265,7 +268,10 @@
     },
     "packages/feature": {
       "name": "@justwant/feature",
-      "version": "0.0.0",
+      "version": "0.1.0",
+      "dependencies": {
+        "@justwant/meta": "workspace:*",
+      },
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
@@ -277,6 +283,8 @@
       "dependencies": {
         "@justwant/bezier": "workspace:*",
         "@justwant/crypto": "workspace:*",
+        "@justwant/feature": "workspace:*",
+        "@justwant/meta": "workspace:*",
       },
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
@@ -309,6 +317,7 @@
       "dependencies": {
         "@justwant/contract": "workspace:*",
         "@justwant/lock": "workspace:*",
+        "@justwant/meta": "workspace:*",
       },
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
@@ -354,6 +363,7 @@
       "version": "0.3.2",
       "dependencies": {
         "@justwant/actor": "workspace:*",
+        "@justwant/meta": "workspace:*",
       },
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
@@ -363,6 +373,17 @@
     "packages/membership": {
       "name": "@justwant/membership",
       "version": "1.0.0",
+      "dependencies": {
+        "@justwant/meta": "workspace:*",
+      },
+      "devDependencies": {
+        "@justwant/tsconfig": "workspace:*",
+        "typescript": "^5.7.0",
+      },
+    },
+    "packages/meta": {
+      "name": "@justwant/meta",
+      "version": "0.1.0",
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
@@ -399,6 +420,7 @@
       "version": "1.0.1",
       "dependencies": {
         "@justwant/membership": "workspace:*",
+        "@justwant/meta": "workspace:*",
         "@justwant/permission": "workspace:*",
       },
       "devDependencies": {
@@ -411,6 +433,8 @@
       "version": "4.0.0",
       "dependencies": {
         "@justwant/actor": "workspace:*",
+        "@justwant/meta": "workspace:*",
+        "@justwant/resource": "workspace:*",
       },
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
@@ -422,6 +446,7 @@
       "version": "0.3.1",
       "dependencies": {
         "@justwant/actor": "workspace:*",
+        "@justwant/meta": "workspace:*",
       },
       "devDependencies": {
         "@justwant/contract": "workspace:*",
@@ -450,6 +475,7 @@
       "version": "0.3.0",
       "dependencies": {
         "@justwant/actor": "workspace:*",
+        "@justwant/meta": "workspace:*",
       },
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
@@ -461,6 +487,17 @@
       "optionalPeers": [
         "@justwant/contract",
       ],
+    },
+    "packages/resource": {
+      "name": "@justwant/resource",
+      "version": "0.1.0",
+      "dependencies": {
+        "@justwant/meta": "workspace:*",
+      },
+      "devDependencies": {
+        "@justwant/tsconfig": "workspace:*",
+        "typescript": "^5.7.0",
+      },
     },
     "packages/storage": {
       "name": "@justwant/storage",
@@ -499,6 +536,9 @@
     "packages/user": {
       "name": "@justwant/user",
       "version": "1.0.0",
+      "dependencies": {
+        "@justwant/meta": "workspace:*",
+      },
       "devDependencies": {
         "@justwant/tsconfig": "workspace:*",
         "typescript": "^5.7.0",
@@ -509,6 +549,7 @@
       "version": "0.3.1",
       "dependencies": {
         "@justwant/actor": "workspace:*",
+        "@justwant/meta": "workspace:*",
       },
       "devDependencies": {
         "@justwant/contract": "workspace:*",
@@ -785,6 +826,8 @@
 
     "@justwant/membership": ["@justwant/membership@workspace:packages/membership"],
 
+    "@justwant/meta": ["@justwant/meta@workspace:packages/meta"],
+
     "@justwant/monitor": ["@justwant/monitor@workspace:packages/monitor"],
 
     "@justwant/notify": ["@justwant/notify@workspace:packages/notify"],
@@ -798,6 +841,8 @@
     "@justwant/protect": ["@justwant/protect@workspace:packages/protect"],
 
     "@justwant/referral": ["@justwant/referral@workspace:packages/referral"],
+
+    "@justwant/resource": ["@justwant/resource@workspace:packages/resource"],
 
     "@justwant/storage": ["@justwant/storage@workspace:packages/storage"],
 
@@ -1208,8 +1253,6 @@
     "has-tostringtag": ["has-tostringtag@1.0.2", "", { "dependencies": { "has-symbols": "^1.0.3" } }, "sha512-NqADB8VjPFLM2V0VvHUewwwsw0ZWBaIdgo+ieHtK3hasLz4qeCRjYcqfB6AQrBggRKppKF8L52/VqdVsO47Dlw=="],
 
     "hasown": ["hasown@2.0.2", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ=="],
-
-    "hono": ["hono@4.12.12", "", {}, "sha512-p1JfQMKaceuCbpJKAPKVqyqviZdS0eUxH9v82oWo1kb9xjQ5wA6iP3FNVAPDFlz5/p7d45lO+BpSk1tuSZMF4Q=="],
 
     "https-proxy-agent": ["https-proxy-agent@5.0.1", "", { "dependencies": { "agent-base": "6", "debug": "4" } }, "sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA=="],
 
