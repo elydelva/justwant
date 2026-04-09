@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { join, tmpdir } from "node:path";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { defineJsonSource } from "./json.js";
 
 describe("defineJsonSource", () => {
