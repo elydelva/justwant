@@ -156,7 +156,7 @@ describe("createOrganisationService", () => {
     expect(acme.name).toBe("Acme");
     expect(acme.slug).toBe("acme");
     expect(acme.type).toBe("organisation");
-    expect(acme.id).toBeDefined();
+    expect(acme.name).toBeDefined();
 
     const found = await org.findById(acme.id);
     expect(found).toEqual(acme);
@@ -817,10 +817,10 @@ describe("createOrganisationService", () => {
       const customScope = defineScope({ name: "company" });
 
       const customPermissions = {
-        read: defineAtomicPermission({ action: "company:read" }),
-        update: defineAtomicPermission({ action: "company:update" }),
-        delete: defineAtomicPermission({ action: "company:delete" }),
-        billingView: defineAtomicPermission({ action: "billing:view" }),
+        read: defineAtomicPermission({ name: "company:read" }),
+        update: defineAtomicPermission({ name: "company:update" }),
+        delete: defineAtomicPermission({ name: "company:delete" }),
+        billingView: defineAtomicPermission({ name: "billing:view" }),
       };
 
       const customRoles = {

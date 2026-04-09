@@ -8,9 +8,9 @@ describe("createStandardOrganisationPermission", () => {
     const result = createStandardOrganisationPermission({ name: "tenant", actor });
     expect(result.realm.name).toBe("tenant");
     expect(result.realm.scope.name).toBe("tenant");
-    expect(result.permissions.organisationRead.id).toBe("tenant:read");
-    expect(result.permissions.organisationUpdate.id).toBe("tenant:update");
-    expect(result.permissions.memberList.id).toBe("member:list");
+    expect(result.permissions.organisationRead.name).toBe("tenant:read");
+    expect(result.permissions.organisationUpdate.name).toBe("tenant:update");
+    expect(result.permissions.memberList.name).toBe("member:list");
   });
 
   test("roles have correct permissions", () => {

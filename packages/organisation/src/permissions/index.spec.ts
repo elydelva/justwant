@@ -3,11 +3,11 @@ import { OrganisationPermissions, OrganisationRealm, OrganisationRoles } from ".
 
 describe("OrganisationPermissions", () => {
   test("exports atomic permissions with correct ids", () => {
-    expect(OrganisationPermissions.organisationRead.id).toBe("organisation:read");
-    expect(OrganisationPermissions.organisationUpdate.id).toBe("organisation:update");
-    expect(OrganisationPermissions.organisationDelete.id).toBe("organisation:delete");
-    expect(OrganisationPermissions.memberInvite.id).toBe("member:invite");
-    expect(OrganisationPermissions.settingsView.id).toBe("settings:view");
+    expect(OrganisationPermissions.organisationRead.name).toBe("organisation:read");
+    expect(OrganisationPermissions.organisationUpdate.name).toBe("organisation:update");
+    expect(OrganisationPermissions.organisationDelete.name).toBe("organisation:delete");
+    expect(OrganisationPermissions.memberInvite.name).toBe("member:invite");
+    expect(OrganisationPermissions.settingsView.name).toBe("settings:view");
   });
 });
 
@@ -31,8 +31,8 @@ describe("OrganisationRealm", () => {
     expect(OrganisationRealm.scope.name).toBe("organisation");
   });
 
-  test("permissionById contains all OrganisationPermissions", () => {
-    expect(OrganisationRealm.permissionById.get("organisation:read")).toBe(
+  test("permissionByName contains all OrganisationPermissions", () => {
+    expect(OrganisationRealm.permissionByName.get("organisation:read")).toBe(
       OrganisationPermissions.organisationRead
     );
   });
