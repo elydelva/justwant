@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { createLockOwner } from "./createLockOwner.js";
+import { defineLockOwner } from "./defineLockOwner.js";
 
-describe("createLockOwner", () => {
+describe("defineLockOwner", () => {
   test("owner with id returns LockOwner", () => {
-    const system = createLockOwner({ name: "system" });
+    const system = defineLockOwner({ name: "system" });
     const owner = system("sys_1");
     expect(owner.type).toBe("system");
     expect(owner.id).toBe("sys_1");
@@ -11,7 +11,7 @@ describe("createLockOwner", () => {
   });
 
   test("owner with within returns LockOwner with within", () => {
-    const user = createLockOwner({ name: "user", within: "org" });
+    const user = defineLockOwner({ name: "user", within: "org" });
     const owner = user("org_1", "user_42");
     expect(owner.type).toBe("user");
     expect(owner.id).toBe("user_42");
@@ -19,7 +19,7 @@ describe("createLockOwner", () => {
   });
 
   test("owner throws when no id provided", () => {
-    const system = createLockOwner({ name: "system" });
+    const system = defineLockOwner({ name: "system" });
     expect(() => system()).toThrow(/requires an id/);
   });
 });

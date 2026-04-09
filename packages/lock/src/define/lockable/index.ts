@@ -1,2 +1,2 @@
-export { createLockable } from "./createLockable.js";
-export type { CreateLockableOptions, LockableDef } from "./createLockable.js";
+export { defineLockable } from "./defineLockable.js";
+export type { DefineLockableOptions, LockableDef } from "./defineLockable.js";

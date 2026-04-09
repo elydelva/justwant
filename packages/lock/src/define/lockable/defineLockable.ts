@@ -1,20 +1,21 @@
 /**
- * @justwant/lock — createLockable
+ * @justwant/lock — defineLockable
  * Defines what can be locked. Singular = one global key. Plural = key per params.
  * Infers literal type N from name for build-time type safety.
  */
 
+import type { Inspectable } from "@justwant/meta";
 import { LockableParamsError } from "../../errors/index.js";
 import { serializeParams } from "../../key.js";
 import type { Lockable } from "../../types/index.js";
 
-export interface CreateLockableOptions<N extends string = string> {
+export interface DefineLockableOptions<N extends string = string> {
   name: N;
   singular: boolean;
   prefix?: string;
 }
 
-export interface LockableDef<N extends string = string> {
+export interface LockableDef<N extends string = string> extends Inspectable<N> {
   readonly name: N;
   readonly singular: boolean;
   readonly prefix?: string;
@@ -28,8 +29,8 @@ function buildKey(prefix: string, name: string, paramsPart: string): string {
   return parts.filter(Boolean).join(":");
 }
 
-export function createLockable<N extends string>(
-  options: CreateLockableOptions<N>
+export function defineLockable<N extends string>(
+  options: DefineLockableOptions<N>
 ): LockableDef<N> {
   const { name, singular, prefix = "" } = options;
 
@@ -37,7 +38,7 @@ export function createLockable<N extends string>(
     if (singular) {
       if (params !== undefined && params !== null) {
         throw new LockableParamsError(
-          `createLockable: lockable "${name}" is singular and does not accept params`,
+          `defineLockable: lockable "${name}" is singular and does not accept params`,
           name,
           "singular_with_params"
         );
@@ -47,7 +48,7 @@ export function createLockable<N extends string>(
     }
     if (params === undefined || params === null) {
       throw new LockableParamsError(
-        `createLockable: lockable "${name}" requires params (plural lockable)`,
+        `defineLockable: lockable "${name}" requires params (plural lockable)`,
         name,
         "plural_without_params"
       );
