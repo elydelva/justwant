@@ -1,0 +1,86 @@
+---
+title: Installation
+description: Install @justwant/db and the peer dependencies for your ORM or query builder.
+icon: Download
+---
+
+## Install the core
+
+```bash
+bun add @justwant/db
+```
+
+Then install the peer dependency for your ORM.
+
+<CodeBlockTabs defaultValue="drizzle">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="drizzle">Drizzle</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="prisma">Prisma</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler-sqlite">Waddler (SQLite)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler-pg">Waddler (PostgreSQL)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler-neon">Waddler (Neon)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler-turso">Waddler (Turso)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler-d1">Waddler (D1)</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="drizzle">
+
+```bash
+bun add drizzle-orm
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="prisma">
+
+```bash
+bun add @prisma/client
+bunx prisma generate
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler-sqlite">
+
+```bash
+bun add waddler
+```
+
+Bun SQLite is built into Bun — no extra install needed.
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler-pg">
+
+```bash
+bun add waddler pg
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler-neon">
+
+```bash
+bun add waddler @neondatabase/serverless
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler-turso">
+
+```bash
+bun add waddler @libsql/client
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler-d1">
+
+```bash
+bun add waddler
+```
+
+D1 is a Cloudflare runtime binding — no npm package required.
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Next steps
+
+- [Basic Usage](/docs/db/basic-usage) — Define a table and run queries
+- [Drizzle](/docs/db/drizzle) — Drizzle adapter setup
+- [Prisma](/docs/db/prisma) — Prisma adapter setup
+- [Waddler](/docs/db/waddler) — Waddler adapter and sub-drivers

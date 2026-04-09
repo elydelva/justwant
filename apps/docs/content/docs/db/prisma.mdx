@@ -1,0 +1,133 @@
+---
+title: Prisma Adapter
+description: Use @justwant/db with Prisma for any supported database provider.
+icon: Triangle
+---
+
+## Overview
+
+The Prisma adapter wraps a `PrismaClient` instance and exposes the `MappedTable` interface for any model in your Prisma schema.
+
+## Setup
+
+```ts title="lib/db.ts"
+import { createPrismaAdapter } from "@justwant/db/prisma";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+export const adapter = createPrismaAdapter(prisma);
+```
+
+For MySQL or SQLite providers, pass the dialect explicitly:
+
+```ts
+export const adapter = createPrismaAdapter(prisma, { dialect: "mysql" });
+```
+
+## Define a table
+
+The first argument to `defineTable` is the **Prisma model name** (lowercase, as it appears on the `PrismaClient` instance).
+
+```ts title="tables/users.ts"
+import { adapter } from "@/lib/db";
+import { defineContract, field } from "@justwant/contract";
+
+const userContract = defineContract({
+  id: field.string(),
+  email: field.string(),
+  name: field.string(),
+  createdAt: field.string(),
+  updatedAt: field.string(),
+  deletedAt: field.string().optional(),
+});
+
+// Map contract keys → Prisma field names
+const mapping = {
+  id: { name: "id" },
+  email: { name: "email" },
+  name: { name: "name" },
+  createdAt: { name: "createdAt" },
+  updatedAt: { name: "updatedAt" },
+  deletedAt: { name: "deletedAt" },
+};
+
+export const users = adapter.defineTable("user", userContract, mapping);
+```
+
+**Important**: The mapping must include an `id` entry. If it is missing, `defineTable` throws an `AdapterMappingError`.
+
+## Prisma schema
+
+The corresponding Prisma schema for the example above:
+
+```prisma title="prisma/schema.prisma"
+model User {
+  id        String   @id
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+}
+```
+
+## Querying
+
+```ts
+import { users } from "@/tables/users";
+
+const user = await users.create({
+  id: "usr_01",
+  email: "alice@example.com",
+  name: "Alice",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+});
+
+const found = await users.findById("usr_01");
+const byEmail = await users.findOne({ email: "alice@example.com" });
+const all = await users.findMany({});
+const updated = await users.update("usr_01", { name: "Alice Smith" });
+
+await users.delete("usr_01");      // soft delete — sets deletedAt
+await users.hardDelete("usr_01");  // hard delete — removes row
+```
+
+## Soft delete
+
+When a `deletedAt` field exists in the mapping, the adapter automatically:
+- Uses `findFirst` instead of `findUnique` on `findById` (to support the extra `WHERE` condition)
+- Excludes soft-deleted rows from all `find*` queries
+- Sets `deletedAt` to the current date on `delete`
+
+To use a different column:
+
+```ts
+adapter.defineTable("user", userContract, mapping, {
+  softDeleteColumn: "archivedAt",
+});
+```
+
+To disable soft delete:
+
+```ts
+adapter.defineTable("user", userContract, mapping, {
+  softDeleteColumn: null,
+});
+```
+
+## Transactions
+
+```ts
+await adapter.transaction(async (tx) => {
+  const txUsers = tx.defineTable("user", userContract, mapping);
+  const user = await txUsers.create({ ... });
+  await txUsers.update(user.id, { ... });
+});
+```
+
+## createPrismaAdapter options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `dialect` | `"pg" \| "mysql" \| "sqlite"` | `"pg"` | Prisma provider dialect |

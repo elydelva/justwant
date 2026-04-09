@@ -1,0 +1,168 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/db — base types, adapters, and table methods.
+icon: BookOpen
+---
+
+## MappedTable
+
+The shared interface implemented by every table definition, regardless of adapter.
+
+```ts
+interface MappedTable<TContract> {
+  readonly infer: InferContract<TContract>;
+  readonly contract: TContract;
+
+  create(data: CreateInput<TContract>): Promise<InferContract<TContract>>;
+  findById(id: string): Promise<InferContract<TContract> | null>;
+  findOne(where: Partial<InferContract<TContract>>): Promise<InferContract<TContract> | null>;
+  findMany(where: Partial<InferContract<TContract>>): Promise<InferContract<TContract>[]>;
+  update(id: string, data: Partial<InferContract<TContract>>): Promise<InferContract<TContract>>;
+  delete(id: string): Promise<void>;
+  hardDelete(id: string): Promise<void>;
+
+  // Waddler only
+  createSafe?(data: CreateInput<TContract>): Promise<ValidateResult<InferContract<TContract>>>;
+  updateSafe?(id: string, data: Partial<InferContract<TContract>>): Promise<ValidateResult<InferContract<TContract>>>;
+  createTable?(): Promise<void>;
+  exist?(): Promise<boolean>;
+  drop?(): Promise<void>;
+}
+```
+
+### CreateInput
+
+`CreateInput<TContract>` is the contract type with `id`, `createdAt`, and `updatedAt` omitted. Pass data for those auto-generated fields if your table requires them explicitly.
+
+## BaseAdapter
+
+```ts
+interface BaseAdapter {
+  readonly dialect: "pg" | "mysql" | "sqlite";
+  defineTable(source, contract, mapping, options?): MappedTable<TContract>;
+  transaction<T>(fn: (tx: this) => Promise<T>): Promise<T>;
+}
+```
+
+## Drizzle
+
+### createDrizzleAdapter
+
+```ts
+function createDrizzleAdapter(
+  db: DrizzleClient,
+  options?: CreateDrizzleAdapterOptions
+): DrizzleAdapter
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `dialect` | `"pg" \| "mysql" \| "sqlite"` | auto | Override dialect detection |
+| `debug` | `boolean` | `false` | Log queries |
+| `onQuery` | `(sql, params) => void` | — | Query hook |
+
+### defineMappedTable (Drizzle)
+
+```ts
+function defineMappedTable<TTable, TContract>(
+  table: TTable,
+  contract: TContract,
+  mapping: MappingFor<TTable, TContract>,
+  options?: { softDeleteColumn?: string | null }
+): DrizzleMappedTable<TTable, TContract>
+```
+
+Returns an unbound table. Bind it by passing to `adapter.defineTable`.
+
+### Utility functions
+
+| Function | Import | Description |
+|----------|--------|-------------|
+| `buildWhere` | `@justwant/db/drizzle/buildWhere` | Build Drizzle `WHERE` from partial contract |
+| `buildOrderBy` | `@justwant/db/drizzle/buildOrderBy` | Build Drizzle `ORDER BY` |
+| `buildPagination` | `@justwant/db/drizzle/buildPagination` | Compute `limit` and `offset` |
+| `upsert` | `@justwant/db/drizzle/upsert` | Insert or update on conflict |
+| `bulkInsert` | `@justwant/db/drizzle/bulkInsert` | Batch insert |
+| `collectSchemas` | `@justwant/db/drizzle/collectSchemas` | Collect Drizzle table schemas |
+
+## Prisma
+
+### createPrismaAdapter
+
+```ts
+function createPrismaAdapter(
+  prisma: PrismaClient,
+  options?: { dialect?: "pg" | "mysql" | "sqlite" }
+): PrismaAdapter
+```
+
+`PrismaAdapter.defineTable(modelName, contract, mapping, options?)` — `modelName` is the lowercase Prisma model name as it appears on the client (e.g. `"user"` for `prisma.user`).
+
+## Waddler
+
+### createDb
+
+```ts
+function createDb(config: WaddlerConnectionConfig): Db
+```
+
+Creates a fully configured Waddler `Db` from a connection config returned by any sub-driver factory.
+
+### createWaddlerAdapter
+
+```ts
+function createWaddlerAdapter(sql: WaddlerSql, options: CreateWaddlerAdapterOptions): Db
+```
+
+Low-level factory. Use `createDb` with a driver factory for the common case.
+
+### Db interface
+
+```ts
+interface Db extends BaseAdapter {
+  readonly sql: WaddlerSql;
+  readonly driver: unknown;
+  createTable(contract: ContractWithTableName): Promise<void>;
+  table(contract: ContractWithTableName, options?): WaddlerMappedTable;
+  close?(): void | Promise<void>;
+}
+```
+
+## Errors
+
+All adapters normalize database errors to `AdapterError` subclasses from `@justwant/db/errors`.
+
+| Class | When |
+|-------|------|
+| `AdapterNotFoundError` | Row not found |
+| `AdapterUniqueViolationError` | Unique constraint violation |
+| `AdapterForeignKeyViolationError` | Foreign key violation |
+| `AdapterNotNullViolationError` | NOT NULL constraint |
+| `AdapterCheckViolationError` | CHECK constraint |
+| `AdapterConstraintError` | Other constraint error |
+| `AdapterConnectionError` | Database connection failure |
+| `AdapterTransactionError` | Transaction error |
+| `AdapterTimeoutError` | Query timeout |
+| `AdapterMappingError` | Invalid mapping configuration |
+| `AdapterUnsupportedError` | Operation not supported by adapter |
+
+```ts
+import { isAdapterError, AdapterUniqueViolationError } from "@justwant/db/errors";
+
+try {
+  await users.create(data);
+} catch (err) {
+  if (err instanceof AdapterUniqueViolationError) {
+    throw new Error("Email already taken");
+  }
+  throw err;
+}
+```
+
+## tableConforms
+
+```ts
+import { tableConforms } from "@justwant/db/conforms";
+
+tableConforms(table); // type guard — checks table implements MappedTable
+```

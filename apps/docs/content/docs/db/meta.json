@@ -1,0 +1,16 @@
+{
+  "title": "DB",
+  "icon": "Database",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Adapters---",
+    "drizzle",
+    "prisma",
+    "waddler",
+    "---Reference---",
+    "api"
+  ]
+}
