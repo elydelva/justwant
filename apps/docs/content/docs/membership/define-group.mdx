@@ -1,0 +1,87 @@
+---
+title: defineGroup
+description: Declare a group type and specify which member type it accepts.
+icon: FolderOpen
+---
+
+## Overview
+
+`defineGroup` declares a **group type** — the other side of the member–group liaison. Crucially, it specifies which member type the group accepts. The service enforces this at runtime and throws `InvalidMemberTypeError` if a member of the wrong type is added.
+
+```ts
+import { defineGroup } from "@justwant/membership";
+import { User } from "./user.ts";
+
+const Team = defineGroup({ name: "team", member: User });
+const ref = Team("team-123"); // { type: "team", id: "team-123" }
+```
+
+## Signature
+
+```ts
+function defineGroup<N extends string>(
+  options: DefineGroupOptions<N>
+): GroupDef<N>
+```
+
+### DefineGroupOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `N extends string` | Discriminator string for this group type |
+| `member` | `MemberLike` | The member definition accepted by this group |
+
+## GroupDef
+
+```ts
+interface GroupDef<N extends string> extends Definable<N> {
+  readonly name: N;
+  readonly member: MemberLike;
+  (id: string): Group<N>;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `N` | The declared group type name |
+| `member` | `MemberLike` | The accepted member definition |
+| `(id)` | `(id: string) => Group<N>` | Factory — produces a `Group<N>` reference |
+
+## Group shape
+
+```ts
+interface Group<N extends string = string> {
+  type: N;
+  id: string;
+}
+```
+
+## Registering with the service
+
+Pass groups to `createMembershipService`. Members are automatically derived from each group's `.member`:
+
+```ts
+import { createMembershipService } from "@justwant/membership";
+
+const membership = createMembershipService({
+  repo,
+  groups: [Team],
+});
+// membership knows about "user" members and "team" groups
+```
+
+## Multiple group types
+
+You can have multiple group types, each accepting a different member type:
+
+```ts
+const OrgGroup = defineGroup({ name: "org", member: User });
+const ProjectGroup = defineGroup({ name: "project", member: User });
+
+const membership = createMembershipService({
+  repo,
+  groups: [OrgGroup, ProjectGroup],
+});
+```
+
+**Note**: If two groups share the same member type (same `member.name`), the member type is registered once. The service routes correctly by group name.

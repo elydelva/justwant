@@ -1,0 +1,107 @@
+---
+title: Errors
+description: Error types thrown by @justwant/membership.
+icon: AlertCircle
+---
+
+## Error hierarchy
+
+```
+Error
+└── MembershipError
+    ├── AlreadyMemberError
+    ├── NotMemberError
+    └── InvalidMemberTypeError
+```
+
+All errors extend `MembershipError`, so a single `instanceof MembershipError` catch handles the entire family.
+
+## MembershipError
+
+Base error class.
+
+```ts
+import { MembershipError } from "@justwant/membership";
+
+try {
+  await membership.add(member, group);
+} catch (err) {
+  if (err instanceof MembershipError) {
+    // any membership error
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `"MembershipError"` | Error name |
+| `message` | `string` | Human-readable description |
+
+## AlreadyMemberError
+
+Thrown by `add` when the member is already in the group.
+
+```ts
+import { AlreadyMemberError } from "@justwant/membership";
+
+try {
+  await membership.add(User("u-1"), Team("t-1"));
+} catch (err) {
+  if (err instanceof AlreadyMemberError) {
+    console.error(err.memberType, err.memberId, err.groupType, err.groupId);
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `memberType` | `string` | Type of the member |
+| `memberId` | `string` | Id of the member |
+| `groupType` | `string` | Type of the group |
+| `groupId` | `string` | Id of the group |
+
+## NotMemberError
+
+Thrown by `remove` when the member is not in the group.
+
+```ts
+import { NotMemberError } from "@justwant/membership";
+
+try {
+  await membership.remove(User("u-1"), Team("t-1"));
+} catch (err) {
+  if (err instanceof NotMemberError) {
+    console.error(err.memberType, err.memberId);
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `memberType` | `string` | Type of the member |
+| `memberId` | `string` | Id of the member |
+| `groupType` | `string` | Type of the group |
+| `groupId` | `string` | Id of the group |
+
+## InvalidMemberTypeError
+
+Thrown by `add` when the member's type does not match the group's declared accepted member type, or when an unregistered member or group type is used.
+
+```ts
+import { InvalidMemberTypeError } from "@justwant/membership";
+
+try {
+  // Team only accepts "user" members, not "bot" members
+  await membership.add(Bot("b-1"), Team("t-1"));
+} catch (err) {
+  if (err instanceof InvalidMemberTypeError) {
+    console.error(err.memberType, err.groupType, err.expectedMemberType);
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `memberType` | `string` | Actual member type provided |
+| `groupType` | `string` | Group type that rejected the member |
+| `expectedMemberType` | `string` | Member type the group expects |

@@ -1,0 +1,16 @@
+{
+  "title": "Membership",
+  "icon": "Users",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "define-member",
+    "define-group",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

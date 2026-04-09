@@ -1,0 +1,56 @@
+---
+title: Introduction
+description: Member–group liaison — type-safe membership without roles. Roles live in @justwant/permission.
+icon: Users
+---
+
+## What is @justwant/membership?
+
+`@justwant/membership` manages the **many-to-many relationship** between members and groups. It has one job: track who belongs where. It has no concept of roles or permissions — those live in `@justwant/permission`.
+
+**Use it when** you need to:
+- Track which users belong to which teams, organisations, or any named group
+- Enforce that only a declared member type can join a specific group
+- Query members of a group or groups of a member
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **`defineMember()`** | Declare a member type (e.g. `"user"`) |
+| **`defineGroup()`** | Declare a group type and which member type it accepts |
+| **`createMembershipService()`** | CRUD membership API: add, remove, has, listMembers, listGroups |
+| **Type enforcement** | Adding a member with the wrong type throws `InvalidMemberTypeError` |
+| **Duplicate guard** | Adding a member already in the group throws `AlreadyMemberError` |
+| **Repository pattern** | Implement `MembershipsRepo` once; swap storage freely |
+
+## How it works
+
+1. Call `defineMember({ name: "user" })` to declare a member type.
+2. Call `defineGroup({ name: "team", member: User })` to declare a group that accepts that member type.
+3. Pass the groups to `createMembershipService({ repo, groups })`.
+4. Call `membership.add(member, group)` to link them.
+
+```ts
+import { defineMember, defineGroup, createMembershipService } from "@justwant/membership";
+
+const User = defineMember({ name: "user" });
+const Team = defineGroup({ name: "team", member: User });
+
+const membership = createMembershipService({ repo, groups: [Team] });
+
+await membership.add(User("user-1"), Team("team-1"));
+await membership.has(User("user-1"), Team("team-1")); // true
+```
+
+## Relationship with @justwant/organisation
+
+`@justwant/organisation` wraps `@justwant/membership` transparently via `createStandardOrganisationMembership`. If you use `@justwant/organisation`, you typically do not need to call `createMembershipService` directly — the organisation package does it for you.
+
+## Next steps
+
+- [Installation](/docs/membership/installation)
+- [Basic Usage](/docs/membership/basic-usage)
+- [defineMember](/docs/membership/define-member)
+- [defineGroup](/docs/membership/define-group)
+- [Errors](/docs/membership/errors)
