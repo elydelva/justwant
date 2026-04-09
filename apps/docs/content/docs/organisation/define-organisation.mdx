@@ -1,0 +1,90 @@
+---
+title: defineOrganisation
+description: Bind a name, realm, and group into a typed organisation definition.
+icon: Shapes
+---
+
+## Overview
+
+`defineOrganisation` combines the three pillars of an organisation type into a single `OrgDef`:
+
+- **`name`** — discriminator string (e.g. `"team"`)
+- **`realm`** — permission realm from `createStandardOrganisationPermission`
+- **`group`** — membership group from `createStandardOrganisationMembership`
+
+```ts
+import { defineOrganisation } from "@justwant/organisation";
+
+const Team = defineOrganisation({
+  name: "team",
+  realm: teamRealm,
+  group: teamGroup,
+});
+```
+
+## Signature
+
+```ts
+function defineOrganisation<N extends string>(
+  options: DefineOrganisationOptions<N>
+): OrgDef<N>
+```
+
+### DefineOrganisationOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `N extends string` | Unique type discriminator for this org kind |
+| `realm` | `RealmDef` | Permission realm (see `@justwant/permission`) |
+| `group` | `GroupDef<N>` | Membership group for this org type |
+
+## OrgDef
+
+`OrgDef<N>` is a callable that produces `OrgRef<N>` values:
+
+```ts
+interface OrgDef<N extends string> extends Definable<N> {
+  readonly name: N;
+  readonly realm: RealmDef;
+  readonly group: GroupDef<N>;
+  (id: string): OrgRef<N>;
+}
+```
+
+```ts
+const ref = Team("org-123");
+// { type: "team", id: "org-123" }
+```
+
+## Organisation entity shape
+
+```ts
+interface Organisation<T extends string = string> {
+  id: string;
+  type: T;
+  name: string;
+  slug?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+```
+
+## Multi-type applications
+
+Register multiple org definitions and pass them all to `createOrganisationService`:
+
+```ts
+const Workspace = defineOrganisation({
+  name: "workspace",
+  realm: workspaceRealm,
+  group: workspaceGroup,
+});
+
+const orgs = createOrganisationService({
+  repo,
+  deps: { membership, permission },
+  organisations: [Team, Workspace],
+});
+```
+
+The service routes by `organisation.type` at runtime. Creating an org with an unregistered type throws an error.

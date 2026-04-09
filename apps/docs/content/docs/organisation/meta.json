@@ -1,0 +1,17 @@
+{
+  "title": "Organisation",
+  "icon": "Building2",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "define-organisation",
+    "membership",
+    "permission",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

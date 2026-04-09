@@ -1,0 +1,97 @@
+---
+title: Permission
+description: createStandardOrganisationPermission — generate realm, permissions, and roles for an organisation type.
+icon: ShieldCheck
+---
+
+## Overview
+
+`createStandardOrganisationPermission` generates a complete permission configuration for an organisation type: a `RealmDef` with 10 atomic permissions and 4 built-in roles.
+
+```ts
+import { createStandardOrganisationPermission } from "@justwant/organisation";
+import { User } from "./user.ts";
+
+const { realm, permissions, roles } = createStandardOrganisationPermission({
+  name: "team",
+  actor: User,
+});
+```
+
+## Signature
+
+```ts
+function createStandardOrganisationPermission<N extends string>(
+  options: CreateStandardOrganisationPermissionOptions<N>
+): StandardOrganisationPermissionResult<N>
+```
+
+### Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `N extends string` | Organisation type name — used as realm name and permission prefix |
+| `actor` | `IdentityLike` | Actor type (e.g. `User` from `@justwant/user`) |
+
+### Result
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `realm` | `RealmDef` | Full realm definition for `@justwant/permission` |
+| `permissions` | `Record<string, AtomicPermission>` | Named atomic permissions (see below) |
+| `roles` | `Record<string, RoleDef>` | Named role definitions (see below) |
+
+## Permissions
+
+Permissions are prefixed with the org type name (e.g. `"team:read"`) except for `member:*` and `settings:*`:
+
+| Key | Name | Description |
+|-----|------|-------------|
+| `organisationRead` | `{name}:read` | Read organisation details |
+| `organisationUpdate` | `{name}:update` | Update organisation settings |
+| `organisationDelete` | `{name}:delete` | Delete the organisation |
+| `organisationTransfer` | `{name}:transfer` | Transfer ownership |
+| `memberList` | `member:list` | List members |
+| `memberInvite` | `member:invite` | Invite new members |
+| `memberRemove` | `member:remove` | Remove members |
+| `memberUpdateRole` | `member:updateRole` | Change a member's role |
+| `settingsView` | `settings:view` | View settings |
+| `settingsEdit` | `settings:edit` | Edit settings |
+
+## Roles
+
+| Role | Permissions granted |
+|------|---------------------|
+| `owner` | All 10 permissions |
+| `admin` | read, update, member:*, settings:* |
+| `member` | read, member:list |
+| `viewer` | read |
+
+## Checking permissions
+
+Use `orgs.can()` with a permission from the result:
+
+```ts
+const { permissions } = createStandardOrganisationPermission({
+  name: "team",
+  actor: User,
+});
+
+const allowed = await orgs.can({
+  organisation: team,
+  member: { id: userId },
+  permission: permissions.settingsEdit,
+});
+```
+
+## Assigning roles
+
+```ts
+await orgs.assignRole({
+  organisation: team,
+  member: { id: userId },
+  role: "admin",
+});
+```
+
+**Note**: `addMember` also accepts a `role` parameter and assigns the role automatically as part of the add operation.

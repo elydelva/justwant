@@ -1,0 +1,80 @@
+---
+title: Errors
+description: Error types thrown by @justwant/organisation.
+icon: AlertCircle
+---
+
+## Error hierarchy
+
+```
+Error
+└── OrganisationError
+    ├── OrganisationNotFoundError
+    └── DuplicateSlugError
+```
+
+All errors extend `OrganisationError`, so a single `instanceof OrganisationError` catches the entire family.
+
+## OrganisationError
+
+Base error class. Thrown directly only in edge cases; most code throws a subclass.
+
+```ts
+import { OrganisationError } from "@justwant/organisation";
+
+try {
+  await orgs.create({ type: "team", name: "Acme", slug: "acme" });
+} catch (err) {
+  if (err instanceof OrganisationError) {
+    // any organisation-related error
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `"OrganisationError"` | Error name |
+| `message` | `string` | Human-readable description |
+
+## OrganisationNotFoundError
+
+Thrown by `update` and `delete` when no organisation exists with the given `id`.
+
+```ts
+import { OrganisationNotFoundError } from "@justwant/organisation";
+
+try {
+  await orgs.update({ id: "missing", data: { name: "X" } });
+} catch (err) {
+  if (err instanceof OrganisationNotFoundError) {
+    console.error(err.message);
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `"OrganisationNotFoundError"` | Error name |
+
+## DuplicateSlugError
+
+Thrown by `create` when a slug is already taken, and by `update` when the new slug conflicts with an existing organisation.
+
+```ts
+import { DuplicateSlugError } from "@justwant/organisation";
+
+try {
+  await orgs.create({ type: "team", name: "Acme", slug: "acme" });
+} catch (err) {
+  if (err instanceof DuplicateSlugError) {
+    console.error(err.slug); // "acme"
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `"DuplicateSlugError"` | Error name |
+| `slug` | `string` | The conflicting slug |
+
+**Note**: `@justwant/permission` can additionally throw `PermissionDeniedError` when `update` or `delete` is called with a `member` that lacks the required permission.

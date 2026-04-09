@@ -1,0 +1,202 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/organisation.
+icon: BookOpen
+---
+
+## defineOrganisation
+
+```ts
+function defineOrganisation<N extends string>(
+  options: DefineOrganisationOptions<N>
+): OrgDef<N>
+```
+
+Binds name, realm, and group into a typed org definition. See [defineOrganisation](/docs/organisation/define-organisation).
+
+---
+
+## createStandardOrganisationMembership
+
+```ts
+function createStandardOrganisationMembership<N extends string>(
+  options: CreateStandardOrganisationMembershipOptions<N>
+): StandardOrganisationMembershipResult<N>
+```
+
+Generates `member` and `group` for `defineOrganisation`. See [Membership](/docs/organisation/membership).
+
+---
+
+## createStandardOrganisationPermission
+
+```ts
+function createStandardOrganisationPermission<N extends string>(
+  options: CreateStandardOrganisationPermissionOptions<N>
+): StandardOrganisationPermissionResult<N>
+```
+
+Generates `realm`, `permissions`, and `roles`. See [Permission](/docs/organisation/permission).
+
+---
+
+## createOrganisationService
+
+```ts
+function createOrganisationService(
+  options: CreateOrganisationServiceOptions
+): OrganisationApi
+```
+
+### CreateOrganisationServiceOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `repo` | `OrganisationsRepo` | Storage implementation |
+| `deps.membership` | `MembershipApi` | From `@justwant/membership` |
+| `deps.permission` | `PermissionApi` | From `@justwant/permission` |
+| `organisations` | `readonly OrgDef[]` | All registered org type definitions |
+
+### OrganisationApi
+
+#### create
+
+```ts
+create(data: CreateInput<Organisation> & { type: string }): Promise<Organisation>
+```
+
+Creates a new organisation. `type` must match a registered `OrgDef`. Throws `DuplicateSlugError` on slug conflict.
+
+#### findById
+
+```ts
+findById(id: string): Promise<Organisation | null>
+```
+
+#### findBySlug
+
+```ts
+findBySlug(slug: string): Promise<Organisation | null>
+```
+
+#### findOne
+
+```ts
+findOne(where: Partial<Organisation>): Promise<Organisation | null>
+```
+
+#### findMany
+
+```ts
+findMany(where: Partial<Organisation>): Promise<Organisation[]>
+```
+
+#### update
+
+```ts
+update(params: UpdateParams): Promise<Organisation>
+```
+
+`UpdateParams`: `{ id: string; data: Partial<Organisation>; member?: MemberLike }`
+
+If `member` is provided, checks `{type}:update` permission. Throws `OrganisationNotFoundError`, `DuplicateSlugError`, or `PermissionDeniedError`.
+
+#### delete
+
+```ts
+delete(params: DeleteParams): Promise<void>
+```
+
+`DeleteParams`: `{ id: string; member?: MemberLike }`
+
+If `member` is provided, checks `{type}:delete` permission.
+
+#### addMember
+
+```ts
+addMember(params: AddMemberParams): Promise<void>
+```
+
+`AddMemberParams`: `{ organisation: Organisation; member: MemberLike; role: string }`
+
+Adds to group and assigns role simultaneously.
+
+#### removeMember
+
+```ts
+removeMember(params: RemoveMemberParams): Promise<void>
+```
+
+`RemoveMemberParams`: `{ organisation: Organisation; member: MemberLike }`
+
+Unassigns roles then removes from group.
+
+#### listMembers
+
+```ts
+listMembers(params: ListMembersParams): Promise<{ type: string; id: string }[]>
+```
+
+#### listForMember
+
+```ts
+listForMember(params: ListForMemberParams): Promise<Organisation[]>
+```
+
+Returns all organisations the member belongs to across all registered types.
+
+#### can
+
+```ts
+can(params: CanParams): Promise<boolean>
+```
+
+`CanParams`: `{ organisation: Organisation; member: MemberLike; permission: AtomicPermission }`
+
+#### assignRole
+
+```ts
+assignRole(params: AssignRoleParams): Promise<void>
+```
+
+`AssignRoleParams`: `{ organisation: Organisation; member: MemberLike; role: string }`
+
+---
+
+## Types
+
+### Organisation
+
+```ts
+interface Organisation<T extends string = string> {
+  id: string;
+  type: T;
+  name: string;
+  slug?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+```
+
+### OrganisationsRepo
+
+```ts
+interface OrganisationsRepo {
+  findById(id: string): Promise<Organisation | null>;
+  findOne(where: Partial<Organisation>): Promise<Organisation | null>;
+  findMany(where: Partial<Organisation>): Promise<Organisation[]>;
+  create(data: CreateInput<Organisation>): Promise<Organisation>;
+  update(id: string, data: Partial<Organisation>): Promise<Organisation>;
+  delete(id: string): Promise<void>;
+}
+```
+
+---
+
+## Errors
+
+| Class | When |
+|-------|------|
+| `OrganisationError` | Base class |
+| `OrganisationNotFoundError` | `update` / `delete` with unknown id |
+| `DuplicateSlugError` | `create` / `update` with duplicate slug |

@@ -1,0 +1,35 @@
+---
+title: Installation
+description: Install @justwant/organisation and its peer dependencies.
+icon: Package
+---
+
+## Install
+
+```bash
+bun add @justwant/organisation
+```
+
+`@justwant/organisation` depends on `@justwant/membership` and `@justwant/permission`, which are installed automatically as transitive dependencies.
+
+If you have not set up `@justwant/membership` and `@justwant/permission` services yet, install them explicitly so you can configure their repos:
+
+```bash
+bun add @justwant/organisation @justwant/membership @justwant/permission
+```
+
+## TypeScript
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "moduleResolution": "bundler",
+    "strict": true
+  }
+}
+```
+
+## Next step
+
+[Basic Usage](/docs/organisation/basic-usage) — wire up membership, permission, and the organisation façade end-to-end.
