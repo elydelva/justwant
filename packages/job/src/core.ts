@@ -32,10 +32,10 @@ function resolveId(x: JobOrId): string {
   if (typeof x === "string") return x;
   if ("queue" in x || "name" in x)
     return (
-      (x as QueueDefinition).queue ?? (x as QueueDefinition).name ?? (x as QueueDefinition).job.id
+      (x as QueueDefinition).queue ?? (x as QueueDefinition).name ?? (x as QueueDefinition).job.name
     );
-  if ("cron" in x) return (x as CronDefinition).id ?? (x as CronDefinition).job.id;
-  return (x as JobDefinition).id;
+  if ("cron" in x) return (x as CronDefinition).id ?? (x as CronDefinition).job.name;
+  return (x as unknown as JobDefinition).name;
 }
 
 export interface JobService {
@@ -121,7 +121,7 @@ function validatePayloadWithSchema<T>(
 }
 
 function queueId(queueDef: QueueDefinition): string {
-  return queueDef.queue ?? queueDef.name ?? queueDef.job.id;
+  return queueDef.queue ?? queueDef.name ?? queueDef.job.name;
 }
 
 /** Convert CronDefinition to QueueDefinition for engine (queue = cron id). */
@@ -129,7 +129,7 @@ function cronToScheduleDef(cron: CronDefinition): QueueDefinition {
   return {
     job: cron.job,
     cron: cron.cron,
-    queue: cron.id ?? cron.job.id,
+    queue: cron.id ?? cron.job.name,
   };
 }
 
@@ -263,7 +263,7 @@ export function createJob(options: CreateJobOptions): JobService {
     },
 
     async trigger(jobOrId: QueueDefinition | string, payload?: unknown): Promise<void> {
-      const id = typeof jobOrId === "string" ? jobOrId : (jobOrId.queue ?? jobOrId.job.id);
+      const id = typeof jobOrId === "string" ? jobOrId : (jobOrId.queue ?? jobOrId.job.name);
       return doEnqueue(id, payload);
     },
 
@@ -310,17 +310,17 @@ export function createJob(options: CreateJobOptions): JobService {
 
     async start(): Promise<void> {
       for (const cron of crons) {
-        const handler = handlersMap[cron.job.id];
-        if (!handler) throw new Error(`No handler for cron job ${cron.job.id}`);
+        const handler = handlersMap[cron.job.name];
+        if (!handler) throw new Error(`No handler for cron job ${cron.job.name}`);
         const def = cronToScheduleDef(cron);
-        const wrapped = wrapHandlerWithSkipCheck(cron.id ?? cron.job.id, handler, repo ?? {});
+        const wrapped = wrapHandlerWithSkipCheck(cron.id ?? cron.job.name, handler, repo ?? {});
         const id = queueId(def);
         queues.set(id, { definition: def, handler: wrapped });
         if (repo) await repo.saveDefinition(def.job);
         await engine.register(def, wrapped);
       }
       for (const queue of queueDefs) {
-        const handler = handlersMap[queue.job.id];
+        const handler = handlersMap[queue.job.name];
         const id = queueId(queue);
         queues.set(id, { definition: queue, handler });
         if (repo) await repo.saveDefinition(queue.job);
@@ -361,28 +361,28 @@ export function createJob(options: CreateJobOptions): JobService {
     },
 
     async skipNext(cronOrId: CronDefinition | string): Promise<void> {
-      const id = typeof cronOrId === "string" ? cronOrId : (cronOrId.id ?? cronOrId.job.id);
+      const id = typeof cronOrId === "string" ? cronOrId : (cronOrId.id ?? cronOrId.job.name);
       if (!repo?.setSkipNextUntil)
         throw new UnsupportedCapabilityError(engine.capabilities.name, "skipNext");
       await repo.setSkipNextUntil(id, "once");
     },
 
     async skipUntil(cronOrId: CronDefinition | string, until: Date): Promise<void> {
-      const id = typeof cronOrId === "string" ? cronOrId : (cronOrId.id ?? cronOrId.job.id);
+      const id = typeof cronOrId === "string" ? cronOrId : (cronOrId.id ?? cronOrId.job.name);
       if (!repo?.setSkipNextUntil)
         throw new UnsupportedCapabilityError(engine.capabilities.name, "skipUntil");
       await repo.setSkipNextUntil(id, until);
     },
 
     async disableCron(cronOrId: CronDefinition | string): Promise<void> {
-      const id = typeof cronOrId === "string" ? cronOrId : (cronOrId.id ?? cronOrId.job.id);
+      const id = typeof cronOrId === "string" ? cronOrId : (cronOrId.id ?? cronOrId.job.name);
       if (engine.pauseQueue) await engine.pauseQueue(id);
       else if (engine.capabilities.supports.pauseQueue && repo) await repo.setPaused(id, true);
       else throw new UnsupportedCapabilityError(engine.capabilities.name, "disableCron");
     },
 
     async enableCron(cronOrId: CronDefinition | string): Promise<void> {
-      const id = typeof cronOrId === "string" ? cronOrId : (cronOrId.id ?? cronOrId.job.id);
+      const id = typeof cronOrId === "string" ? cronOrId : (cronOrId.id ?? cronOrId.job.name);
       if (engine.resumeQueue) await engine.resumeQueue(id);
       else if (engine.capabilities.supports.resumeQueue && repo) await repo.setPaused(id, false);
       else throw new UnsupportedCapabilityError(engine.capabilities.name, "enableCron");

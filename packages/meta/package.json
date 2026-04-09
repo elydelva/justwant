@@ -1,0 +1,37 @@
+{
+  "name": "@justwant/meta",
+  "version": "0.1.0",
+  "description": "Foundation interfaces for the @justwant ecosystem. Zero dependencies.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elydelva/justwant",
+    "directory": "packages/meta"
+  },
+  "keywords": ["meta", "definable", "inspectable", "typescript"],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test || true",
+    "prepublishOnly": "bun run typecheck && bun run build"
+  },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@justwant/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}

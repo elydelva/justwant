@@ -1,5 +1,5 @@
-export { createLockable } from "./lockable/createLockable.js";
-export type { CreateLockableOptions, LockableDef } from "./lockable/createLockable.js";
+export { defineLockable } from "./lockable/defineLockable.js";
+export type { DefineLockableOptions, LockableDef } from "./lockable/defineLockable.js";
 
-export { createLockOwner } from "./owner/createLockOwner.js";
-export type { CreateLockOwnerOptions, LockOwnerDef } from "./owner/createLockOwner.js";
+export { defineLockOwner } from "./owner/defineLockOwner.js";
+export type { DefineLockOwnerOptions, LockOwnerDef } from "./owner/defineLockOwner.js";

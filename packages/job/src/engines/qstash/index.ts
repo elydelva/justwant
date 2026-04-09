@@ -36,7 +36,7 @@ export interface QStashEngineOptions {
 }
 
 function queueId(def: QueueDefinition): string {
-  return def.queue ?? def.job.id;
+  return def.queue ?? def.job.name;
 }
 
 function getDestination(baseUrl: string, routePrefix: string, jobId: string): string {

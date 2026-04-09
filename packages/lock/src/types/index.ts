@@ -1,7 +1,7 @@
 /**
  * @justwant/lock — Core types
  * LockOwner and Lockable type names are user-defined (string).
- * Use createLockOwner/createLockable generics for literal inference.
+ * Use defineLockOwner/defineLockable generics for literal inference.
  */
 
 import type { Actor } from "@justwant/actor";

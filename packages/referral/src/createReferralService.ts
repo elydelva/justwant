@@ -25,7 +25,7 @@ export interface CreateReferralServiceOptions {
 }
 
 function resolveOfferKey(offer: ReferralOfferDef | string): string {
-  return typeof offer === "string" ? offer : offer();
+  return typeof offer === "string" ? offer : offer.key();
 }
 
 function toActor(referral: Referral): Actor {

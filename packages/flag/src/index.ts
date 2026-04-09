@@ -9,6 +9,7 @@ export type { CreateFlagServiceOptions } from "./createFlagService.js";
 export { createMemoryFlagConfigRepo } from "./createMemoryFlagConfigRepo.js";
 export { defineFlag } from "./defineFlag.js";
 export type { DefineFlagConfig } from "./defineFlag.js";
+export type { FeatureDef } from "@justwant/feature";
 export { defineRule } from "./defineRule.js";
 export type { DefineRuleConfig } from "./defineRule.js";
 

@@ -51,7 +51,7 @@ export async function findOverrides(ctx: ResolveContext): Promise<Override[]> {
   const where = {
     ...actorToRepo(ctx.actor),
     ...scopeToRepo(ctx.scope),
-    permission: ctx.action.id,
+    permission: ctx.action.name,
   };
   return ctx.overrides.findMany(where as Partial<Override>);
 }

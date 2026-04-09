@@ -16,43 +16,43 @@ const themeSchema: StandardSchemaV1<unknown, "light" | "dark" | "system"> = {
 };
 
 describe("definePreference", () => {
-  test("creates preference with id and key defaults to id", () => {
-    const pref = definePreference({ id: "theme" });
-    expect(pref.id).toBe("theme");
+  test("creates preference with name and key defaults to name", () => {
+    const pref = definePreference({ name: "theme" });
+    expect(pref.name).toBe("theme");
     expect(pref.key).toBe("theme");
   });
 
   test("creates preference with explicit key", () => {
-    const pref = definePreference({ id: "theme", key: "ui.theme" });
-    expect(pref.id).toBe("theme");
+    const pref = definePreference({ name: "theme", key: "ui.theme" });
+    expect(pref.name).toBe("theme");
     expect(pref.key).toBe("ui.theme");
   });
 
   test("exposes schema on definition", () => {
-    const pref = definePreference({ id: "theme", schema: themeSchema });
+    const pref = definePreference({ name: "theme", schema: themeSchema });
     expect(pref.schema).toBe(themeSchema);
   });
 
   test("exposes default on definition", () => {
-    const pref = definePreference({
-      id: "theme",
-      default: "system",
-    });
+    const pref = definePreference({ name: "theme", default: "system" });
     expect(pref.default).toBe("system");
+  });
+
+  test("is callable — returns typed ref", () => {
+    const pref = definePreference({ name: "theme" });
+    expect(pref("user-123")).toEqual({ type: "theme", id: "user-123" });
   });
 
   test("creates full definition with all options", () => {
     const pref = definePreference({
-      id: "theme",
+      name: "theme",
       key: "app.theme",
       schema: themeSchema,
       default: "system",
     });
-    expect(pref).toEqual({
-      id: "theme",
-      key: "app.theme",
-      schema: themeSchema,
-      default: "system",
-    });
+    expect(pref.name).toBe("theme");
+    expect(pref.key).toBe("app.theme");
+    expect(pref.schema).toBe(themeSchema);
+    expect(pref.default).toBe("system");
   });
 });

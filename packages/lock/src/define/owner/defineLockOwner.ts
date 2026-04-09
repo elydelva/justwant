@@ -1,25 +1,26 @@
 /**
- * @justwant/lock — createLockOwner
+ * @justwant/lock — defineLockOwner
  * Defines who can hold a lock (system, user, etc.).
  * Produces Actor with optional within (e.g. org, team).
  */
 
+import type { Definable } from "@justwant/meta";
 import type { LockOwner } from "../../types/index.js";
 
-export interface CreateLockOwnerOptions<N extends string = string> {
+export interface DefineLockOwnerOptions<N extends string = string> {
   name: N;
   within?: string;
 }
 
-export interface LockOwnerDef<N extends string = string> {
+export interface LockOwnerDef<N extends string = string> extends Definable<N> {
   readonly name: N;
   readonly within?: string;
   (id: string): LockOwner<N>;
   (withinId: string, id: string): LockOwner<N>;
 }
 
-export function createLockOwner<N extends string>(
-  options: CreateLockOwnerOptions<N>
+export function defineLockOwner<N extends string>(
+  options: DefineLockOwnerOptions<N>
 ): LockOwnerDef<N> {
   const { name, within } = options;
 
@@ -37,7 +38,7 @@ export function createLockOwner<N extends string>(
         id: withinIdOrId,
       } as LockOwner<N>;
     }
-    throw new Error(`createLockOwner: owner "${name}" requires an id`);
+    throw new Error(`defineLockOwner: owner "${name}" requires an id`);
   }) as LockOwnerDef<N>;
 
   Object.defineProperties(ownerDef, {

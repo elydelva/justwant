@@ -31,7 +31,7 @@ describe("E2E referral (SQLite)", () => {
   });
 
   test("full flow: refer, getReferrer, getRecipients, countByReferrer, countByOffer", async () => {
-    const offer = defineReferralOffer({ id: "waitlist_beta" });
+    const offer = defineReferralOffer({ name: "waitlist_beta" });
 
     const r1 = await service.refer(offer, user("u1"), user("u2"));
     expect(r1.id).toBeDefined();
@@ -56,22 +56,22 @@ describe("E2E referral (SQLite)", () => {
 
   test("parametrized offer: offer with listId", async () => {
     const offer = defineReferralOffer({
-      id: "waitlist",
+      name: "waitlist",
       params: ["listId"],
       defaultReferrerType: "user",
     });
 
-    await service.refer(offer({ listId: "beta" }), user("u1"), user("u2"));
+    await service.refer(offer.key({ listId: "beta" }), user("u1"), user("u2"));
 
-    const referrer = await service.getReferrer(offer({ listId: "beta" }), user("u2"));
+    const referrer = await service.getReferrer(offer.key({ listId: "beta" }), user("u2"));
     expect(referrer).toEqual({ type: "user", id: "u1" });
 
-    const referrerProd = await service.getReferrer(offer({ listId: "prod" }), user("u2"));
+    const referrerProd = await service.getReferrer(offer.key({ listId: "prod" }), user("u2"));
     expect(referrerProd).toBeNull();
   });
 
   test("resolveCode with stored referralCode", async () => {
-    const offer = defineReferralOffer({ id: "waitlist_beta" });
+    const offer = defineReferralOffer({ name: "waitlist_beta" });
 
     await service.refer(offer, user("u1"), user("u2"), {
       referralCode: "SHARE-ABC",
@@ -107,7 +107,7 @@ describe("E2E referral (SQLite)", () => {
   });
 
   test("pagination E2E: limit and offset", async () => {
-    const offer = defineReferralOffer({ id: "pagination" });
+    const offer = defineReferralOffer({ name: "pagination" });
 
     for (let i = 1; i <= 10; i++) {
       await service.refer(offer, user("u1"), user(`u${i}`));

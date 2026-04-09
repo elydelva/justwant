@@ -7,7 +7,6 @@ export { defineList } from "./defineList.js";
 export type {
   DefineListConfig,
   WaitlistDef,
-  WaitlistList,
 } from "./defineList.js";
 
 export { createWaitlistService } from "./createWaitlistService.js";

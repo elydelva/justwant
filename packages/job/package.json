@@ -110,7 +110,8 @@
   "files": ["dist", "README.md"],
   "dependencies": {
     "@justwant/contract": "workspace:*",
-    "@justwant/lock": "workspace:*"
+    "@justwant/lock": "workspace:*",
+    "@justwant/meta": "workspace:*"
   },
   "peerDependencies": {
     "@standard-schema/spec": "^1.0.0",

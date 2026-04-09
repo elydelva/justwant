@@ -4,13 +4,14 @@
  * Infers literal type N from name for build-time type safety.
  */
 
+import type { Inspectable } from "@justwant/meta";
 import type { Scope } from "../../types/index.js";
 
 export interface DefineScopeOptions<N extends string = string> {
   name: N;
 }
 
-export interface ScopeDef<N extends string = string> {
+export interface ScopeDef<N extends string = string> extends Inspectable<N> {
   readonly name: N;
   (): Scope<N>;
   (id: string): Scope<N>;

@@ -5,16 +5,15 @@
  * UsersRepo: repository aligned with @justwant/db MappedTable.
  */
 
+import type { RefLike } from "@justwant/meta";
+
 export interface User {
   id: string;
   email: string;
   name?: string;
 }
 
-export interface UserRef {
-  type: "user";
-  id: string;
-}
+export interface UserRef extends RefLike<"user"> {}
 
 export type CreateInput<T> = Omit<T, "id" | "createdAt" | "updatedAt">;
 

@@ -35,12 +35,12 @@ function createMockEngine(): JobEngineContract & {
       },
     },
     async register(queueDef, handler) {
-      const id = queueDef.queue ?? queueDef.job.id;
+      const id = queueDef.queue ?? queueDef.job.name;
       queues.set(id, queueDef);
       if (handler) handlers.set(id, handler);
     },
     async handle(queueDef, handler) {
-      const id = queueDef.queue ?? queueDef.job.id;
+      const id = queueDef.queue ?? queueDef.job.name;
       queues.set(id, queueDef);
       handlers.set(id, handler);
     },
@@ -75,14 +75,14 @@ describe("createJob", () => {
       engine: createMockEngine(),
       skipRuntimeCheck: true,
     });
-    const job = defineJob({ id: "test" });
+    const job = defineJob({ name: "test" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     let ran = false;
     const handler = job.handle(async () => {
       ran = true;
     });
     await jobService.register(queue, handler);
-    await jobService.enqueue(queue.job.id, {});
+    await jobService.enqueue(queue.job.name, {});
     expect(ran).toBe(true);
   });
 
@@ -91,7 +91,7 @@ describe("createJob", () => {
       engine: createMockEngine(),
       skipRuntimeCheck: true,
     });
-    const job = defineJob({ id: "test" });
+    const job = defineJob({ name: "test" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     await jobService.register(queue);
     const list = await jobService.listQueues();
@@ -114,7 +114,7 @@ describe("createJob", () => {
   test("dispatch success parses body and executes handler", async () => {
     const engine = createMockEngine();
     const jobService = createJob({ engine, skipRuntimeCheck: true });
-    const job = defineJob({ id: "test" });
+    const job = defineJob({ name: "test" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     let receivedPayload: unknown;
     const handler = job.handle(async ({ data }) => {
@@ -137,25 +137,25 @@ describe("createJob", () => {
   test("handle alone then enqueue executes handler", async () => {
     const engine = createMockEngine();
     const jobService = createJob({ engine, skipRuntimeCheck: true });
-    const job = defineJob({ id: "handle-test" });
+    const job = defineJob({ name: "handle-test" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     let ran = false;
     const handler = job.handle(async () => {
       ran = true;
     });
     await jobService.handle(queue, handler);
-    await jobService.enqueue(queue.job.id);
+    await jobService.enqueue(queue.job.name);
     expect(ran).toBe(true);
   });
 
   test("unregister removes queue from list", async () => {
     const engine = createMockEngine();
     const jobService = createJob({ engine, skipRuntimeCheck: true });
-    const job = defineJob({ id: "unreg" });
+    const job = defineJob({ name: "unreg" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     await jobService.register(queue);
     expect(await jobService.listQueues()).toHaveLength(1);
-    await jobService.unregister(queue.job.id);
+    await jobService.unregister(queue.job.name);
     expect(await jobService.listQueues()).toHaveLength(0);
   });
 
@@ -186,24 +186,24 @@ describe("createJob", () => {
       plugins: [pluginA, pluginB],
       skipRuntimeCheck: true,
     });
-    const job = defineJob({ id: "order-test" });
+    const job = defineJob({ name: "order-test" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     const handler = job.handle(async () => {
       order.push("handler");
     });
     await jobService.register(queue, handler);
-    await jobService.enqueue(queue.job.id, {});
+    await jobService.enqueue(queue.job.name, {});
     expect(order).toEqual(["A.before", "B.before", "handler", "A.after", "B.after"]);
   });
 
   test("enqueue without handler calls engine.enqueue", async () => {
     const engine = createMockEngine();
     const jobService = createJob({ engine, skipRuntimeCheck: true });
-    const job = defineJob({ id: "scheduler-only" });
+    const job = defineJob({ name: "scheduler-only" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     await jobService.register(queue);
 
-    await jobService.enqueue(queue.job.id, { x: 1 });
+    await jobService.enqueue(queue.job.name, { x: 1 });
 
     expect(engine.enqueueCalls).toHaveLength(1);
     expect(engine.enqueueCalls[0]).toEqual({ id: "scheduler-only", payload: { x: 1 } });
@@ -212,7 +212,7 @@ describe("createJob", () => {
   test("trigger (deprecated) works as enqueue alias", async () => {
     const engine = createMockEngine();
     const jobService = createJob({ engine, skipRuntimeCheck: true });
-    const job = defineJob({ id: "trigger-test" });
+    const job = defineJob({ name: "trigger-test" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     let ran = false;
     const handler = job.handle(async () => {
@@ -232,9 +232,9 @@ describe("createJob", () => {
 
   test("crons and queues from options register on start", async () => {
     const engine = createMockEngine();
-    const job = defineJob({ id: "scheduled-job" });
+    const job = defineJob({ name: "scheduled-job" });
     const cron = defineCron({ job, cron: "* * * * *" });
-    const queue = defineQueue({ job: defineJob({ id: "queue-job" }), name: "my-queue" });
+    const queue = defineQueue({ job: defineJob({ name: "queue-job" }), name: "my-queue" });
     let cronRan = false;
     let queueRan = false;
     const jobService = createJob({
@@ -263,7 +263,7 @@ describe("createJob", () => {
   test("enqueue accepts queue object", async () => {
     const engine = createMockEngine();
     const jobService = createJob({ engine, skipRuntimeCheck: true });
-    const job = defineJob({ id: "obj-test" });
+    const job = defineJob({ name: "obj-test" });
     const queue = defineQueue({ job, name: "emails" });
     let ran = false;
     const handler = job.handle(async () => {
@@ -278,7 +278,7 @@ describe("createJob", () => {
     const paused = new Map<string, boolean>();
     const engine = createMockEngineWithPause(paused);
     const jobService = createJob({ engine, skipRuntimeCheck: true });
-    const job = defineJob({ id: "pause-test" });
+    const job = defineJob({ name: "pause-test" });
     const queue = defineQueue({ job, name: "pausable" });
     await jobService.register(queue);
     await jobService.pauseQueue(queue);
@@ -290,7 +290,7 @@ describe("createJob", () => {
   test("skipNext skips next cron execution", async () => {
     const repo = createMemoryJobRepository();
     let runCount = 0;
-    const job = defineJob({ id: "skip-test" });
+    const job = defineJob({ name: "skip-test" });
     const cron = defineCron({ job, cron: "* * * * *", id: "skip-cron" });
     const jobService = createJob({
       engine: nodeEngine(),

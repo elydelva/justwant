@@ -38,13 +38,13 @@ describe("QStash engine E2E", () => {
       }),
       skipRuntimeCheck: true,
     });
-    const job = defineJob({ id: jobId });
+    const job = defineJob({ name: jobId });
     const queue = defineQueue({ job, cron: "0 0 1 1 *" });
     const handler = job.handle(async () => {});
 
     await expect(jobService.register(queue, handler)).resolves.not.toThrow();
 
-    await jobService.unregister(queue.job.id);
+    await jobService.unregister(queue.job.name);
   });
 
   test("enqueue sends POST to destination", async () => {
@@ -83,12 +83,12 @@ describe("QStash engine E2E", () => {
         }),
         skipRuntimeCheck: true,
       });
-      const job = defineJob({ id: jobId });
+      const job = defineJob({ name: jobId });
       const queue = defineQueue({ job, cron: "0 0 1 1 *" });
       const handler = job.handle(async () => {});
 
       await jobService.register(queue, handler);
-      await jobService.enqueue(queue.job.id, { foo: "bar" });
+      await jobService.enqueue(queue.job.name, { foo: "bar" });
 
       await new Promise((r) => setTimeout(r, 500));
       expect(received).toBe(true);
@@ -115,7 +115,7 @@ describe("QStash engine E2E", () => {
       }),
       skipRuntimeCheck: true,
     });
-    const job = defineJob({ id: jobId });
+    const job = defineJob({ name: jobId });
     const queue = defineQueue({ job, cron: "0 0 1 1 *" });
     let ran = false;
     const handler = job.handle(async () => {

@@ -5,7 +5,14 @@
 
 import { FlagValidationError } from "./errors.js";
 import { evaluate as evaluateStandalone, resolveRuleId } from "./evaluate.js";
-import type { ConfigOverride, FlagConfigRepo, FlagDef, FlagService, RuleDef } from "./types.js";
+import type {
+  ConfigOverride,
+  FlagConfigRepo,
+  FlagDef,
+  FlagService,
+  RuleDef,
+  RuleRef,
+} from "./types.js";
 
 function validateConfig(
   schema: { "~standard"?: { validate: (v: unknown) => unknown } },
@@ -32,14 +39,14 @@ export interface CreateFlagServiceOptions {
 export function createFlagService(options: CreateFlagServiceOptions): FlagService {
   const { flags, repo } = options;
 
-  const ruleMap = new Map<string, RuleDef<unknown, unknown>>();
+  const ruleMap = new Map<string, RuleDef>();
   for (const flag of flags) {
     for (const rule of flag.rules) {
-      ruleMap.set(rule.id, rule);
+      ruleMap.set(rule.name, rule);
     }
   }
 
-  async function getLatest(rule: RuleDef | string): Promise<ConfigOverride | null> {
+  async function getLatest(rule: RuleRef): Promise<ConfigOverride | null> {
     const ruleId = resolveRuleId(rule);
     const ruleDef = typeof rule === "string" ? ruleMap.get(ruleId) : rule;
 
@@ -79,7 +86,7 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
         const remote = await getLatest(rule);
         const defaultConfig = rule.defaultConfig ?? {};
         const remoteConfig = remote?.config ?? {};
-        const override = configOverride?.[rule.id] as Record<string, unknown> | undefined;
+        const override = configOverride?.[rule.name] as Record<string, unknown> | undefined;
         const merged = {
           ...defaultConfig,
           ...remoteConfig,
@@ -92,13 +99,13 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
           );
           if (!valid) {
             throw new FlagValidationError(
-              `Config validation failed for rule ${rule.id}: ${(issues ?? []).map((i) => i.message).join(", ")}`,
-              { ruleId: rule.id, issues }
+              `Config validation failed for rule ${rule.name}: ${(issues ?? []).map((i) => i.message).join(", ")}`,
+              { ruleId: rule.name, issues }
             );
           }
-          configByRuleId[rule.id] = value ?? merged;
+          configByRuleId[rule.name] = value ?? merged;
         } else {
-          configByRuleId[rule.id] = merged;
+          configByRuleId[rule.name] = merged;
         }
       }
       return evaluateStandalone(flag, { context, configByRuleId });
@@ -120,7 +127,7 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
       );
     },
 
-    async setConfigOverride(rule: RuleDef | string, config: unknown): Promise<ConfigOverride> {
+    async setConfigOverride(rule: RuleRef, config: unknown): Promise<ConfigOverride> {
       const ruleId = resolveRuleId(rule);
       const ruleDef = typeof rule === "string" ? ruleMap.get(ruleId) : rule;
 
@@ -144,7 +151,7 @@ export function createFlagService(options: CreateFlagServiceOptions): FlagServic
       });
     },
 
-    async rollbackLastConfig(rule: RuleDef | string): Promise<void> {
+    async rollbackLastConfig(rule: RuleRef): Promise<void> {
       const latest = await getLatest(rule);
       if (latest) {
         await repo.update(latest.id, { rolledBack: true });

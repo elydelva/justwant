@@ -4,6 +4,7 @@
  */
 
 import type { GroupDef } from "@justwant/membership";
+import type { Definable } from "@justwant/meta";
 import type { RealmDef } from "@justwant/permission";
 import type { OrgRef } from "./types/index.js";
 
@@ -13,7 +14,7 @@ export interface DefineOrganisationOptions<N extends string = string> {
   group: GroupDef<N>;
 }
 
-export interface OrgDef<N extends string = string> {
+export interface OrgDef<N extends string = string> extends Definable<N> {
   readonly name: N;
   readonly realm: RealmDef;
   readonly group: GroupDef<N>;

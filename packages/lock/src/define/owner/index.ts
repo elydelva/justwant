@@ -1,2 +1,2 @@
-export { createLockOwner } from "./createLockOwner.js";
-export type { CreateLockOwnerOptions, LockOwnerDef } from "./createLockOwner.js";
+export { defineLockOwner } from "./defineLockOwner.js";
+export type { DefineLockOwnerOptions, LockOwnerDef } from "./defineLockOwner.js";

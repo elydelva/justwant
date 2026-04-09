@@ -4,6 +4,7 @@
  */
 
 import type { Actor } from "@justwant/actor";
+import type { Definable } from "@justwant/meta";
 
 export type { Actor } from "@justwant/actor";
 
@@ -39,16 +40,14 @@ export interface ReferralRepository {
   count(where: Partial<Referral>): Promise<number>;
 }
 
-/** Referral offer definition — portable, callable if params. */
-export interface ReferralOfferDef {
-  readonly id: string;
-  readonly name?: string;
+/** Referral offer definition — extends Definable<N>. Callable: offer(refId) → { type: N; id: refId }. */
+export interface ReferralOfferDef<N extends string = string> extends Definable<N> {
+  readonly name: N;
   readonly params?: string[];
   readonly codeGenerator?: (offerKey: string, referrer: Actor) => string | Promise<string>;
-  /** Default referrer type when resolving code as referrerId (before any referral exists). */
   readonly defaultReferrerType?: string;
-  /** Resolve offer key from params (e.g. "waitlist_beta" or "waitlist_beta:list-1"). */
-  (params?: Record<string, string>): string;
+  /** Resolve offer key from params (e.g. "beta" or "beta:listId:prod-1"). */
+  key(params?: Record<string, string>): string;
 }
 
 /** Referral service API. */

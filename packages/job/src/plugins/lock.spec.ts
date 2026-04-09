@@ -77,7 +77,7 @@ function createMockEngine(): JobEngineContract {
       },
     },
     async register(queueDef, handler) {
-      const id = queueDef.queue ?? queueDef.job.id;
+      const id = queueDef.queue ?? queueDef.job.name;
       queues.set(id, queueDef);
       if (handler) handlers.set(id, handler);
     },
@@ -113,14 +113,14 @@ describe("lockPlugin", () => {
       plugins: [lockPlugin({ lock })],
       skipRuntimeCheck: true,
     });
-    const job = defineJob({ id: "lock-test" });
+    const job = defineJob({ name: "lock-test" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     let ran = false;
     const handler = job.handle(async () => {
       ran = true;
     });
     await jobService.register(queue, handler);
-    await jobService.enqueue(queue.job.id);
+    await jobService.enqueue(queue.job.name);
     expect(ran).toBe(true);
   });
 
@@ -136,7 +136,7 @@ describe("lockPlugin", () => {
       skipRuntimeCheck: true,
     });
 
-    const job = defineJob({ id: "contended" });
+    const job = defineJob({ name: "contended" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     let runs = 0;
     const handler = job.handle(async () => {
@@ -163,7 +163,7 @@ describe("lockPlugin", () => {
       plugins: [lockPlugin({ lock })],
       skipRuntimeCheck: true,
     });
-    const job = defineJob({ id: "release-test" });
+    const job = defineJob({ name: "release-test" });
     const queue = defineQueue({ job, cron: "* * * * *" });
     const handler = job.handle(async () => {});
     await jobService.register(queue, handler);

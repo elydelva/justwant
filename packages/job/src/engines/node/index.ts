@@ -36,7 +36,7 @@ interface NodeCronModule {
 }
 
 function queueId(def: QueueDefinition): string {
-  return def.queue ?? def.job.id;
+  return def.queue ?? def.job.name;
 }
 
 export function nodeEngine(options: NodeEngineOptions = {}): JobEngineContract {

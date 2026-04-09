@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { defineFeature } from "@justwant/feature";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { createFlagService } from "./createFlagService.js";
 import { createMemoryFlagConfigRepo } from "./createMemoryFlagConfigRepo.js";
@@ -23,8 +24,10 @@ const strictPctSchema: StandardSchemaV1<unknown, { pct?: number }> = {
 };
 
 describe("createFlagService", () => {
+  const newDashboardFeature = defineFeature({ name: "new-dashboard" });
+
   const betaRule = defineRule({
-    id: "beta-rollout",
+    name: "beta-rollout",
     config: strictPctSchema,
     defaultConfig: { pct: 0.2 },
     logic: ({ config, context }) => {
@@ -33,8 +36,7 @@ describe("createFlagService", () => {
     },
   });
 
-  const newDashboard = defineFlag({
-    id: "new-dashboard",
+  const newDashboard = defineFlag(newDashboardFeature, {
     default: false,
     rules: [betaRule as RuleDef<unknown, unknown>],
     strategy: "any",
@@ -77,25 +79,28 @@ describe("createFlagService", () => {
   });
 
   test("evaluate strategy any: at least one rule true", async () => {
-    const ruleT = defineRule({ id: "t", logic: () => true });
-    const ruleF = defineRule({ id: "f", logic: () => false });
-    const flag = defineFlag({ id: "any", rules: [ruleT, ruleF], strategy: "any" });
+    const feature = defineFeature({ name: "any-flag" });
+    const ruleT = defineRule({ name: "t", logic: () => true });
+    const ruleF = defineRule({ name: "f", logic: () => false });
+    const flag = defineFlag(feature, { rules: [ruleT, ruleF], strategy: "any" });
     const repo = createMemoryFlagConfigRepo();
     const service = createFlagService({ flags: [flag], repo });
     expect(await service.evaluate(flag, {})).toBe(true);
   });
 
   test("evaluate strategy all: all rules must be true", async () => {
-    const ruleT = defineRule({ id: "t", logic: () => true });
-    const ruleF = defineRule({ id: "f", logic: () => false });
-    const flag = defineFlag({ id: "all", rules: [ruleT, ruleF], strategy: "all" });
+    const feature = defineFeature({ name: "all-flag" });
+    const ruleT = defineRule({ name: "t", logic: () => true });
+    const ruleF = defineRule({ name: "f", logic: () => false });
+    const flag = defineFlag(feature, { rules: [ruleT, ruleF], strategy: "all" });
     const repo = createMemoryFlagConfigRepo();
     const service = createFlagService({ flags: [flag], repo });
     expect(await service.evaluate(flag, {})).toBe(false);
   });
 
   test("evaluate empty rules returns default", async () => {
-    const flag = defineFlag({ id: "empty", rules: [], default: true });
+    const feature = defineFeature({ name: "empty-flag" });
+    const flag = defineFlag(feature, { rules: [], default: true });
     const repo = createMemoryFlagConfigRepo();
     const service = createFlagService({ flags: [flag], repo });
     expect(await service.evaluate(flag, {})).toBe(true);
@@ -158,12 +163,13 @@ describe("createFlagService", () => {
       },
     };
     const rule = defineRule({
-      id: "async-rule",
+      name: "async-rule",
       config: asyncSchema,
       defaultConfig: { pct: 0.5 },
       logic: ({ config }) => (config.pct ?? 0) > 0.3,
     });
-    const flag = defineFlag({ id: "f", rules: [rule as RuleDef<unknown, unknown>] });
+    const feature = defineFeature({ name: "async-flag" });
+    const flag = defineFlag(feature, { rules: [rule as RuleDef<unknown, unknown>] });
     const repo = createMemoryFlagConfigRepo();
     await repo.create({ ruleId: "async-rule", config: { pct: 0.8 }, rolledBack: false });
     const service = createFlagService({ flags: [flag], repo });

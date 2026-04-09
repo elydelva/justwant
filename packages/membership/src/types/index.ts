@@ -4,14 +4,16 @@
  * Group: group reference (type + id) with member type.
  * Membership: persisted link member ↔ group.
  * MembershipsRepo: repository aligned with @justwant/db MappedTable.
- * MemberLike, GroupLike: structural interfaces for cross-package composition (no import).
+ * MemberLike, GroupLike: structural interfaces for cross-package composition.
  */
 
-/** Structural interface for identity-like definitions (UserDef, MemberDef) */
-export interface MemberLike {
-  readonly name: string;
-  (id: string): { type: string; id: string };
-}
+import type { Definable, RefLike } from "@justwant/meta";
+
+/**
+ * MemberLike — structural alias for Definable<string>.
+ * Kept as a named interface for readability and backward compatibility.
+ */
+export interface MemberLike extends Definable<string> {}
 
 /** Structural interface for group-like definitions */
 export interface GroupLike {
@@ -20,10 +22,8 @@ export interface GroupLike {
   (id: string): { type: string; id: string };
 }
 
-export interface Member<T extends string = string> {
-  type: T;
-  id: string;
-}
+/** Member — canonical member reference. Intentionally distinct from Actor. */
+export interface Member<T extends string = string> extends RefLike<T> {}
 
 export interface Group<N extends string = string> {
   type: N;

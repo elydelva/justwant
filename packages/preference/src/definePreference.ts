@@ -5,24 +5,32 @@
 
 import type { PreferenceDef } from "./types.js";
 
-export interface DefinePreferenceConfig<T = unknown> {
-  id: string;
-  /** Key for storage; defaults to id. */
+export interface DefinePreferenceConfig<N extends string = string, T = unknown> {
+  name: N;
+  /** Storage key — defaults to name. */
   key?: string;
-  /** Optional schema for value validation. */
-  schema?: PreferenceDef<T>["schema"];
-  /** Default value when not set. */
+  schema?: PreferenceDef<N, T>["schema"];
   default?: T;
 }
 
 /**
- * Define a preference. Returns a portable PreferenceDef.
+ * Define a preference. Returns a callable PreferenceDef.
+ * pref(actorId) → { type: N; id: actorId }
  */
-export function definePreference<T = unknown>(config: DefinePreferenceConfig<T>): PreferenceDef<T> {
-  return {
-    id: config.id,
-    key: config.key ?? config.id,
-    schema: config.schema,
-    default: config.default,
-  };
+export function definePreference<N extends string, T = unknown>(
+  config: DefinePreferenceConfig<N, T>
+): PreferenceDef<N, T> {
+  const { name, schema } = config;
+  const key = config.key ?? name;
+
+  const prefDef = ((actorId: string) => ({ type: name, id: actorId })) as PreferenceDef<N, T>;
+
+  Object.defineProperties(prefDef, {
+    name: { value: name, enumerable: true },
+    key: { value: key, enumerable: true },
+    schema: { value: schema, enumerable: true },
+    default: { value: config.default, enumerable: true },
+  });
+
+  return prefDef;
 }

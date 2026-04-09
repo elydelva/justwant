@@ -2,6 +2,7 @@
  * @justwant/preference — Core types
  */
 
+import type { Definable } from "@justwant/meta";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 export type { Actor } from "@justwant/actor";
@@ -18,9 +19,10 @@ export interface PreferenceEntry {
   updatedAt: Date;
 }
 
-/** Portable preference definition. */
-export interface PreferenceDef<T = unknown> {
-  readonly id: string;
+/** Portable preference definition. Callable: pref(actorId) → { type: N; id: actorId }. */
+export interface PreferenceDef<N extends string = string, T = unknown> extends Definable<N> {
+  readonly name: N;
+  /** Storage key — defaults to name. */
   readonly key: string;
   readonly schema?: StandardSchemaV1<unknown, T>;
   readonly default?: T;

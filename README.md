@@ -67,6 +67,7 @@ Small, focused packages with no inter-package dependencies. Everything else is b
 
 | Package | Role |
 |---|---|
+| [`@justwant/meta`](./packages/meta) | Type primitives. `Inspectable<N>` (named config objects), `Definable<N>` (callable factories), `RefLike<T>` (entity references) |
 | [`@justwant/db`](./packages/db) | Data Access Layer. Contracts, Drizzle, Prisma, Waddler. `defineContract()`, `AdapterError`, `createDrizzleAdapter` |
 | [`@justwant/plugin`](./packages/plugin) | Plugin system. `createPlugin()`, dependency graph, declaration merging |
 | [`@justwant/id`](./packages/id) | ID generation. `ulid()`, `uuid()`, `prefixed('key')` → `key_01J8X` |
@@ -225,7 +226,8 @@ npx justwant migrate generate --adapter drizzle  # outputs table definitions
 ```
 @justwant/
 ├── packages/
-│   ├── adapter/       # Foundation
+│   ├── meta/          # Foundation
+│   ├── adapter/
 │   ├── plugin/
 │   ├── id/
 │   ├── crypto/

@@ -25,7 +25,7 @@ const themeSchemaStandard: StandardSchemaV1<unknown, "light" | "dark" | "system"
 };
 
 const themePref = definePreference({
-  id: "theme",
+  name: "theme",
   schema: themeSchemaStandard,
   default: "system",
 });
@@ -44,7 +44,7 @@ const emailSchemaStandard: StandardSchemaV1<unknown, boolean> = {
 };
 
 const emailPref = definePreference({
-  id: "notifications.email",
+  name: "notifications.email",
   key: "notifications.email",
   schema: emailSchemaStandard,
   default: true,

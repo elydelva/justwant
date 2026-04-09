@@ -1,20 +1,24 @@
 /**
  * @justwant/flag — defineFlag
- * Flag definition with rules and strategy.
+ * Attaches evaluation rules to a FeatureDef.
  */
 
+import type { FeatureDef } from "@justwant/feature";
 import type { FlagDef, RuleDef } from "./types.js";
 
 export interface DefineFlagConfig {
-  id: string;
   default?: boolean;
   rules: RuleDef[];
   strategy?: "all" | "any";
 }
 
-export function defineFlag(config: DefineFlagConfig): FlagDef {
+export function defineFlag<N extends string>(
+  feature: FeatureDef<N>,
+  config: DefineFlagConfig
+): FlagDef<N> {
   return {
-    id: config.id,
+    feature,
+    name: feature.name,
     default: config.default,
     rules: config.rules,
     strategy: config.strategy ?? "any",

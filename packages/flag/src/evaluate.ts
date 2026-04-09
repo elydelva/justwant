@@ -10,12 +10,12 @@ export interface EvaluateParams {
   configByRuleId: Record<string, unknown>;
 }
 
-function resolveRuleId(rule: { id: string } | string): string {
-  return typeof rule === "string" ? rule : rule.id;
+function resolveRuleId(rule: { name: string } | string): string {
+  return typeof rule === "string" ? rule : rule.name;
 }
 
 function getConfigForRule(rule: RuleDef, configByRuleId: Record<string, unknown>): unknown {
-  const override = configByRuleId[rule.id];
+  const override = configByRuleId[rule.name];
   const defaultConfig = rule.defaultConfig ?? {};
   if (override == null) return defaultConfig;
   return { ...defaultConfig, ...(override as Record<string, unknown>) };

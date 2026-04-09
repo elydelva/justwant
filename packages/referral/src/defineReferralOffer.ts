@@ -5,33 +5,35 @@
 
 import type { Actor, ReferralOfferDef } from "./types.js";
 
-export interface DefineReferralOfferConfig {
-  id: string;
-  name?: string;
+export interface DefineReferralOfferConfig<N extends string = string> {
+  name: N;
   /** Params for parametrized offers (e.g. ["listId"] → offer per list). */
   params?: string[];
-  /** Optional schema for metadata validation (via @justwant/contract). */
-  schema?: unknown;
   /** Optional code generator. Default: referrerId or uuid. */
   codeGenerator?: (offerKey: string, referrer: Actor) => string | Promise<string>;
   /** Default referrer type when resolving code as referrerId (before any referral exists). */
   defaultReferrerType?: string;
 }
 
-function buildOfferKey(id: string, params?: Record<string, string>): string {
-  if (!params || Object.keys(params).length === 0) return id;
+function buildOfferKey(name: string, params?: Record<string, string>): string {
+  if (!params || Object.keys(params).length === 0) return name;
   const parts = Object.entries(params)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${k}:${v}`);
-  return `${id}:${parts.join(":")}`;
+  return `${name}:${parts.join(":")}`;
 }
 
 /**
- * Define a referral offer. The definition is portable between processes.
- * If params are provided, the returned def is callable: offer({ listId: "beta" }) → "waitlist_beta:listId:beta"
+ * Define a referral offer. Extends Definable<N>.
+ * offer(refId) → { type: N; id: refId }
+ * offer.key(params?) → resolves offerKey string
  */
-export function defineReferralOffer(config: DefineReferralOfferConfig): ReferralOfferDef {
-  const { id, name, params, codeGenerator, defaultReferrerType } = config;
+export function defineReferralOffer<N extends string>(
+  config: DefineReferralOfferConfig<N>
+): ReferralOfferDef<N> {
+  const { name, params, codeGenerator, defaultReferrerType } = config;
+
+  const offerDef = ((refId: string) => ({ type: name, id: refId })) as ReferralOfferDef<N>;
 
   const keyFn = (offerParams?: Record<string, string>): string => {
     if (params?.length && offerParams) {
@@ -39,16 +41,18 @@ export function defineReferralOffer(config: DefineReferralOfferConfig): Referral
       for (const p of params) {
         if (offerParams[p] != null) filtered[p] = String(offerParams[p]);
       }
-      return buildOfferKey(id, filtered);
+      return buildOfferKey(name, filtered);
     }
-    return id;
+    return name;
   };
 
-  const props = { id, name, params, codeGenerator, defaultReferrerType };
-  return new Proxy(keyFn, {
-    get(_target, prop) {
-      if (prop in props) return (props as Record<string | symbol, unknown>)[prop];
-      return Reflect.get(keyFn as object, prop);
-    },
-  }) as ReferralOfferDef;
+  Object.defineProperties(offerDef, {
+    name: { value: name, enumerable: true },
+    params: { value: params, enumerable: true },
+    codeGenerator: { value: codeGenerator, enumerable: true },
+    defaultReferrerType: { value: defaultReferrerType, enumerable: true },
+    key: { value: keyFn, enumerable: false },
+  });
+
+  return offerDef;
 }

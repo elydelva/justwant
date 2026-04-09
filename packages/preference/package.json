@@ -42,7 +42,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@justwant/actor": "workspace:*"
+    "@justwant/actor": "workspace:*",
+    "@justwant/meta": "workspace:*"
   },
   "peerDependencies": {
     "@standard-schema/spec": "^1.0.0"

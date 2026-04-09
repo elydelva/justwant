@@ -3,11 +3,13 @@
  * Canonical Actor identity. Agnostic of domain (org, team, workspace).
  */
 
-/** Structural interface for composition (UserDef, LockOwnerDef, etc.) */
-export interface IdentityLike {
-  readonly name: string;
-  (id: string): { type: string; id: string };
-}
+import type { Definable, RefLike } from "@justwant/meta";
+
+/**
+ * IdentityLike — structural alias for Definable<string>.
+ * Kept for backward compatibility with existing consumers.
+ */
+export interface IdentityLike extends Definable<string> {}
 
 /** Optional locality — "within" which entity this actor is acting. Agnostic. */
 export interface ActorWithin {
@@ -16,8 +18,6 @@ export interface ActorWithin {
 }
 
 /** Actor — canonical identity. within optional for scoped contexts. */
-export interface Actor<T extends string = string> {
-  type: T;
-  id: string;
+export interface Actor<T extends string = string> extends RefLike<T> {
   within?: ActorWithin;
 }

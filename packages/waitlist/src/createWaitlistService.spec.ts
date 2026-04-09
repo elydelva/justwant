@@ -8,7 +8,7 @@ import { AlreadySubscribedError, NotSubscribedError } from "./errors.js";
 describe("createWaitlistService", () => {
   const repo = createMemoryWaitlistAdapter();
   const service = createWaitlistService({ repo });
-  const list = defineList({ id: "beta" })();
+  const list = defineList({ name: "beta" });
 
   test("subscribes and checks", async () => {
     await service.subscribe(list, { type: "user", id: "u1" });
@@ -43,7 +43,7 @@ describe("createWaitlistService", () => {
   });
 
   test("returns position", async () => {
-    const list2 = defineList({ id: "pos-test" })();
+    const list2 = defineList({ name: "pos-test" });
     await service.subscribe(list2, { type: "user", id: "p1" });
     await service.subscribe(list2, { type: "user", id: "p2" });
     await service.subscribe(list2, { type: "user", id: "p3" });
@@ -52,7 +52,7 @@ describe("createWaitlistService", () => {
   });
 
   test("pops FIFO", async () => {
-    const list3 = defineList({ id: "fifo-test" })();
+    const list3 = defineList({ name: "fifo-test" });
     await service.subscribe(list3, { type: "user", id: "f1" });
     await service.subscribe(list3, { type: "user", id: "f2" });
     const first = await service.pop(list3);
@@ -64,14 +64,14 @@ describe("createWaitlistService", () => {
   });
 
   test("invite subscribes with referredBy", async () => {
-    const list4 = defineList({ id: "invite-test" })();
+    const list4 = defineList({ name: "invite-test" });
     await service.invite(list4, { type: "user", id: "inviter" }, { type: "user", id: "invitee" });
     const entry = (await service.listSubscribers(list4))[0];
     expect(entry?.metadata?.referredBy).toBe("user:inviter");
   });
 
   test("listSubscribers with pagination and orderBy", async () => {
-    const list5 = defineList({ id: "list-test" })();
+    const list5 = defineList({ name: "list-test" });
     await service.subscribe(list5, { type: "user", id: "a1" });
     await service.subscribe(list5, { type: "user", id: "a2" });
     await service.subscribe(list5, { type: "user", id: "a3" });
@@ -83,14 +83,14 @@ describe("createWaitlistService", () => {
   });
 
   test("subscribe with metadata", async () => {
-    const list6 = defineList({ id: "meta-test" })();
+    const list6 = defineList({ name: "meta-test" });
     await service.subscribe(list6, { type: "user", id: "m1" }, { metadata: { source: "landing" } });
     const entry = (await service.listSubscribers(list6))[0];
     expect(entry?.metadata?.source).toBe("landing");
   });
 
   test("subscribe with priority and expiresAt", async () => {
-    const list7 = defineList({ id: "opts-test" })();
+    const list7 = defineList({ name: "opts-test" });
     const future = new Date(Date.now() + 86400000);
     await service.subscribe(
       list7,
@@ -106,7 +106,7 @@ describe("createWaitlistService", () => {
   });
 
   test("Actor with within org", async () => {
-    const list8 = defineList({ id: "org-test" })();
+    const list8 = defineList({ name: "org-test" });
     await service.subscribe(list8, {
       type: "user",
       id: "x1",
@@ -129,7 +129,7 @@ describe("createWaitlistService", () => {
   });
 
   test("subscribeMany ignores AlreadySubscribed", async () => {
-    const list9 = defineList({ id: "bulk-sub" })();
+    const list9 = defineList({ name: "bulk-sub" });
     await service.subscribe(list9, { type: "user", id: "b1" });
     const results = await service.subscribeMany(list9, [
       { type: "user", id: "b1" },
@@ -140,7 +140,7 @@ describe("createWaitlistService", () => {
   });
 
   test("unsubscribeMany ignores NotSubscribed", async () => {
-    const list10 = defineList({ id: "bulk-unsub" })();
+    const list10 = defineList({ name: "bulk-unsub" });
     await service.subscribe(list10, { type: "user", id: "c1" });
     await service.unsubscribeMany(list10, [
       { type: "user", id: "nonexistent" },
@@ -151,7 +151,7 @@ describe("createWaitlistService", () => {
 
   test("validates metadata with schema", async () => {
     const schema = v.object({ source: v.string() });
-    const list11 = defineList({ id: "schema-valid", schema })();
+    const list11 = defineList({ name: "schema-valid", schema });
     await service.subscribe(
       list11,
       { type: "user", id: "v1" },
@@ -165,7 +165,7 @@ describe("createWaitlistService", () => {
 
   test("validates metadata with schema when valid", async () => {
     const schema = v.object({ count: v.number() });
-    const list12 = defineList({ id: "schema-valid-2", schema })();
+    const list12 = defineList({ name: "schema-valid-2", schema });
     await service.subscribe(
       list12,
       { type: "user", id: "v3" },
@@ -178,7 +178,7 @@ describe("createWaitlistService", () => {
   });
 
   test("invite calls referralService.refer when provided", async () => {
-    const list13 = defineList({ id: "referral-test" })();
+    const list13 = defineList({ name: "referral-test" });
     const referCalls: Array<{ offer: string; referrer: unknown; recipient: unknown }> = [];
     const serviceWithReferral = createWaitlistService({
       repo,
@@ -200,7 +200,7 @@ describe("createWaitlistService", () => {
   });
 
   test("invite uses offerKeyForList when provided", async () => {
-    const list14 = defineList({ id: "offer-key-test" })();
+    const list14 = defineList({ name: "offer-key-test" });
     let capturedOffer = "";
     const serviceWithOfferKey = createWaitlistService({
       repo,

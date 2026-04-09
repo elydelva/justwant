@@ -80,54 +80,59 @@ function validatePayload<T>(
   return value as T;
 }
 
-export interface DefineJobConfig<T = unknown> {
-  id: string;
+export interface DefineJobConfig<N extends string = string, T = unknown> {
+  name: N;
   schema?: StandardSchemaV1<unknown, T>;
   defaults?: JobDefaults;
 }
 
 /** Infer payload type from job definition. */
-export type InferJobPayload<J> = J extends JobDefinition<infer T> ? T : never;
+export type InferJobPayload<J> = J extends JobDefinition<string, infer T> ? T : never;
 
 /**
  * Define work (handler + schema). No cron/queue — use defineQueue for execution params.
- * Portable between processes. Use job.handle(fn) to create a handler with .run(payload).
+ * Extends Definable<N>: job(instanceId) → { type: N; id: instanceId }.
+ * Use job.handle(fn) to create a handler with .run(payload).
  */
-export function defineJob<T = unknown>(
-  config: DefineJobConfig<T>
-): JobDefinition<T> & { handle(fn: JobHandlerFn<T>): JobHandler<T> } {
-  const definition: JobDefinition<T> = {
-    id: config.id,
-    schema: config.schema,
-    defaults: config.defaults,
+export function defineJob<N extends string, T = unknown>(
+  config: DefineJobConfig<N, T>
+): JobDefinition<N, T> & { handle(fn: JobHandlerFn<T>): JobHandler<T> } {
+  const { name, schema, defaults } = config;
+
+  const jobDef = ((instanceId: string) => ({ type: name, id: instanceId })) as JobDefinition<
+    N,
+    T
+  > & {
+    handle(fn: JobHandlerFn<T>): JobHandler<T>;
   };
 
-  const jobWithHandle = {
-    ...definition,
+  const handleFn = (fn: JobHandlerFn<T>): JobHandler<T> => {
+    const handler: JobHandler<T> = {
+      async run(payload: T): Promise<void> {
+        const data = schema ? validatePayload(schema, payload, name) : (payload ?? ({} as T));
 
-    handle(fn: JobHandlerFn<T>): JobHandler<T> {
-      const handler: JobHandler<T> = {
-        async run(payload: T): Promise<void> {
-          const data = definition.schema
-            ? validatePayload(definition.schema, payload, definition.id)
-            : (payload ?? ({} as T));
+        const ctx: JobHandlerContext<T> = {
+          data,
+          job: {
+            name,
+            runCount: 1,
+            startedAt: new Date(),
+          },
+          logger: defaultLogger,
+        };
 
-          const ctx: JobHandlerContext<T> = {
-            data,
-            job: {
-              id: definition.id,
-              runCount: 1,
-              startedAt: new Date(),
-            },
-            logger: defaultLogger,
-          };
-
-          await fn(ctx);
-        },
-      };
-      return handler;
-    },
+        await fn(ctx);
+      },
+    };
+    return handler;
   };
 
-  return jobWithHandle;
+  Object.defineProperties(jobDef, {
+    name: { value: name, enumerable: true },
+    schema: { value: schema, enumerable: true },
+    defaults: { value: defaults, enumerable: true },
+    handle: { value: handleFn, enumerable: false },
+  });
+
+  return jobDef;
 }
