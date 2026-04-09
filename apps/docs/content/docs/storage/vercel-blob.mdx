@@ -1,0 +1,57 @@
+---
+title: Vercel Blob Adapter
+description: Use Vercel Blob as your storage backend for Vercel-hosted applications.
+icon: Triangle
+---
+
+## Overview
+
+The Vercel Blob adapter uses `@vercel/blob` to store files in Vercel Blob storage. It is best suited for applications deployed on Vercel.
+
+## Install peer dependencies
+
+```bash
+bun add @vercel/blob
+```
+
+## Import
+
+```ts
+import { defineVercelBlobSource } from "@justwant/storage/vercel-blob";
+```
+
+## Setup
+
+```ts title="lib/storage.ts"
+import { defineVercelBlobSource } from "@justwant/storage/vercel-blob";
+import { defineBucket, createStorageService } from "@justwant/storage";
+
+const source = defineVercelBlobSource({
+  token: process.env.BLOB_READ_WRITE_TOKEN,
+});
+
+const bucket = defineBucket({ source, name: "uploads" });
+
+export const storage = createStorageService({
+  buckets: [bucket],
+  defaultBucket: bucket,
+});
+```
+
+## Configuration
+
+### `DefineVercelBlobSourceConfig`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `token` | `string` | No | Blob read/write token. Falls back to `BLOB_READ_WRITE_TOKEN` env var |
+
+## Environment variables
+
+```bash title=".env"
+BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
+```
+
+Vercel automatically injects this variable when you add a Blob store in the Vercel dashboard.
+
+**Note**: The `name` passed to `defineBucket` becomes a path prefix for all files in this source. Files will be stored at `<name>/<path>` in Vercel Blob.

@@ -1,0 +1,72 @@
+---
+title: R2 Adapter
+description: Use Cloudflare R2 as your storage backend — S3-compatible, no egress fees.
+icon: CloudLightning
+---
+
+## Overview
+
+The R2 adapter connects to Cloudflare R2 using the S3-compatible API. R2 has no egress fees between R2 and Cloudflare compute (Workers, Pages), making it well-suited for Cloudflare deployments.
+
+Internally, `defineR2Source` wraps `defineS3Source` with the Cloudflare endpoint.
+
+## Install peer dependencies
+
+```bash
+bun add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+```
+
+## Import
+
+```ts
+import { defineR2Source } from "@justwant/storage/r2";
+```
+
+## Setup
+
+```ts title="lib/storage.ts"
+import { defineR2Source } from "@justwant/storage/r2";
+import { defineBucket, createStorageService } from "@justwant/storage";
+
+const source = defineR2Source({
+  accountId: process.env.CLOUDFLARE_ACCOUNT_ID!,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
+
+const bucket = defineBucket({ source, name: "my-r2-bucket" });
+
+export const storage = createStorageService({
+  buckets: [bucket],
+  defaultBucket: bucket,
+});
+```
+
+## Configuration
+
+### `DefineR2SourceConfig`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `accountId` | `string` | Yes | Your Cloudflare account ID |
+| `credentials.accessKeyId` | `string` | Yes | R2 API token access key |
+| `credentials.secretAccessKey` | `string` | Yes | R2 API token secret |
+| `endpoint` | `string` | No | Override endpoint (for testing, e.g. MinIO) |
+
+The endpoint defaults to `https://<accountId>.r2.cloudflarestorage.com`.
+
+## Getting R2 credentials
+
+1. Go to the [Cloudflare Dashboard](https://dash.cloudflare.com) → R2 → Manage R2 API Tokens.
+2. Create an API token with **Object Read & Write** permissions for your bucket.
+3. Copy the **Access Key ID** and **Secret Access Key**.
+
+## Environment variables
+
+```bash title=".env"
+CLOUDFLARE_ACCOUNT_ID=abc123
+R2_ACCESS_KEY_ID=your-r2-access-key
+R2_SECRET_ACCESS_KEY=your-r2-secret
+```

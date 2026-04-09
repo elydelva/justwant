@@ -1,0 +1,141 @@
+---
+title: Plugins
+description: Extend storage behavior with the plugin pipeline — encryption, renaming, watermarks, and more.
+icon: Puzzle
+---
+
+## What are plugins?
+
+Plugins are middleware that wrap the storage operations. They intercept `upload`, `download`, `delete`, `getUrl`, and `getSignedUrl` before they reach the adapter.
+
+```ts
+export const storage = createStorageService({
+  buckets: [bucket],
+  plugins: [renamePlugin({ strategy: "uuid" }), encryptionPlugin({ key })],
+});
+```
+
+Plugins are applied in order. Each one calls `next(params)` to pass control to the next plugin or, ultimately, the adapter.
+
+## Available plugins
+
+| Plugin | Subpath | Description |
+|--------|---------|-------------|
+| Encryption | `/plugins/encryption` | AES-256-GCM encrypt on upload, decrypt on download |
+| Rename | `/plugins/rename` | Sanitize paths and apply naming strategies |
+| Watermark | `/plugins/watermark` | Append transform params to image URLs |
+| Multi-bucket | `/plugins/multiBucket` | Route uploads across multiple buckets |
+| Image transform | `/plugins/imageTransform` | Resize and convert images via `sharp` |
+| Signed URL | `/plugins/signedUrl` | Override URL generation with signed URLs |
+
+## Encryption plugin
+
+Encrypts every file with AES-256-GCM on upload and decrypts transparently on download. The key is derived from a string password using `scrypt`.
+
+```ts
+import { encryptionPlugin } from "@justwant/storage/plugins/encryption";
+
+export const storage = createStorageService({
+  buckets: [bucket],
+  plugins: [
+    encryptionPlugin({ key: process.env.STORAGE_ENCRYPTION_KEY! }),
+  ],
+});
+```
+
+Pass a `Buffer` key if you want to derive it with `@justwant/crypto/derive-key` for consistent key management across your app.
+
+## Rename plugin
+
+Sanitizes file paths and applies a naming strategy.
+
+```ts
+import { renamePlugin } from "@justwant/storage/plugins/rename";
+
+// Sanitize only (remove unsafe characters)
+plugins: [renamePlugin({ sanitize: true })]
+
+// UUID filenames (avoids collisions and PII in paths)
+plugins: [renamePlugin({ strategy: "uuid" })]
+
+// SHA-256 hash of file content (content-addressed storage)
+plugins: [renamePlugin({ strategy: "hash" })]
+
+// Slug (lowercase, hyphens)
+plugins: [renamePlugin({ strategy: "slug" })]
+```
+
+### Strategies
+
+| Strategy | Output | Use case |
+|----------|--------|----------|
+| `"uuid"` | `<uuid>.ext` | Collision-free uploads |
+| `"hash"` | `<sha256>.ext` | Content-addressed, deduplication |
+| `"slug"` | `kebab-case-name.ext` | Human-readable public URLs |
+
+## Watermark plugin
+
+Appends image transformation parameters to URLs for Cloudflare Images or imgproxy.
+
+```ts
+import { watermarkPlugin } from "@justwant/storage/plugins/watermark";
+
+plugins: [
+  watermarkPlugin({
+    provider: "cloudflare",
+    cloudflare: { width: 800, quality: 80, fit: "cover" },
+  }),
+]
+```
+
+Only applies to image paths (`.jpg`, `.png`, `.webp`, `.avif`, etc.).
+
+## Image transform plugin
+
+Resizes, converts, and processes images using `sharp` before upload.
+
+```ts
+import { imageTransformPlugin } from "@justwant/storage/plugins/imageTransform";
+
+plugins: [
+  imageTransformPlugin({
+    width: 1200,
+    format: "webp",
+    quality: 85,
+  }),
+]
+```
+
+Requires `sharp` to be installed: `bun add sharp`.
+
+## Multi-bucket plugin
+
+Routes uploads to different buckets based on custom logic.
+
+```ts
+import { multiBucketPlugin } from "@justwant/storage/plugins/multiBucket";
+
+plugins: [
+  multiBucketPlugin({
+    buckets: [imagesBucket, documentsBucket],
+    route: (params) => {
+      if (params.options?.contentType?.startsWith("image/")) return imagesBucket;
+      return documentsBucket;
+    },
+  }),
+]
+```
+
+## Composing plugins
+
+Plugins compose in order — the first plugin in the array wraps the second, and so on.
+
+```ts
+plugins: [
+  renamePlugin({ strategy: "uuid" }),   // 1. rename path
+  encryptionPlugin({ key }),             // 2. encrypt content
+]
+```
+
+For uploads: rename runs first, then encryption, then the adapter.
+For downloads: encryption decrypts on the way back up.

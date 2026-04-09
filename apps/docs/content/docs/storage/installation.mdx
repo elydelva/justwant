@@ -1,0 +1,77 @@
+---
+title: Installation
+description: Install @justwant/storage and the peer dependencies for your chosen adapter.
+icon: Download
+---
+
+## Install the package
+
+```bash
+bun add @justwant/storage
+```
+
+## Install adapter peer dependencies
+
+Each adapter requires its own peer dependencies. Install only what you need.
+
+<CodeBlockTabs defaultValue="local">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="local">Local (dev)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="s3">AWS S3</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="r2">Cloudflare R2</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="vercel-blob">Vercel Blob</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="supabase">Supabase</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="local">
+
+```bash
+bun add @justwant/storage
+```
+
+No extra dependencies needed. The local adapter uses the Node.js `fs` module.
+
+  </CodeBlockTab>
+  <CodeBlockTab value="s3">
+
+```bash
+bun add @justwant/storage @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="r2">
+
+```bash
+bun add @justwant/storage @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+```
+
+R2 uses the S3-compatible API, so the same AWS SDK packages are required.
+
+  </CodeBlockTab>
+  <CodeBlockTab value="vercel-blob">
+
+```bash
+bun add @justwant/storage @vercel/blob
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="supabase">
+
+```bash
+bun add @justwant/storage @supabase/supabase-js
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Image transform plugin (optional)
+
+If you use the `imageTransform` plugin, install `sharp`:
+
+```bash
+bun add sharp
+```
+
+## Next steps
+
+- [Basic Usage](/docs/storage/basic-usage) — Define buckets and create a service
+- [Adapters](/docs/storage/adapters) — Choose the right adapter for your environment
