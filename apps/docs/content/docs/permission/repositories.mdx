@@ -1,0 +1,128 @@
+---
+title: Repositories
+description: PermissionRepository, AssignmentsRepo, and OverridesRepo interfaces — and a minimal in-memory implementation.
+icon: Database
+---
+
+## Overview
+
+The permission service is data-agnostic. It reads and writes through two repository interfaces:
+
+- `AssignmentsRepo` — stores role assignments per actor+scope
+- `OverridesRepo` — stores per-actor grant/deny overrides
+
+Implement these interfaces against any database (Postgres, SQLite, Redis, etc.).
+
+## `PermissionRepository<T>` interface
+
+Both repos extend this generic interface:
+
+```ts
+interface PermissionRepository<T extends { id: string }> {
+  findById(id: string): Promise<T | null>;
+  findOne(where: Partial<T>): Promise<T | null>;
+  findMany(where: Partial<T>): Promise<T[]>;
+  create(data: CreateInput<T>): Promise<T>;
+  update(id: string, data: Partial<T>): Promise<T>;
+  delete(id: string): Promise<void>;
+}
+```
+
+## `AssignmentsRepo`
+
+```ts
+interface AssignmentsRepo extends PermissionRepository<Assignment> {}
+```
+
+The `Assignment` entity:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier |
+| `actorType` | `string` | Actor type name |
+| `actorId` | `string` | Actor instance ID |
+| `role` | `string` | Role name |
+| `scopeType` | `string` | Scope type name |
+| `scopeId` | `string \| null` | Scope instance ID |
+| `createdAt` | `Date` | Creation timestamp |
+| `updatedAt` | `Date` | Update timestamp |
+
+## `OverridesRepo`
+
+```ts
+interface OverridesRepo extends PermissionRepository<Override> {}
+```
+
+The `Override` entity:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier |
+| `type` | `"grant" \| "deny"` | Override type |
+| `actorType` | `string` | Actor type name |
+| `actorId` | `string` | Actor instance ID |
+| `permission` | `string` | Permission name |
+| `scopeType` | `string` | Scope type name |
+| `scopeId` | `string \| null` | Scope instance ID |
+| `resourceType` | `string` | Optional resource type |
+| `resourceId` | `string` | Optional resource ID |
+| `grantedBy` | `string` | Optional auditing field |
+| `deniedBy` | `string` | Optional auditing field |
+
+## Minimal in-memory implementation
+
+Use this for tests or development. Replace with a real database adapter in production.
+
+```ts title="lib/permission/repos.ts"
+import type { AssignmentsRepo, OverridesRepo, Assignment, Override, CreateInput } from "@justwant/permission";
+import { randomUUID } from "node:crypto";
+
+function createMemoryRepo<T extends { id: string }>(): {
+  findById: (id: string) => Promise<T | null>;
+  findOne: (where: Partial<T>) => Promise<T | null>;
+  findMany: (where: Partial<T>) => Promise<T[]>;
+  create: (data: CreateInput<T>) => Promise<T>;
+  update: (id: string, data: Partial<T>) => Promise<T>;
+  delete: (id: string) => Promise<void>;
+} {
+  const store: T[] = [];
+
+  function matches(item: T, where: Partial<T>): boolean {
+    return Object.entries(where).every(
+      ([k, v]) => (item as Record<string, unknown>)[k] === v
+    );
+  }
+
+  return {
+    async findById(id) {
+      return store.find((i) => i.id === id) ?? null;
+    },
+    async findOne(where) {
+      return store.find((i) => matches(i, where)) ?? null;
+    },
+    async findMany(where) {
+      return store.filter((i) => matches(i, where));
+    },
+    async create(data) {
+      const item = { ...data, id: randomUUID(), createdAt: new Date(), updatedAt: new Date() } as T;
+      store.push(item);
+      return item;
+    },
+    async update(id, data) {
+      const idx = store.findIndex((i) => i.id === id);
+      if (idx === -1) throw new Error(`Not found: ${id}`);
+      store[idx] = { ...store[idx]!, ...data, updatedAt: new Date() };
+      return store[idx]!;
+    },
+    async delete(id) {
+      const idx = store.findIndex((i) => i.id === id);
+      if (idx !== -1) store.splice(idx, 1);
+    },
+  };
+}
+
+export const assignmentsRepo: AssignmentsRepo = createMemoryRepo<Assignment>();
+export const overridesRepo: OverridesRepo = createMemoryRepo<Override>();
+```
+
+**Note**: This implementation is not suitable for production — it has no persistence and no concurrency safety.

@@ -1,0 +1,21 @@
+{
+  "title": "Permission",
+  "icon": "ShieldCheck",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "scopes",
+    "actors",
+    "roles",
+    "realms",
+    "permissions",
+    "---Repositories---",
+    "repositories",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

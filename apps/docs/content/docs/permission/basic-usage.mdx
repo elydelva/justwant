@@ -1,0 +1,144 @@
+---
+title: Basic Usage
+description: Full example — defineScope, defineActor, defineAtomicPermission, defineRole, defineRealm, then can/assert/assign/hasRole.
+icon: Play
+---
+
+## Full example
+
+This walkthrough models a document management system with an organization scope and two roles: `viewer` and `editor`.
+
+### 1. Define the model
+
+```ts title="lib/permission/model.ts"
+import {
+  defineScope,
+  defineActor,
+  defineAtomicPermission,
+  defineRole,
+  defineRealm,
+} from "@justwant/permission";
+
+// Scopes
+export const orgScope = defineScope({ name: "organization" });
+
+// Actors
+export const userActor = defineActor({ name: "user" });
+
+// Permissions
+export const readDoc = defineAtomicPermission({ name: "document:read" });
+export const writeDoc = defineAtomicPermission({ name: "document:write" });
+export const deleteDoc = defineAtomicPermission({ name: "document:delete" });
+export const manageBilling = defineAtomicPermission({ name: "billing:manage" });
+
+// Roles
+export const viewerRole = defineRole({
+  name: "viewer",
+  permissions: [readDoc],
+});
+
+export const editorRole = defineRole({
+  name: "editor",
+  permissions: [readDoc, writeDoc, deleteDoc],
+});
+
+export const adminRole = defineRole({
+  name: "admin",
+  permissions: [readDoc, writeDoc, deleteDoc, manageBilling],
+});
+
+// Realm
+export const orgRealm = defineRealm({
+  name: "organization",
+  scope: orgScope,
+  actors: [userActor],
+  permissions: [readDoc, writeDoc, deleteDoc, manageBilling],
+  roles: [viewerRole, editorRole, adminRole],
+});
+```
+
+### 2. Create the service
+
+```ts title="lib/permission/service.ts"
+import { createPermissionService } from "@justwant/permission";
+import { orgRealm } from "./model";
+import { assignmentsRepo, overridesRepo } from "./repos";
+
+export const permission = createPermissionService({
+  repos: { assignments: assignmentsRepo, overrides: overridesRepo },
+  realms: [orgRealm],
+});
+```
+
+### 3. Assign a role
+
+```ts
+import { permission } from "@/lib/permission/service";
+import { userActor, orgScope, editorRole } from "@/lib/permission/model";
+
+const actor = { type: "user", id: "user_123" };
+const scope = orgScope("org_abc");
+
+await permission.assign({ actor, role: editorRole, scope });
+```
+
+### 4. Check permissions
+
+```ts
+import { readDoc, writeDoc, manageBilling } from "@/lib/permission/model";
+
+const actor = { type: "user", id: "user_123" };
+const scope = orgScope("org_abc");
+
+await permission.can({ actor, action: readDoc, scope });    // true
+await permission.can({ actor, action: writeDoc, scope });   // true
+await permission.can({ actor, action: manageBilling, scope }); // false
+```
+
+### 5. Assert (throws on denial)
+
+```ts
+import { PermissionDeniedError } from "@justwant/permission";
+
+try {
+  await permission.assert({ actor, action: manageBilling, scope });
+} catch (err) {
+  if (err instanceof PermissionDeniedError) {
+    // 403
+  }
+}
+```
+
+### 6. Check role membership
+
+```ts
+const isEditor = await permission.hasRole({ actor, role: editorRole, scope });
+console.log(isEditor); // true
+```
+
+### 7. Grant / deny overrides
+
+Override permissions at the individual actor level, bypassing role assignments:
+
+```ts
+// Grant billing access to one specific user
+await permission.grant({ actor, action: manageBilling, scope });
+
+await permission.can({ actor, action: manageBilling, scope }); // true
+
+// Explicitly deny a permission (wins over grants)
+await permission.deny({ actor, action: writeDoc, scope });
+await permission.can({ actor, action: writeDoc, scope }); // false
+
+// Revoke overrides
+await permission.revokeGrant({ actor, action: manageBilling, scope });
+await permission.revokeDeny({ actor, action: writeDoc, scope });
+```
+
+### 8. Explain a permission decision
+
+```ts
+const result = await permission.explain({ actor, action: readDoc, scope });
+// { result: true, reason: "role", role: "editor" }
+// reason: "grant" | "deny" | "role" | undefined
+```

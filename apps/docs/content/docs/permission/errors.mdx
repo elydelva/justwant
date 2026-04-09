@@ -1,0 +1,102 @@
+---
+title: Errors
+description: PermissionError, PermissionDeniedError, and CeilingViolationError.
+icon: AlertTriangle
+---
+
+## Error hierarchy
+
+```
+Error
+└── PermissionError
+    ├── PermissionDeniedError
+    └── CeilingViolationError
+```
+
+## `PermissionError`
+
+Base class for all permission errors.
+
+```ts
+import { PermissionError } from "@justwant/permission";
+
+class PermissionError extends Error {
+  name: "PermissionError";
+}
+```
+
+## `PermissionDeniedError`
+
+Thrown by `assert()` when the actor does not have the requested permission.
+
+```ts
+import { PermissionDeniedError } from "@justwant/permission";
+
+class PermissionDeniedError extends PermissionError {
+  name: "PermissionDeniedError";
+  readonly actorId?: string;
+  readonly permission?: string;
+  readonly scopeId?: string;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `actorId` | `string \| undefined` | The actor that was denied |
+| `permission` | `string \| undefined` | The permission that was denied |
+| `scopeId` | `string \| undefined` | The scope where the denial occurred |
+
+### Handling
+
+```ts
+import { PermissionDeniedError } from "@justwant/permission";
+
+try {
+  await service.assert({
+    actor: { type: "user", id: "user_123" },
+    action: manageBilling,
+    scope: orgScope("org_abc"),
+  });
+} catch (err) {
+  if (err instanceof PermissionDeniedError) {
+    // Respond with 403
+    console.error(err.actorId);   // "user_123"
+    console.error(err.permission); // "billing:manage"
+    console.error(err.scopeId);    // "org_abc"
+  }
+}
+```
+
+## `CeilingViolationError`
+
+Thrown when a role assignment or override would exceed a realm's permission ceiling.
+
+```ts
+import { CeilingViolationError } from "@justwant/permission";
+
+class CeilingViolationError extends PermissionError {
+  name: "CeilingViolationError";
+  readonly requiredRole?: string;
+  readonly actorRole?: string;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `requiredRole` | `string \| undefined` | The ceiling role required |
+| `actorRole` | `string \| undefined` | The actor's actual role |
+
+### Handling
+
+```ts
+import { CeilingViolationError } from "@justwant/permission";
+
+try {
+  await service.assign({ actor, role: adminRole, scope });
+} catch (err) {
+  if (err instanceof CeilingViolationError) {
+    console.error(err.requiredRole); // e.g. "owner"
+    console.error(err.actorRole);    // e.g. "editor"
+  }
+}
+```

@@ -1,0 +1,91 @@
+---
+title: Realms
+description: defineRealm — compose a scope, actors, permissions, and roles into a single model unit.
+icon: Globe
+---
+
+## Overview
+
+A realm is the top-level composition unit. It binds a scope to a set of actors, permissions, and roles. The service maps each realm by its scope name and uses it to resolve permissions at runtime.
+
+Think of a realm as the complete permission schema for one scope type.
+
+## `defineRealm`
+
+```ts
+import { defineRealm } from "@justwant/permission";
+
+const orgRealm = defineRealm({
+  name: "organization",
+  scope: orgScope,
+  actors: [userActor, serviceActor],
+  resources: [documentResource], // optional
+  permissions: [readDoc, writeDoc, deleteDoc, manageBilling],
+  roles: [viewerRole, editorRole, adminRole],
+});
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Realm identifier. Conventionally matches `scope.name`. |
+| `scope` | `ScopeDef` | Yes | The scope this realm governs |
+| `actors` | `IdentityLike[]` | Yes | Actor types that operate in this realm |
+| `resources` | `ReferenceLike[]` | No | Resource types subject to permissions (default: `[]`) |
+| `permissions` | `AtomicPermission[]` | Yes | All permissions available in this realm |
+| `roles` | `RoleDef[]` | Yes | All roles available in this realm |
+
+## Internals
+
+`defineRealm` pre-builds two lookup maps for the service:
+
+```ts
+realm.roleByName       // Map<string, RoleDef>
+realm.permissionByName // Map<string, AtomicPermission>
+```
+
+## Multiple realms
+
+Register multiple realms in one service — one per scope type:
+
+```ts
+const projectRealm = defineRealm({
+  name: "project",
+  scope: projectScope,
+  actors: [userActor],
+  permissions: [readDoc, writeDoc],
+  roles: [viewerRole, editorRole],
+});
+
+const permissionService = createPermissionService({
+  repos: { assignments: assignmentsRepo, overrides: overridesRepo },
+  realms: [orgRealm, projectRealm],
+});
+```
+
+**Important**: Each realm must have a unique `scope.name`. The service throws if two realms share the same scope name.
+
+## Realm lookup at runtime
+
+Use `service.realm({ name })` to retrieve a realm definition at runtime:
+
+```ts
+const realm = permissionService.realm({ name: "organization" });
+// Returns the RealmDef for the "organization" scope, or undefined
+```
+
+## `RealmDef` type
+
+```ts
+interface RealmDef<N extends string> {
+  readonly name: N;
+  readonly scope: ScopeLike;
+  readonly actors: readonly IdentityLike[];
+  readonly resources: readonly ReferenceLike[];
+  readonly permissions: readonly AtomicPermission[];
+  readonly roles: readonly RoleDef[];
+  readonly roleByName: Map<string, RoleDef>;
+  readonly permissionByName: Map<string, AtomicPermission>;
+}
+```

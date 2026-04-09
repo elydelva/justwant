@@ -1,0 +1,98 @@
+---
+title: Permissions
+description: defineAtomicPermission — define atomic action strings and attach them to roles.
+icon: Key
+---
+
+## Overview
+
+An atomic permission represents a single action. Permission names are free-form strings — the convention is `resource:action` (e.g. `"document:read"`, `"billing:manage"`).
+
+## `defineAtomicPermission`
+
+```ts
+import { defineAtomicPermission } from "@justwant/permission";
+
+const readDoc = defineAtomicPermission({ name: "document:read" });
+const writeDoc = defineAtomicPermission({ name: "document:write" });
+const manageBilling = defineAtomicPermission({ name: "billing:manage" });
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Full permission string, e.g. `"document:read"` |
+| `resource` | `ReferenceLike` | No | Optional resource type this permission applies to |
+
+## Linking to a resource
+
+When a permission is resource-scoped, pass a `resource` to `defineAtomicPermission`. You can also pass a `resource` instance to service methods for more granular checks:
+
+```ts
+import { defineResource } from "@justwant/permission";
+
+const documentResource = defineResource({ name: "document" });
+
+const readDoc = defineAtomicPermission({
+  name: "document:read",
+  resource: documentResource,
+});
+```
+
+Then check with a specific resource instance:
+
+```ts
+await service.can({
+  actor,
+  action: readDoc,
+  scope: orgScope("org_abc"),
+  resource: { type: "document", id: "doc_xyz" },
+});
+```
+
+## `AtomicPermission` type
+
+```ts
+interface AtomicPermission<N extends string> {
+  readonly name: N;
+  readonly resource?: ReferenceLike;
+}
+```
+
+## Naming conventions
+
+Use `resource:action` as a convention for clarity and to avoid collisions:
+
+| Permission | Meaning |
+|------------|---------|
+| `document:read` | Read documents |
+| `document:write` | Create or update documents |
+| `document:delete` | Delete documents |
+| `billing:view` | View billing information |
+| `billing:manage` | Manage subscriptions and payments |
+| `users:invite` | Invite new users |
+| `users:remove` | Remove users |
+
+## Attaching permissions to roles
+
+Pass permission objects to `defineRole`:
+
+```ts
+const editorRole = defineRole({
+  name: "editor",
+  permissions: [readDoc, writeDoc, deleteDoc],
+});
+```
+
+All permissions used in roles must also be listed in the realm's `permissions` array:
+
+```ts
+const orgRealm = defineRealm({
+  name: "organization",
+  scope: orgScope,
+  actors: [userActor],
+  permissions: [readDoc, writeDoc, deleteDoc, manageBilling],
+  roles: [viewerRole, editorRole, adminRole],
+});
+```

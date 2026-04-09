@@ -1,0 +1,94 @@
+---
+title: Actors
+description: defineActor — define identity types that perform actions within scopes.
+icon: User
+---
+
+## Overview
+
+An actor is the identity that requests a permission. `defineActor` creates a typed factory for actor instances. Actors are registered in a realm and carry a `type` and `id` at runtime.
+
+## `defineActor`
+
+```ts
+import { defineActor } from "@justwant/permission";
+```
+
+There are three call forms:
+
+### Basic — `{ name }`
+
+Creates a simple named actor type:
+
+```ts
+const userActor = defineActor({ name: "user" });
+
+// Create an actor instance
+const actor = userActor("user_123");
+// { type: "user", id: "user_123" }
+```
+
+### With `within` — `{ name, within }`
+
+Scopes the actor to a parent entity. Useful when actors exist within another resource (e.g. a team member within an organization):
+
+```ts
+const memberActor = defineActor({ name: "member", within: "organization" });
+
+// Create an actor instance scoped to an org
+const actor = memberActor("org_abc", "user_123");
+// { type: "member", id: "user_123", within: { type: "organization", id: "org_abc" } }
+```
+
+### With `from` — `{ from: IdentityLike }`
+
+Derives an actor definition from an existing identity-like definition:
+
+```ts
+const serviceActor = defineActor({ from: someIdentityDef });
+```
+
+## `ActorDef` type
+
+```ts
+interface ActorDef<N extends string> {
+  readonly name: N;
+  readonly within?: string;
+  (id: string): Actor<N>;
+  (withinId: string, id: string): Actor<N>;
+}
+```
+
+## Using actors at runtime
+
+Actor instances are plain objects — create them inline or cache them:
+
+```ts
+const actor = { type: "user", id: req.user.id };
+
+await service.can({
+  actor,
+  action: readDoc,
+  scope: orgScope("org_abc"),
+});
+```
+
+You can also use the `ActorDef` factory directly:
+
+```ts
+const actor = userActor(req.user.id);
+```
+
+## Registering actors in a realm
+
+Actors must be listed in the realm's `actors` array to be part of that realm's model. This is used for documentation and tooling purposes — the service does not enforce actor type at runtime.
+
+```ts
+const orgRealm = defineRealm({
+  name: "organization",
+  scope: orgScope,
+  actors: [userActor, serviceActor],
+  permissions: [...],
+  roles: [...],
+});
+```
