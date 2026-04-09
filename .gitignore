@@ -12,3 +12,6 @@ var
 .turbo
 .scannerwork
 .claude/settings.local.json
+.next/
+.source/
+next-env.d.ts
