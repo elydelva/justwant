@@ -1,4 +1,3 @@
-import { PackageSelector } from "@/components/PackageSelector";
 import { isValidPackage, sources } from "@/lib/sources";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import { notFound } from "next/navigation";
@@ -15,17 +14,7 @@ export default async function Layout({ children, params }: Props) {
   const source = sources[pkg];
 
   return (
-    <DocsLayout
-      tree={source.getPageTree()}
-      nav={{
-        title: (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs text-fd-muted-foreground">@justwant</span>
-            <PackageSelector />
-          </div>
-        ),
-      }}
-    >
+    <DocsLayout tree={source.getPageTree()} nav={{ title: "@justwant" }}>
       {children}
     </DocsLayout>
   );
