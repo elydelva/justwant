@@ -3,13 +3,14 @@
  * Defines a member type. Returns a function that produces Member instances.
  */
 
+import type { Definable } from "@justwant/meta";
 import type { Member } from "./types/index.js";
 
 export interface DefineMemberOptions<N extends string = string> {
   name: N;
 }
 
-export interface MemberDef<N extends string = string> {
+export interface MemberDef<N extends string = string> extends Definable<N> {
   readonly name: N;
   (id: string): Member<N>;
 }

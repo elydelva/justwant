@@ -40,6 +40,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "@justwant/meta": "workspace:*"
+  },
   "devDependencies": {
     "@justwant/tsconfig": "workspace:*",
     "typescript": "^5.7.0"
