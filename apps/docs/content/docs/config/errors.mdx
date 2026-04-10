@@ -1,0 +1,43 @@
+---
+title: Errors
+description: Error classes exported by @justwant/config.
+icon: CircleAlert
+---
+
+All errors thrown by `@justwant/config` extend `ConfigError`, which itself extends the native `Error` class. You can catch the base class to handle any library error, or catch a specific subclass for finer control.
+
+## `ConfigError`
+
+The base error class for all `@justwant/config` errors.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `"ConfigError"` | Always `"ConfigError"` |
+| `message` | `string` | Human-readable error description |
+
+## `ConfigValidationError`
+
+Thrown when one or more configuration values fail validation. The `issues` array lists every failing key with its associated error message. The `message` property is a semicolon-separated summary of all issues.
+
+Extends `ConfigError`.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `"ConfigValidationError"` | Always `"ConfigValidationError"` |
+| `issues` | `{ key: string; message: string }[]` | Detailed list of all validation failures |
+
+```ts
+import { createConfigService, ConfigError, ConfigValidationError } from "@justwant/config";
+
+try {
+  const config = await createConfigService(/* ... */);
+} catch (err) {
+  if (err instanceof ConfigValidationError) {
+    for (const issue of err.issues) {
+      console.error(`${issue.key}: ${issue.message}`);
+    }
+  } else if (err instanceof ConfigError) {
+    console.error("Config error:", err.message);
+  }
+}
+```

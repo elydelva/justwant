@@ -12,9 +12,8 @@
     "roles",
     "realms",
     "permissions",
-    "---Repositories---",
-    "repositories",
     "---Reference---",
+    "repositories",
     "errors",
     "api"
   ]

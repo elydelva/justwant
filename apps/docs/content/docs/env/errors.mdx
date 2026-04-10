@@ -1,0 +1,55 @@
+---
+title: Errors
+description: Error classes exported by @justwant/env.
+icon: CircleAlert
+---
+
+`@justwant/env` exports one error class. All errors extend the native `Error` class.
+
+## `EnvironmentError`
+
+Thrown when one or more environment variables fail validation during `createEnv()` or `defineEnv()`.
+
+```ts
+import { EnvironmentError } from "@justwant/env";
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | `"EnvironmentError"` | Always `"EnvironmentError"`. |
+| `issues` | `readonly EnvIssue[]` | Array of every validation failure, one entry per invalid variable. |
+| `message` | `string` | Human-readable summary listing all issues (inherited from `Error`). |
+
+#### `EnvIssue`
+
+Each entry in `issues` is an `EnvIssue`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | `string` | The name of the environment variable that failed. |
+| `message` | `string` | The validation message for that variable. |
+
+### Example
+
+```ts
+import { createEnv, EnvironmentError } from "@justwant/env";
+import * as v from "valibot";
+
+try {
+  const env = createEnv({
+    schema: {
+      PORT: v.pipe(v.string(), v.regex(/^\d+$/)),
+    },
+  });
+} catch (err) {
+  if (err instanceof EnvironmentError) {
+    console.error(`${err.issues.length} invalid variable(s)`);
+
+    for (const issue of err.issues) {
+      console.error(`  ${issue.key}: ${issue.message}`);
+    }
+  }
+}
+```

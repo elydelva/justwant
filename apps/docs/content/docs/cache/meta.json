@@ -18,7 +18,7 @@
     "cf-kv",
     "vercel-kv",
     "tiered",
-    "---Plugins---",
+    "---Extend---",
     "plugins",
     "---Reference---",
     "errors",
