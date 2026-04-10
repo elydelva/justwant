@@ -1,5 +1,5 @@
 ---
-title: Cloudflare KV Adapter
+title: Cloudflare KV
 description: Cache backed by a Cloudflare KV namespace for Workers.
 icon: Globe
 ---
@@ -56,5 +56,5 @@ cfKvAdapter({
 ## Notes
 
 - Cloudflare KV has **eventual consistency** — writes may take up to 60 seconds to propagate globally.
-- TTL is enforced via KV's native expiration (`expirationTtl`).
-- `keys()` uses `namespace.list()` which may be costly for large namespaces.
+- TTL is enforced via KV's native expiration (`expirationTtl` for relative TTL, `expiration` for absolute `Date`).
+- Tag invalidation is **not supported** — `invalidateTag` is a no-op on this adapter.

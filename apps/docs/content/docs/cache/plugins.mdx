@@ -23,21 +23,25 @@ const cache = createCache({
 | Serialize | `/plugins/serialize` | Custom serializer (superjson, msgpack) |
 | Encrypt | `/plugins/encrypt` | Encrypt values at rest (AES-256-GCM) |
 | Stats | `/plugins/stats` | Track hit/miss ratio via `cache.stats()` |
-| Stale | `/plugins/stale` | Stale-while-revalidate |
-| Dedupe | `/plugins/dedupe` | Deduplicate concurrent `wrap` calls |
+| Stale | `/plugins/stale` | Stale-while-revalidate (stub — currently pass-through) |
+| Dedupe | `/plugins/dedupe` | Deduplicate concurrent `get` calls for the same key |
 | Prefetch | `/plugins/prefetch` | Prefetch related keys on cache hit |
 | Audit | `/plugins/audit` | Callback hooks for logging, metrics, or compliance |
 
 ## Namespace plugin
+
+Prefixes all cache keys. Prefer `cache.namespace()` for runtime namespacing — this plugin is for when you need the prefix baked into the plugin pipeline at creation time.
 
 ```ts
 import { namespacePlugin } from "@justwant/cache/plugins/namespace";
 
 const cache = createCache({
   adapter: memoryAdapter(),
-  plugins: [namespacePlugin({ prefix: "v1", separator: ":" })],
+  plugins: [namespacePlugin({ prefix: "v1" })],
 });
 ```
+
+The separator between prefix and key is always `:` (e.g. `v1:mykey`).
 
 ## Serialize plugin
 
@@ -55,13 +59,13 @@ Supports `Date`, `Map`, `Set`, `BigInt` and other non-JSON types via SuperJSON o
 
 ## Encrypt plugin
 
-Encrypts every cached value using AES-256-GCM. Requires a derived key from `@justwant/crypto/derive-key`:
+Encrypts every cached value using AES-256-GCM. Requires a 32-byte key — derive one from `@justwant/crypto/derive-key`:
 
 ```ts
 import { encryptPlugin } from "@justwant/cache/plugins/encrypt";
 import { deriveKey } from "@justwant/crypto/derive-key";
 
-const key = await deriveKey(process.env.CACHE_SECRET!, "cache", "salt", 32);
+const key = deriveKey(process.env.CACHE_SECRET!, "salt", "cache", 32);
 
 const cache = createCache({
   adapter: redisAdapter({ redis: redisClient }),
@@ -69,9 +73,11 @@ const cache = createCache({
 });
 ```
 
+`deriveKey(secret, salt, info, length)` uses HKDF-SHA256 and returns a `Uint8Array`.
+
 ## Stats plugin
 
-Exposes a `cache.stats()` method that returns hit/miss counts:
+Exposes a `cache.stats()` method that returns hit/miss counts and latency percentiles:
 
 ```ts
 import { statsPlugin } from "@justwant/cache/plugins/stats";
@@ -82,12 +88,16 @@ const cache = createCache({
 });
 
 const stats = cache.stats?.();
-// → { hits: 42, misses: 8, hitRate: 0.84 }
+// → { hits: 42, misses: 8, hitRate: 0.84, sets: 50, deletes: 3, errors: 0, latency: { get: { p50, p95, p99 }, set: { p50, p95, p99 } } }
 ```
+
+`cache.stats` is `undefined` when the plugin is not registered.
 
 ## Stale plugin
 
-Returns a stale (expired) value while triggering a background revalidation:
+<Callout type="warn">
+  `stalePlugin` is currently a stub — it passes values through without implementing stale-while-revalidate behavior. The `staleTtl` option is accepted but has no effect.
+</Callout>
 
 ```ts
 import { stalePlugin } from "@justwant/cache/plugins/stale";
@@ -100,7 +110,7 @@ const cache = createCache({
 
 ## Dedupe plugin
 
-Collapses concurrent `wrap` calls for the same key into a single fetch:
+Deduplicates concurrent `get` calls for the same key. When multiple callers read the same key simultaneously, only one request reaches the adapter — the rest await the same promise.
 
 ```ts
 import { dedupePlugin } from "@justwant/cache/plugins/dedupe";
@@ -110,6 +120,8 @@ const cache = createCache({
   plugins: [dedupePlugin()],
 });
 ```
+
+The in-flight map is module-level — shared across all `createCache` instances that use this plugin.
 
 ## Prefetch plugin
 
@@ -129,7 +141,7 @@ const cache = createCache({
 });
 ```
 
-The prefetched keys are fetched in the background — they do not block the current `get` call and their results are silently discarded if they fail.
+Prefetched keys are fetched in the background — they do not block the current `get` and errors are silently ignored.
 
 ## Audit plugin
 
@@ -152,8 +164,8 @@ const cache = createCache({
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `onGet` | `(key, hit) => void` | Called after every `get`; `hit` is `true` if the value was found |
-| `onSet` | `(key) => void` | Called after every `set` |
-| `onDelete` | `(key) => void` | Called after every `delete` |
+| `onGet` | `(key, hit) => void \| Promise<void>` | Called after every `get`; `hit` is `true` if a value was found |
+| `onSet` | `(key) => void \| Promise<void>` | Called after every `set` |
+| `onDelete` | `(key) => void \| Promise<void>` | Called after every `delete` |
 
-Callbacks may be async — errors are not suppressed, so handle them inside the callback if needed.
+Callbacks may be async. Errors thrown inside callbacks are not caught by the plugin — handle them inside the callback if needed.

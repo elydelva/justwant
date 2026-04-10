@@ -1,5 +1,5 @@
 ---
-title: Memory Adapter
+title: Memory
 description: In-process, volatile cache for development and tests.
 icon: Cpu
 ---
@@ -35,7 +35,7 @@ export const cache = createCache({
 
 ## Behavior
 
-- TTL is enforced via `Date.now()` comparison on read — no background timer.
-- `clear()` removes all entries.
-- `keys()` returns all non-expired keys.
-- `invalidateTag()` is emulated via an internal reverse-index.
+- TTL is enforced lazily via `Date.now()` comparison on read — no background timer.
+- Expired entries are pruned on access, not proactively.
+- Tag invalidation is tracked via an internal reverse-index (`tag → Set<key>`).
+- State is local to the process — not shared across instances or restarts.

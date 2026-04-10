@@ -6,13 +6,13 @@ icon: FolderOpen
 
 ## What is a namespace?
 
-A namespace is a scoped sub-cache built on top of the same adapter. Every key operation is automatically prefixed, so different namespaces cannot collide.
+A namespace is a scoped sub-cache built on top of the same adapter. Every key operation is automatically prefixed with `prefix:`, so different namespaces cannot collide.
 
 ```ts
 const userCache = cache.namespace("user");
 const sessionCache = cache.namespace("session");
 
-await userCache.set("1", userData);    // stored as "user:1"
+await userCache.set("1", userData);       // stored as "user:1"
 await sessionCache.set("1", sessionData); // stored as "session:1"
 ```
 
@@ -29,14 +29,24 @@ await ns.has("key");
 
 All `CacheInstance` methods are available on the namespace object.
 
-## Custom separator
+## Namespace options
 
-By default, the separator between prefix and key is `:`. Override it:
+`cache.namespace(prefix, opts?)` accepts an optional second argument to override defaults for the sub-cache:
 
 ```ts
-const ns = cache.namespace("user", { separator: "/" });
-// keys become "user/key"
+const ns = cache.namespace("session", {
+  ttl: "30m",       // default TTL for this namespace
+  onError: "throw", // override error handling
+});
 ```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `ttl` | `TTL` | Default TTL for `set` / `wrap` in this namespace |
+| `tags` | `string[]` | Default tags for entries in this namespace |
+| `onError` | `OnError` | Error handling for this namespace |
+
+The separator between prefix and key is always `:` — it is not configurable.
 
 ## Nested namespaces
 
@@ -51,4 +61,4 @@ await orgPosts.set("1", post); // stored as "org:42:posts:1"
 
 ## Namespace plugin
 
-For static namespaces applied at cache creation time, use the namespace plugin instead of calling `cache.namespace()`. See [Plugins](/docs/cache/plugins) for details.
+For static namespaces applied at cache creation time, use the `namespacePlugin` instead of calling `cache.namespace()`. See [Plugins](/docs/cache/plugins) for details.

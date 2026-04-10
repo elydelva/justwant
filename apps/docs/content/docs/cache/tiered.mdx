@@ -1,5 +1,5 @@
 ---
-title: Tiered Adapter
+title: Tiered
 description: L1 (memory) + L2 (Redis) with promotion and write-through.
 icon: Layers
 ---
@@ -52,7 +52,7 @@ L2 hits are always promoted to L1 and writes always go to both layers.
 ## Read path
 
 1. Check L1 — return if found and not expired.
-2. Check L2 — if found, optionally promote to L1 and return.
+2. Check L2 — if found, promote to L1 and return.
 3. Return `null` on miss.
 
 ## Write path
