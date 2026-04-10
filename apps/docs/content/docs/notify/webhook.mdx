@@ -1,5 +1,5 @@
 ---
-title: Webhook Canal
+title: Webhook
 description: Custom webhook notification canal using createCanal().
 icon: Webhook
 ---
@@ -30,37 +30,20 @@ const webhookCanal: WebhookCanal = createCanal({
 
 ## Message type
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `url` | `string` | Target URL to POST to |
-| `body` | `unknown` | Request body (serialized as JSON) |
-| `headers` | `Record<string, string>` | Additional headers merged with `Content-Type` |
+```ts
+interface WebhookMessage {
+  url: string;
+  body: unknown;
+  headers?: Record<string, string>;
+}
+```
 
 ## Registering the canal
 
-```ts title="lib/notify.ts"
-import { createNotify } from "@justwant/notify";
-
+```ts
 export const notify = createNotify({
   templates: [...],
-  canals: {
-    webhook: webhookCanal,
-  },
-});
-```
-
-## Example: sending a webhook notification
-
-Define a template with the `webhook` kind, then send:
-
-```ts
-const orderShipped = defineTemplate({
-  id: "order-shipped",
-  canal: "webhook",
-  render: ({ orderId, trackingUrl }: { orderId: string; trackingUrl: string }) => ({
-    url: process.env.WEBHOOK_URL!,
-    body: { event: "order.shipped", orderId, trackingUrl },
-  }),
+  canals: { webhook: webhookCanal },
 });
 
 await notify.send({

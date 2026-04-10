@@ -1,0 +1,16 @@
+---
+title: Which provider?
+description: Ready-made canal adapters for third-party notification services.
+icon: MessageCircleQuestionMark
+---
+
+## Overview
+
+Providers are ready-made adapters that wire a third-party service into a notify canal. Each provider targets a specific [channel kind](/docs/notify/channels).
+
+| Provider | Channel | Package import |
+|----------|---------|----------------|
+| [Resend](/docs/notify/resend) | `email` | `@justwant/notify/channels/email/resend` |
+| [Twilio](/docs/notify/twilio) | `sms` | `@justwant/notify/channels/sms/twilio` |
+
+Multiple providers can serve the same channel kind — pick the one that fits your stack. You can also implement a custom canal for any channel using `createCanal()` — see [Custom canal](/docs/notify/channels#custom-canal).

@@ -1,5 +1,5 @@
 ---
-title: Slack Canal
+title: Slack
 description: Custom Slack notification canal using createCanal() and Incoming Webhooks.
 icon: MessageSquare
 ---
@@ -30,10 +30,13 @@ const slackCanal: SlackCanal = createCanal({
 
 ## Message type
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `text` | `string` | Fallback text (shown in notifications and when blocks are not supported) |
-| `blocks` | `unknown[]` | Optional Slack Block Kit blocks |
+```ts
+interface SlackMessage {
+  text: string;
+  blocks?: unknown[];
+  attachments?: unknown[];
+}
+```
 
 ## Slack Incoming Webhook setup
 
@@ -41,39 +44,16 @@ const slackCanal: SlackCanal = createCanal({
 2. Enable Incoming Webhooks and add a new webhook to a channel.
 3. Copy the webhook URL and set it as `SLACK_WEBHOOK_URL` in your environment.
 
-```bash
-# .env
+```bash title=".env"
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T.../B.../...
 ```
 
 ## Registering the canal
 
-```ts title="lib/notify.ts"
-import { createNotify } from "@justwant/notify";
-
+```ts
 export const notify = createNotify({
   templates: [...],
-  canals: {
-    slack: slackCanal,
-  },
-});
-```
-
-## Example: sending a Slack notification
-
-```ts
-const deployAlert = defineTemplate({
-  id: "deploy-alert",
-  canal: "slack",
-  render: ({ service, version }: { service: string; version: string }) => ({
-    text: `Deployed ${service} v${version}`,
-    blocks: [
-      {
-        type: "section",
-        text: { type: "mrkdwn", text: `*${service}* deployed — version \`${version}\`` },
-      },
-    ],
-  }),
+  canals: { slack: slackCanal },
 });
 
 await notify.send({

@@ -1,0 +1,56 @@
+---
+title: Which channel?
+description: Overview of all supported notification channel types.
+icon: MessageCircleQuestionMark
+---
+
+## Overview
+
+A **canal** is a delivery channel instance. You create one from a provider (e.g. Resend for email, Twilio for SMS) or by implementing your own with `createCanal()`, then register it by string key in `createNotify({ canals: { ... } })`.
+
+The `canalId` used in `notify.send({ canalId })` must match a key in the `canals` map.
+
+## Channel kinds and message types
+
+| Kind | Message type | Key fields | Built-in support |
+|------|-------------|------------|-----------------|
+| `email` | `EmailMessage` | `to`, `subject`, `html` | Yes — see [Providers](/docs/notify/providers) |
+| `sms` | `SmsMessage` | `to`, `body` | Yes — see [Providers](/docs/notify/providers) |
+| `console` | `ConsoleMessage` | `level`, `text` | Yes |
+| `webhook` | `WebhookMessage` | `url`, `body` | No — implement via `createCanal()` |
+| `slack` | `SlackMessage` | `text`, `blocks` | No — implement via `createCanal()` |
+
+## Registering multiple canals
+
+```ts
+export const notify = createNotify({
+  templates: [...],
+  canals: {
+    email: emailCanal,
+    sms: smsCanal,
+    dev: consoleCanal(),
+  },
+});
+```
+
+## Custom canal
+
+For channels without a built-in provider (webhook, Slack, etc.), implement a canal with `createCanal()`:
+
+```ts
+import { createCanal } from "@justwant/notify";
+import type { WebhookCanal } from "@justwant/notify";
+
+const webhookCanal: WebhookCanal = createCanal({
+  kind: "webhook",
+  adapter: {
+    async send(message) {
+      await fetch(message.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...message.headers },
+        body: JSON.stringify(message.body),
+      });
+    },
+  },
+}) as WebhookCanal;
+```

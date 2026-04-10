@@ -1,12 +1,12 @@
 ---
-title: SMS Channel
+title: Twilio
 description: Send SMS messages with Twilio using @justwant/notify.
 icon: MessageSquare
 ---
 
 ## Overview
 
-The SMS channel uses [Twilio](https://twilio.com) for SMS delivery. You pass your Twilio client instance to the adapter.
+The Twilio provider implements the [`sms`](/docs/notify/channels/sms) canal. Pass your Twilio client instance — no raw HTTP calls.
 
 ## Install peer dependency
 
@@ -23,7 +23,7 @@ import { createTwilioSmsCanal } from "@justwant/notify/channels/sms/twilio";
 ## Setup
 
 ```ts title="lib/notify.ts"
-import { createNotify, createTemplate } from "@justwant/notify";
+import { createNotify } from "@justwant/notify";
 import { createTwilioSmsCanal } from "@justwant/notify/channels/sms/twilio";
 import twilio from "twilio";
 
@@ -38,7 +38,7 @@ export const notify = createNotify({
 });
 ```
 
-## Configuration
+## Options
 
 ### `TwilioSmsAdapterOptions`
 
@@ -46,28 +46,6 @@ export const notify = createNotify({
 |-------|------|----------|-------------|
 | `client` | `TwilioClient` | Yes | Twilio client (`twilio(accountSid, authToken)`) |
 | `from` | `string` | Yes | Twilio phone number in E.164 format (e.g. `+15005550006`) |
-
-## Template SMS factory
-
-Your template's `sms` factory must return an `SmsMessage`:
-
-```ts
-const otpTemplate = createTemplate({
-  id: "otp",
-  sms: (args: { phone: string; code: string }) => ({
-    to: args.phone,
-    body: `Your verification code is: ${args.code}`,
-  }),
-});
-```
-
-```ts
-await notify.send({
-  templateId: "otp",
-  canalId: "sms",
-  args: { phone: "+14155552671", code: "482917" },
-});
-```
 
 ## Environment variables
 

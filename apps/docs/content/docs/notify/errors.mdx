@@ -1,0 +1,93 @@
+---
+title: Errors
+description: Error types thrown by @justwant/notify.
+icon: CircleAlert
+---
+
+## Error types
+
+```ts
+import {
+  NotifyError,
+  TemplateNotFoundError,
+  CanalNotFoundError,
+  TemplateVersionNotFoundError,
+} from "@justwant/notify";
+```
+
+| Error | When |
+|-------|------|
+| `TemplateNotFoundError` | No template registered with that `templateId` |
+| `CanalNotFoundError` | No canal registered with that `canalId` |
+| `TemplateVersionNotFoundError` | Template exists but has no factory for the canal's kind |
+
+All errors extend `NotifyError`, which extends `Error`.
+
+## `TemplateNotFoundError`
+
+Thrown when `notify.send` is called with a `templateId` that was not passed to `createNotify`.
+
+```ts
+class TemplateNotFoundError extends NotifyError {
+  templateId: string;
+}
+```
+
+```ts
+try {
+  await notify.send({ templateId: "unknown", canalId: "email", args });
+} catch (err) {
+  if (err instanceof TemplateNotFoundError) {
+    console.error("Missing template:", err.templateId);
+  }
+}
+```
+
+## `CanalNotFoundError`
+
+Thrown when `notify.send` is called with a `canalId` that was not registered in `createNotify({ canals })`.
+
+```ts
+class CanalNotFoundError extends NotifyError {
+  canalId: string;
+}
+```
+
+```ts
+try {
+  await notify.send({ templateId: "welcome", canalId: "sms", args });
+} catch (err) {
+  if (err instanceof CanalNotFoundError) {
+    console.error("Missing canal:", err.canalId);
+  }
+}
+```
+
+## `TemplateVersionNotFoundError`
+
+Thrown when the template exists but has no factory defined for the canal's kind.
+
+```ts
+class TemplateVersionNotFoundError extends NotifyError {
+  templateId: string;
+  canalId: string;
+  channelKind: string;
+}
+```
+
+```ts
+// Template only defines an email factory — sending to sms throws
+try {
+  await notify.send({ templateId: "receipt", canalId: "sms", args });
+} catch (err) {
+  if (err instanceof TemplateVersionNotFoundError) {
+    console.error(
+      `Template "${err.templateId}" has no version for canal "${err.canalId}" (kind: ${err.channelKind})`
+    );
+  }
+}
+```
+
+## Suppressing errors
+
+Pass `onError: "silent"` to `createNotify` to swallow all errors instead of throwing. See [Error handling](/docs/notify/error-handling).

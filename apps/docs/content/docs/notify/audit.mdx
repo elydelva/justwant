@@ -1,34 +1,22 @@
 ---
-title: Plugins
-description: Extend notification behavior with plugins — audit every send.
-icon: Puzzle
+title: Audit
+description: Log or record every notification sent with auditPlugin.
+icon: ClipboardList
 ---
 
-## What are plugins?
-
-Plugins hook into the notification lifecycle via `onSend`. They receive the template ID, canal ID, rendered message, and args — before and after the canal sends.
-
-```ts
-export const notify = createNotify({
-  templates: [...],
-  canals: { email: emailCanal },
-  plugins: [auditPlugin({ onSend: myLogger })],
-});
-```
-
-## Available plugins
-
-| Plugin | Subpath | Description |
-|--------|---------|-------------|
-| Audit | `/plugins/audit` | Log or record every notification sent |
-
-## Audit plugin
+## Overview
 
 The audit plugin calls your `onSend` callback before and after each notification is dispatched. Use it to write notification logs, track metrics, or push audit records to a database.
 
+## Import
+
 ```ts
 import { auditPlugin } from "@justwant/notify/plugins/audit";
+```
 
+## Setup
+
+```ts
 export const notify = createNotify({
   templates: [...],
   canals: { email: emailCanal },
@@ -49,6 +37,8 @@ export const notify = createNotify({
 });
 ```
 
+## Options
+
 ### `AuditPluginOptions`
 
 | Field | Type | Description |
@@ -64,7 +54,7 @@ export const notify = createNotify({
 | `args` | `unknown` | Arguments passed to `notify.send` |
 | `message` | `ChannelMessage` | Rendered message (email, SMS, etc.) |
 | `phase` | `"before" \| "after"` | `"before"` = before send, `"after"` = after send |
-| `result` | `unknown` | `undefined` on success, error on failure (only present in `"after"` phase) |
+| `result` | `unknown` | `undefined` on success, the error on failure (only in `"after"` phase) |
 
 ## Custom plugins
 
@@ -80,4 +70,10 @@ const metricsPlugin: NotifyPlugin = {
     }
   },
 };
+
+export const notify = createNotify({
+  templates: [...],
+  canals: { email: emailCanal },
+  plugins: [metricsPlugin],
+});
 ```

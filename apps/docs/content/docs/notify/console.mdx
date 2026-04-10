@@ -1,5 +1,5 @@
 ---
-title: Console Channel
+title: Console
 description: Log notifications to stdout for local development.
 icon: Terminal
 ---
@@ -19,7 +19,7 @@ import { consoleCanal } from "@justwant/notify/channels/console";
 ## Setup
 
 ```ts title="lib/notify.ts"
-import { createNotify, createTemplate } from "@justwant/notify";
+import { createNotify } from "@justwant/notify";
 import { consoleCanal } from "@justwant/notify/channels/console";
 
 export const notify = createNotify({
@@ -30,9 +30,16 @@ export const notify = createNotify({
 });
 ```
 
-## Template console factory
+## Message type
 
 Your template's `console` factory must return a `ConsoleMessage`:
+
+```ts
+interface ConsoleMessage {
+  level: "info" | "warn" | "error" | "debug";
+  text: string;
+}
+```
 
 ```ts
 const welcomeTemplate = createTemplate({

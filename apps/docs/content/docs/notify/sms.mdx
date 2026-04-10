@@ -1,0 +1,55 @@
+---
+title: SMS
+description: Send SMS messages with @justwant/notify.
+icon: MessageSquare
+---
+
+## Overview
+
+The SMS channel (`kind: "sms"`) delivers notifications as text messages. A canal wraps a provider-specific adapter and is registered under a string key in `createNotify`.
+
+## Message type
+
+Your template's `sms` factory must return an `SmsMessage`:
+
+```ts
+interface SmsMessage {
+  to: string;   // E.164 format, e.g. "+14155552671"
+  body: string;
+}
+```
+
+## Template factory
+
+```ts
+import { createTemplate } from "@justwant/notify";
+
+const otpTemplate = createTemplate({
+  id: "otp",
+  sms: (args: { phone: string; code: string }) => ({
+    to: args.phone,
+    body: `Your verification code is: ${args.code}`,
+  }),
+});
+```
+
+## Registering the canal
+
+```ts
+export const notify = createNotify({
+  templates: [otpTemplate],
+  canals: { sms: smsCanal },
+});
+
+await notify.send({
+  templateId: "otp",
+  canalId: "sms",
+  args: { phone: "+14155552671", code: "482917" },
+});
+```
+
+## Providers
+
+Pick a provider to create an `smsCanal`:
+
+- [Twilio](/docs/notify/twilio)
