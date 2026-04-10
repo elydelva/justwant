@@ -57,3 +57,16 @@ const storage = createStorageService({
   onError: "throw",
 });
 ```
+
+## `parseStorageError`
+
+Utility function that normalises a raw caught value into a `StorageError`. Used internally by adapters; available for use in custom adapters.
+
+```ts
+import { parseStorageError } from "@justwant/storage";
+
+function parseStorageError(raw: unknown): StorageError
+```
+
+- If `raw` has a `code` of `"ECONNREFUSED"`, `"ECONNRESET"`, or `"ETIMEDOUT"`, returns a `StorageAdapterError` (code `"ADAPTER"`).
+- Otherwise returns a `StorageError` with code `"UNKNOWN"` and `metadata.original` set to the raw value.
