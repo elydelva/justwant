@@ -131,7 +131,7 @@ The section in the sidebar already provides the context. Do not repeat it in the
 
 One page per plugin exported by the package. No overview page — just individual plugin pages.
 
-The title is **just the plugin name**, no "plugin" suffix:
+**Title:** just the plugin name, no "plugin" suffix:
 
 ```mdx
 ---
@@ -139,7 +139,16 @@ title: Audit         # ✓  not "Audit Plugin"
 ---
 ```
 
-Plugins must be documented from the actual source code. Check `src/plugins/` before writing anything. Each plugin page covers: import path, setup, options table, and a custom plugin example if the package exposes the plugin interface.
+**Filename:** slug of the plugin name — `audit.mdx`, `lock.mdx`, `alert.mdx`.
+
+**Each plugin page must cover, in this order:**
+1. **Overview** — what the plugin does and when to use it
+2. **Import** — the exact subpath import (`@justwant/<package>/plugins/<name>`)
+3. **Setup** — minimal working example wired into `create<Package>({ plugins: [...] })`
+4. **Options** — a table of the plugin's option type fields (name, type, required, description)
+5. **Custom plugin** — only if the package exposes a plugin interface type (e.g. `NotifyPlugin`, `CachePlugin`); show how to implement one from scratch
+
+**Source-first:** always read `src/plugins/<name>.ts` before writing. Document only what is actually exported. Do not invent options or behaviours.
 
 ### `---Reference---`
 
