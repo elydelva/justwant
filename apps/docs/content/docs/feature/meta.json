@@ -1,11 +1,5 @@
 {
   "title": "Feature",
   "icon": "Puzzle",
-  "pages": [
-    "index",
-    "---Get Started---",
-    "installation",
-    "---Reference---",
-    "api"
-  ]
+  "pages": ["index", "---Get Started---", "installation", "---Reference---", "api"]
 }
