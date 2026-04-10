@@ -6,37 +6,6 @@ That's a complete platform.
 **`@justwant/*`** is a TypeScript-first library ecosystem that covers authentication, observability, billing, notifications, file storage, and much more — using infrastructure you already own.
 
 ```ts
-import { createEverything }    from '@justwant/everything'
-import { createDrizzleAdapter } from '@justwant/db/drizzle'
-import { emailPasswordPlugin } from '@justwant/auth/plugin-email-password'
-import { oauthPlugin }         from '@justwant/auth/plugin-oauth'
-import { twoFactorPlugin }     from '@justwant/auth/plugin-two-factor'
-import { integrityPlugin }     from '@justwant/audit/plugin-integrity'
-import { retentionPlugin }     from '@justwant/audit/plugin-retention'
-
-export const { auth, audit, keys, notify } = createEverything({
-  adapters: {
-    db: createDrizzleAdapter(db, { dialect: 'pg' }),
-  },
-  auth: {
-    plugins: [
-      emailPasswordPlugin(),
-      oauthPlugin({ providers: ['google', 'github'] }),
-      twoFactorPlugin(),
-    ],
-  },
-  audit: {
-    plugins: [
-      integrityPlugin(),
-      retentionPlugin({ after: '90d', action: 'anonymize' }),
-    ],
-  },
-})
-```
-
-You can also instantiate each package independently — `createEverything` is just the orchestrator that wires them together and shares adapters across packages.
-
-```ts
 import { createAudit }     from '@justwant/audit'
 import { integrityPlugin } from '@justwant/audit/plugin-integrity'
 import { pgAdapter }       from '@justwant/audit/adapter-pg'
@@ -146,7 +115,7 @@ const audit = createAudit({
 
 ### Plugin system
 
-Each package has a minimal everything. Features are opt-in plugins — imported explicitly, so bundlers only include what you actually use.
+Each package has a minimal core. Features are opt-in plugins — imported explicitly, so bundlers only include what you actually use.
 
 ```ts
 import { createAudit }     from '@justwant/audit'
@@ -182,7 +151,7 @@ import { pgAdapter }       from '@justwant/audit/adapter-pg'
 
 ### Declaration merging
 
-Plugins extend types without patching the everything. The result is always fully typed, inferred directly from your config.
+Plugins extend types without patching the core. The result is always fully typed, inferred directly from your config.
 
 ```ts
 // With creditsPlugin and rateLimitPlugin active on @justwant/keys:
@@ -199,9 +168,7 @@ result.permissions         // typed — only when permissionPlugin is active
 ## Getting started
 
 ```bash
-pnpm add @justwant/everything
-
-# Then add the packages you need
+# Add the packages you need
 pnpm add @justwant/auth @justwant/audit
 
 # Peer dependencies — install only what your adapters require
@@ -251,8 +218,6 @@ npx justwant migrate generate --adapter drizzle  # outputs table definitions
 │   ├── audit/
 │   ├── webhook/
 │   ├── notify/
-│   │
-│   ├── everything/          # createEverything orchestrator
 │   │
 │   ├── auth/          # Features
 │   ├── keys/
