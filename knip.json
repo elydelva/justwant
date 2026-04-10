@@ -1,6 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "ignore": [
+    "apps/docs/**",
     "examples/**",
     "**/*.type-test.ts",
     "packages/cache/src/adapters/index.ts",
