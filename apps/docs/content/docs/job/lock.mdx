@@ -1,0 +1,44 @@
+---
+title: Lock
+description: Prevent double execution across distributed instances using a distributed lock.
+icon: Lock
+---
+
+## Overview
+
+The lock plugin prevents double execution across distributed instances. Before running a handler, it acquires a distributed lock. If the lock is already held by another instance, execution is skipped silently.
+
+## Import
+
+```ts
+import { lockPlugin } from "@justwant/job/plugins/lock";
+```
+
+## Setup
+
+```ts
+import { lockPlugin } from "@justwant/job/plugins/lock";
+import { createLock } from "@justwant/lock";
+
+const lock = createLock({ repo: lockRepo });
+
+const plugin = lockPlugin({
+  lock,
+  owner: { type: "job", id: "scheduler-1" }, // optional, default: { type: "job", id: "default" }
+  ttlMs: 60_000,                               // optional, default: 60000
+});
+
+const jobs = createJob({ engine, plugins: [plugin] });
+```
+
+## LockPluginOptions
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `lock` | `LockApi` | Yes | Lock instance from `createLock` |
+| `owner` | `LockOwner` | No | Owner identity (default: `{ type: "job", id: "default" }`) |
+| `ttlMs` | `number` | No | Lock TTL in milliseconds (default: `60000`) |
+
+## Behavior
+
+The lock key is `job:{jobId}`. If the lock is already held, the plugin returns early without calling the handler. The lock is always released in a `finally` block — release errors are suppressed to avoid masking handler errors.

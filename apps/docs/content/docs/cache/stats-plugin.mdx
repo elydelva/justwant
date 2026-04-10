@@ -1,0 +1,51 @@
+---
+title: Stats
+description: Track hit/miss ratio and latency percentiles via cache.stats().
+icon: ChartBar
+---
+
+Exposes a `cache.stats()` method that returns hit/miss counts, hit rate, and latency percentiles for `get` and `set` operations.
+
+## Setup
+
+```ts
+import { statsPlugin } from "@justwant/cache/plugins/stats";
+import { createCache } from "@justwant/cache";
+import { memoryAdapter } from "@justwant/cache/adapters/memory";
+
+const cache = createCache({
+  adapter: memoryAdapter(),
+  plugins: [statsPlugin()],
+});
+```
+
+## Reading stats
+
+```ts
+const stats = cache.stats?.();
+```
+
+`cache.stats` is `undefined` when the plugin is not registered, so the optional chain (`?.`) is the safe way to call it.
+
+## Return shape
+
+```ts
+{
+  hits: number;
+  misses: number;
+  hitRate: number;       // hits / (hits + misses), 0 when no requests yet
+  sets: number;
+  deletes: number;
+  errors: number;
+  latency: {
+    get: { p50: number; p95: number; p99: number };  // milliseconds
+    set: { p50: number; p95: number; p99: number };
+  };
+}
+```
+
+## Notes
+
+- Latencies are computed from all operations since the cache instance was created — there is no rolling window.
+- Errors incremented on any thrown exception in `get`, `set`, or `delete`.
+- `statsPlugin` takes no options.

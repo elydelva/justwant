@@ -1,0 +1,64 @@
+---
+title: Which engine?
+description: Engine overview — BullMQ, QStash, PostgreSQL, and node-cron. When to use each.
+icon: MessageCircleQuestionMark
+---
+
+## Available engines
+
+| Engine | Backend | Page |
+|--------|---------|------|
+| [`bullmqEngine`](/docs/job/bullmq) | Redis (BullMQ) | [→](/docs/job/bullmq) |
+| [`qstashEngine`](/docs/job/qstash) | Upstash QStash | [→](/docs/job/qstash) |
+| [`pgEngine`](/docs/job/pg) | PostgreSQL | [→](/docs/job/pg) |
+| [`nodeEngine`](/docs/job/node) | In-process (node-cron) | [→](/docs/job/node) |
+
+## Overview
+
+`@justwant/job` uses a `JobEngineContract` interface that every engine implements. You pass an engine to `createJob({ engine })` and the service delegates scheduling, enqueueing, and worker management to it.
+
+## Engine comparison
+
+| | BullMQ | QStash | pg | node |
+|--|--------|--------|----|------|
+| **Backend** | Redis | Upstash (HTTP) | PostgreSQL | In-process |
+| **Persistent runtime** | Required | Not required | Required | Required |
+| **TCP connection** | Required | Not required | Required | Not required |
+| **Retry** | Yes | Yes | No | No |
+| **Delay** | Yes | Yes | No | No |
+| **Priority** | Yes | No | No | No |
+| **Concurrency** | Yes | No | No | No |
+| **Pause / resume** | Yes | No | No | Yes (via repo) |
+| **Cancel instance** | Yes | Yes | No | No |
+| **Instance management** | Yes | Partial | No | No |
+| **Edge / serverless** | No | Yes | No | No |
+| **Best for** | Production, high throughput | Serverless, edge, Vercel | Minimal deps, existing pg | Dev, simple apps |
+
+## Custom engine
+
+Implement `JobEngineContract` to bring your own backend:
+
+```ts
+import type { JobEngineContract } from "@justwant/job";
+
+const myEngine: JobEngineContract = {
+  capabilities: {
+    name: "my-engine",
+    hasNativePersistence: false,
+    requires: { persistentRuntime: true, tcpConnection: false, unlimitedDuration: true },
+    supports: {
+      scheduling: true, manualTrigger: true, retry: false,
+      pauseQueue: false, resumeQueue: false,
+      getQueueMetadata: false, listInstances: false, getInstance: false,
+      cancelInstance: false, retryInstance: false, drain: false, getJobCounts: false,
+    },
+  },
+  async register(def, handler) { /* ... */ },
+  async unregister(id) { /* ... */ },
+  async enqueue(id, payload) { /* ... */ },
+  async listQueues() { return []; },
+  async stats(id) { return { runs: 0, failures: 0 }; },
+  async start() { /* ... */ },
+  async stop() { /* ... */ },
+};
+```

@@ -1,0 +1,38 @@
+---
+title: Namespace
+description: Prefix all cache keys at the plugin level.
+icon: Tag
+---
+
+Prefixes every cache key with a fixed string. Prefer `cache.namespace()` for runtime namespacing — use this plugin when you want the prefix baked into the plugin pipeline at creation time.
+
+## Setup
+
+```ts
+import { namespacePlugin } from "@justwant/cache/plugins/namespace";
+import { createCache } from "@justwant/cache";
+import { memoryAdapter } from "@justwant/cache/adapters/memory";
+
+const cache = createCache({
+  adapter: memoryAdapter(),
+  plugins: [namespacePlugin({ prefix: "v1" })],
+});
+```
+
+The separator between prefix and key is always `:`. A key `"user"` becomes `"v1:user"`. If the prefix already ends with `:`, no extra separator is added.
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `prefix` | `string` | Yes | String to prepend to every key |
+
+## Example — version-based invalidation
+
+```ts
+// Bump the prefix to invalidate all cached data in one change
+const cache = createCache({
+  adapter: redisAdapter({ redis }),
+  plugins: [namespacePlugin({ prefix: "v2" })],
+});
+```

@@ -1,0 +1,54 @@
+---
+title: Serialize
+description: Replace the default JSON serializer with a custom one.
+icon: ArrowLeftRight
+---
+
+Replaces the default JSON serializer with a custom implementation. Use this to support types that `JSON.stringify` cannot handle: `Date`, `Map`, `Set`, `BigInt`, `undefined`, and so on.
+
+## Setup
+
+```ts
+import { serializePlugin } from "@justwant/cache/plugins/serialize";
+import { superjsonSerializer } from "@justwant/cache/serializers/superjson";
+import { createCache } from "@justwant/cache";
+import { redisAdapter } from "@justwant/cache/adapters/redis";
+
+const cache = createCache({
+  adapter: redisAdapter({ redis }),
+  plugins: [serializePlugin({ serializer: superjsonSerializer() })],
+});
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `serializer` | `CacheSerializer` | Yes | Object with `serialize` and `deserialize` methods |
+
+## `CacheSerializer` interface
+
+```ts
+interface CacheSerializer {
+  serialize: (value: unknown) => string;
+  deserialize: (raw: string) => unknown;
+}
+```
+
+## Custom serializer
+
+```ts
+import { serializePlugin } from "@justwant/cache/plugins/serialize";
+
+const cache = createCache({
+  adapter: memoryAdapter(),
+  plugins: [
+    serializePlugin({
+      serializer: {
+        serialize: (v) => JSON.stringify(v),
+        deserialize: (raw) => JSON.parse(raw),
+      },
+    }),
+  ],
+});
+```

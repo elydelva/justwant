@@ -1,0 +1,31 @@
+---
+title: Dedupe
+description: Deduplicate concurrent get calls for the same key.
+icon: Copy
+---
+
+When multiple callers read the same key at the same time, only one request reaches the adapter — the rest share the same in-flight promise. This prevents cache stampedes under high concurrency.
+
+## Setup
+
+```ts
+import { dedupePlugin } from "@justwant/cache/plugins/dedupe";
+import { createCache } from "@justwant/cache";
+import { redisAdapter } from "@justwant/cache/adapters/redis";
+
+const cache = createCache({
+  adapter: redisAdapter({ redis }),
+  plugins: [dedupePlugin()],
+});
+```
+
+## Behavior
+
+- Only `get` calls are deduplicated. `set` and `delete` are unaffected.
+- The in-flight map is **module-level** — it is shared across all `createCache` instances that use this plugin in the same process.
+- Once a request completes (success or error), the key is removed from the in-flight map and the next call will start a new request.
+
+## Notes
+
+- `dedupePlugin` takes no options.
+- If the underlying `get` throws, all waiters receive the same error.

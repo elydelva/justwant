@@ -1,0 +1,38 @@
+---
+title: Prefetch
+description: Warm the cache for related keys on every get.
+icon: Zap
+---
+
+Whenever a key is read, the plugin fires background fetches for related keys returned by `keyFn`. Those keys are loaded into the cache before they are explicitly requested, reducing latency for predictable access patterns.
+
+## Setup
+
+```ts
+import { prefetchPlugin } from "@justwant/cache/plugins/prefetch";
+import { createCache } from "@justwant/cache";
+import { redisAdapter } from "@justwant/cache/adapters/redis";
+
+const cache = createCache({
+  adapter: redisAdapter({ redis }),
+  plugins: [
+    prefetchPlugin({
+      keyFn: (key) => [`${key}:meta`, `${key}:tags`],
+      maxKeys: 5,
+    }),
+  ],
+});
+```
+
+## Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `keyFn` | `(key: string) => string[]` | — | Returns the related keys to prefetch for a given key |
+| `maxKeys` | `number` | `10` | Maximum number of related keys to prefetch per `get` |
+
+## Notes
+
+- Prefetched keys are fetched **in the background** — they do not block the current `get`.
+- Errors from background fetches are silently ignored (`.catch(() => {})`).
+- If `keyFn` is omitted, the plugin is registered but does nothing.

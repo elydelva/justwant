@@ -1,5 +1,5 @@
 ---
-title: PostgreSQL Engine
+title: PostgreSQL
 description: Job engine backed by PostgreSQL using pg_try_advisory_lock — no extra services required.
 icon: Database
 ---
@@ -56,4 +56,4 @@ export const jobs = createJob({
 | Concurrency | No |
 | Edge / serverless | No |
 
-For retry, backoff, and priority support, use [BullMQ](/docs/job/engines/bullmq). For serverless, use [QStash](/docs/job/engines/qstash).
+For retry, backoff, and priority support, use [BullMQ](/docs/job/bullmq). For serverless, use [QStash](/docs/job/qstash).

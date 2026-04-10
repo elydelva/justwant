@@ -1,0 +1,42 @@
+---
+title: Audit
+description: Callback hooks fired on every cache operation.
+icon: ClipboardList
+---
+
+Fires callbacks after every `get`, `set`, and `delete`. Use for logging, metrics, alerting, or compliance tracing.
+
+## Setup
+
+```ts
+import { auditPlugin } from "@justwant/cache/plugins/audit";
+import { createCache } from "@justwant/cache";
+import { memoryAdapter } from "@justwant/cache/adapters/memory";
+
+const cache = createCache({
+  adapter: memoryAdapter(),
+  plugins: [
+    auditPlugin({
+      onGet: (key, hit) => console.log(`GET ${key} — ${hit ? "HIT" : "MISS"}`),
+      onSet: (key) => console.log(`SET ${key}`),
+      onDelete: (key) => console.log(`DELETE ${key}`),
+    }),
+  ],
+});
+```
+
+## Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `onGet` | `(key: string, hit: boolean) => void \| Promise<void>` | Called after every `get`. `hit` is `true` if a value was found |
+| `onSet` | `(key: string) => void \| Promise<void>` | Called after every `set` |
+| `onDelete` | `(key: string) => void \| Promise<void>` | Called after every `delete` |
+
+All callbacks are optional. Omit any you do not need.
+
+## Notes
+
+- Callbacks may be async — the plugin awaits them before returning.
+- Errors thrown inside callbacks are **not caught** by the plugin. Handle them inside the callback if needed.
+- All three options default to `undefined` — `auditPlugin()` is valid with no arguments.
