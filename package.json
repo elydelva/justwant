@@ -36,8 +36,5 @@
     "defu": ">=6.1.5",
     "@hono/node-server": ">=1.19.13",
     "axios": ">=1.15.0"
-  },
-  "dependencies": {
-    "twilio": "^5.13.1"
   }
 }
