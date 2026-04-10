@@ -1,0 +1,83 @@
+---
+title: Audit
+description: Log every waitlist operation for an audit trail.
+icon: ClipboardList
+---
+
+## Overview
+
+`auditPlugin` hooks into every waitlist operation (`subscribe`, `unsubscribe`, `pop`) and calls your `log` function before the operation executes. Use it to write structured audit logs to a database, external service, or stdout.
+
+## Import
+
+```ts
+import { auditPlugin } from "@justwant/waitlist";
+```
+
+## Setup
+
+Pass `auditPlugin` in the `plugins` array of `createWaitlistService`:
+
+```ts
+import { createWaitlistService, auditPlugin } from "@justwant/waitlist";
+
+const waitlist = createWaitlistService({
+  repo,
+  plugins: [
+    auditPlugin({
+      audit: {
+        log(entry) {
+          console.log(`[audit] ${entry.operation} ${entry.listKey} ${entry.actorKey ?? ""}`);
+        },
+      },
+    }),
+  ],
+});
+```
+
+## Options
+
+### `AuditPluginOptions`
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `audit.log` | `(entry: AuditEntry) => void \| Promise<void>` | Yes | Called before each operation with a structured audit entry |
+
+### `AuditEntry`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `operation` | `string` | Operation name (e.g. `"subscribe"`, `"unsubscribe"`, `"pop"`) |
+| `listKey` | `string` | The waitlist key being operated on |
+| `actorKey` | `string \| undefined` | Actor identifier string, if an actor is present |
+| `entryId` | `string \| undefined` | Entry id — populated after the operation creates an entry |
+| `timestamp` | `Date` | When the audit entry was created |
+
+## Custom plugin
+
+`auditPlugin` implements the `WaitlistPlugin` interface. If you need behaviour beyond logging, implement `WaitlistPlugin` directly:
+
+```ts
+import type { WaitlistPlugin, WaitlistPluginContext } from "@justwant/waitlist";
+
+const myPlugin: WaitlistPlugin = {
+  init({ setContext }) {
+    // optional setup
+  },
+  async beforeExecute(ctx: WaitlistPluginContext, next) {
+    // runs before the operation
+    return next();
+  },
+  async afterExecute(ctx: WaitlistPluginContext, next) {
+    // runs after the operation (reverse order)
+    return next();
+  },
+  async onError({ operation, error }) {
+    // called on uncaught errors
+  },
+};
+
+const waitlist = createWaitlistService({ repo, plugins: [myPlugin] });
+```
+
+`beforeExecute` plugins run in declaration order; `afterExecute` plugins run in reverse order.

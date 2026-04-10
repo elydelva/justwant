@@ -1,0 +1,48 @@
+---
+title: Image Transform
+description: Resize and convert images via sharp before upload.
+icon: SlidersHorizontal
+---
+
+## Overview
+
+The image transform plugin intercepts `upload` and processes the file through `sharp` before it reaches the adapter. It resizes images to fit within optional `maxWidth` / `maxHeight` bounds (never enlarges), converts them to the target format, and applies quality compression. Only uploads whose `contentType` resolves to an image MIME type are processed — other files pass through unchanged.
+
+Requires `sharp` as a peer dependency.
+
+```bash
+bun add sharp
+```
+
+## Import
+
+```ts
+import { imageTransformPlugin } from "@justwant/storage/plugins/imageTransform";
+```
+
+## Setup
+
+```ts
+import { createStorageService } from "@justwant/storage";
+import { imageTransformPlugin } from "@justwant/storage/plugins/imageTransform";
+
+export const storage = createStorageService({
+  buckets: [bucket],
+  plugins: [
+    imageTransformPlugin({
+      maxWidth: 1200,
+      format: "webp",
+      quality: 85,
+    }),
+  ],
+});
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `maxWidth` | `number` | no | Maximum output width in pixels. Image is scaled down to fit; never enlarged. |
+| `maxHeight` | `number` | no | Maximum output height in pixels. Image is scaled down to fit; never enlarged. |
+| `format` | `"webp" \| "avif" \| "jpeg" \| "png"` | no | Output format. When set, the file extension and `contentType` are updated accordingly. |
+| `quality` | `number` | no | Compression quality (1–100). Defaults to `80`. |

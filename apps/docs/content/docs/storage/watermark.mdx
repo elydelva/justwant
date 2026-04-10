@@ -1,0 +1,60 @@
+---
+title: Watermark
+description: Append image transformation parameters to URLs for Cloudflare Images or imgproxy.
+icon: ImagePlay
+---
+
+## Overview
+
+The watermark plugin intercepts `getUrl` and appends transformation query parameters (Cloudflare Images) or path segments (imgproxy) to the returned URL. It is a no-op for non-image paths — only files with extensions `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.avif`, `.svg`, `.bmp`, or `.ico` are affected.
+
+## Import
+
+```ts
+import { watermarkPlugin } from "@justwant/storage/plugins/watermark";
+```
+
+## Setup
+
+```ts
+import { createStorageService } from "@justwant/storage";
+import { watermarkPlugin } from "@justwant/storage/plugins/watermark";
+
+// Cloudflare Images
+export const storage = createStorageService({
+  buckets: [bucket],
+  plugins: [
+    watermarkPlugin({
+      provider: "cloudflare",
+      cloudflare: { width: 800, quality: 80, fit: "cover" },
+    }),
+  ],
+});
+
+// imgproxy
+export const storage = createStorageService({
+  buckets: [bucket],
+  plugins: [
+    watermarkPlugin({
+      provider: "imgproxy",
+      imgproxy: { w: 800, h: 600, resize: "fill" },
+    }),
+  ],
+});
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `provider` | `"cloudflare" \| "imgproxy"` | yes | Which URL format to produce. |
+| `cloudflare` | `object` | no | Cloudflare Images transform options (used when `provider` is `"cloudflare"`). |
+| `cloudflare.fit` | `string` | no | Fit mode (e.g. `"cover"`, `"contain"`). |
+| `cloudflare.width` | `number` | no | Target width in pixels. |
+| `cloudflare.height` | `number` | no | Target height in pixels. |
+| `cloudflare.quality` | `number` | no | Image quality (1–100). |
+| `imgproxy` | `object` | no | imgproxy processing options (used when `provider` is `"imgproxy"`). |
+| `imgproxy.w` | `number` | no | Target width. |
+| `imgproxy.h` | `number` | no | Target height. |
+| `imgproxy.resize` | `string` | no | Resize mode (e.g. `"fill"`, `"fit"`). |
+| `imgproxy.wm` | `string` | no | Watermark option string. |

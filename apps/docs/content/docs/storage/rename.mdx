@@ -1,0 +1,59 @@
+---
+title: Rename
+description: Sanitize file paths and apply a naming strategy on upload.
+icon: Pencil
+---
+
+## Overview
+
+The rename plugin intercepts `upload` and rewrites the file path before it reaches the adapter. It can sanitize unsafe characters, and optionally apply one of three naming strategies: UUID, SHA-256 hash, or slug.
+
+`sanitize` is enabled by default even when no `strategy` is set.
+
+## Import
+
+```ts
+import { renamePlugin } from "@justwant/storage/plugins/rename";
+```
+
+## Setup
+
+```ts
+import { createStorageService } from "@justwant/storage";
+import { renamePlugin } from "@justwant/storage/plugins/rename";
+
+export const storage = createStorageService({
+  buckets: [bucket],
+  plugins: [
+    renamePlugin({ strategy: "uuid" }),
+  ],
+});
+```
+
+Other examples:
+
+```ts
+// Sanitize only (remove unsafe characters — default behaviour)
+renamePlugin({ sanitize: true })
+
+// SHA-256 hash of file content (content-addressed, deduplication)
+renamePlugin({ strategy: "hash" })
+
+// Slug (lowercase, hyphens)
+renamePlugin({ strategy: "slug" })
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `sanitize` | `boolean` | no | Remove unsafe path characters (`<>:"\|?*`) and collapse double slashes. Defaults to `true`. |
+| `strategy` | `"uuid" \| "hash" \| "slug"` | no | Naming strategy applied after sanitization. When omitted only sanitization runs. |
+
+### Strategies
+
+| Strategy | Output | Use case |
+|----------|--------|----------|
+| `"uuid"` | `<uuid>.ext` | Collision-free uploads |
+| `"hash"` | `<sha256-16>.ext` | Content-addressed storage, deduplication |
+| `"slug"` | `kebab-case-name.ext` | Human-readable public URLs |

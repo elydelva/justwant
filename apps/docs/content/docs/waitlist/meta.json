@@ -10,7 +10,9 @@
     "positions",
     "invitations",
     "---Extend---",
-    "plugins",
+    "audit",
+    "expiration",
+    "referral",
     "---Reference---",
     "errors",
     "api"

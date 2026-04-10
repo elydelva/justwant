@@ -14,7 +14,12 @@
     "vercel-blob",
     "supabase",
     "---Extend---",
-    "plugins",
+    "encryption",
+    "rename",
+    "watermark",
+    "multi-bucket",
+    "image-transform",
+    "signed-url",
     "---Reference---",
     "errors",
     "api"

@@ -1,0 +1,52 @@
+---
+title: Multi Bucket
+description: Route uploads to different buckets based on content-type or file extension patterns.
+icon: GitFork
+---
+
+## Overview
+
+The multi-bucket plugin intercepts `upload` and redirects each file to a specific bucket based on its content-type or file extension. Patterns are evaluated in insertion order — the first match wins. If no pattern matches and no `defaultBucket` is configured, an error is thrown.
+
+## Import
+
+```ts
+import { multiBucketPlugin } from "@justwant/storage/plugins/multiBucket";
+```
+
+## Setup
+
+```ts
+import { createStorageService } from "@justwant/storage";
+import { multiBucketPlugin } from "@justwant/storage/plugins/multiBucket";
+
+export const storage = createStorageService({
+  buckets: [imagesBucket, documentsBucket, videosBucket],
+  plugins: [
+    multiBucketPlugin({
+      routing: {
+        "image/*":          imagesBucket,     // MIME wildcard
+        "application/pdf":  documentsBucket,  // exact MIME type
+        "*.mp4":            videosBucket,     // file extension glob
+      },
+      defaultBucket: documentsBucket,
+    }),
+  ],
+});
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `routing` | `Record<string, StorageBucket>` | yes | Map of pattern → bucket. Evaluated in insertion order; first match wins. |
+| `defaultBucket` | `StorageBucket` | no | Fallback bucket when no pattern matches. If omitted and no pattern matches, an error is thrown. |
+
+### Pattern syntax
+
+| Pattern | Matches |
+|---------|---------|
+| `"image/*"` | Any content-type starting with `image/` |
+| `"application/pdf"` | Exact content-type match |
+| `"*.jpg"` | Files whose path ends with `.jpg` (case-insensitive) |
+| `"jpg"` | Exact extension or exact content-type match |
