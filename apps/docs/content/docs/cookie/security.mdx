@@ -1,0 +1,184 @@
+---
+title: Security
+description: Production cookie security — httpOnly, secure, sameSite, maxAge, session vs persistent, and CSRF patterns.
+icon: ShieldCheck
+---
+
+## Overview
+
+Every `store.set()` and `setCookie()` call accepts a `CookieOptions` object. Getting these right is critical for web security — a misconfigured cookie can leak sessions, enable CSRF attacks, or be accessed by malicious scripts.
+
+---
+
+## Essential options
+
+### `httpOnly`
+
+Prevents JavaScript from reading the cookie via `document.cookie`. **Always set `true` for session and authentication cookies.**
+
+```ts
+store.set("session", token, {
+  path: "/",
+  httpOnly: true, // inaccessible to JS — XSS-safe
+});
+```
+
+### `secure`
+
+Sends the cookie only over HTTPS. Always set `true` in production.
+
+```ts
+store.set("session", token, {
+  path: "/",
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+});
+```
+
+### `sameSite`
+
+Controls cross-site request behavior. Mitigates CSRF attacks.
+
+| Value | Behavior | Use case |
+|-------|----------|----------|
+| `"strict"` | Never sent on cross-site requests | Highest protection — breaks OAuth redirects |
+| `"lax"` | Sent on top-level navigations (links, GET forms) | Recommended default for most cookies |
+| `"none"` | Always sent — requires `secure: true` | Third-party embeds, cross-origin APIs |
+
+```ts
+store.set("session", token, {
+  path: "/",
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax", // recommended for session cookies
+});
+```
+
+---
+
+## Session vs persistent cookies
+
+### Session cookie (expires when browser closes)
+
+Omit `maxAge` and `expires` entirely:
+
+```ts
+store.set("session", token, {
+  path: "/",
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax",
+  // no maxAge — expires when the browser tab closes
+});
+```
+
+### Persistent cookie
+
+Set `maxAge` (seconds) or `expires` (Date):
+
+```ts
+// Remember me — 30 days
+store.set("session", token, {
+  path: "/",
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax",
+  maxAge: 60 * 60 * 24 * 30,
+});
+
+// UI preference — 1 year
+store.set("theme", "dark", {
+  path: "/",
+  sameSite: "lax",
+  maxAge: 60 * 60 * 24 * 365,
+});
+```
+
+---
+
+## Recommended presets
+
+### Authentication session
+
+```ts
+const SESSION_OPTIONS = {
+  path: "/",
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax" as const,
+  maxAge: 60 * 60 * 24 * 7, // 7 days
+};
+
+store.set("session", token, SESSION_OPTIONS);
+```
+
+### UI preference (theme, locale)
+
+```ts
+const PREF_OPTIONS = {
+  path: "/",
+  sameSite: "lax" as const,
+  maxAge: 60 * 60 * 24 * 365, // 1 year
+};
+
+store.set("theme", "dark", PREF_OPTIONS);
+```
+
+### Cross-origin API cookie
+
+```ts
+store.set("api_token", token, {
+  path: "/",
+  httpOnly: true,
+  secure: true,     // required when sameSite is "none"
+  sameSite: "none",
+});
+```
+
+---
+
+## Deleting cookies
+
+Use `setCookie` / `deleteCookie` primitives to produce a `Max-Age=0` header, or call `store.set` with `maxAge: 0`:
+
+```ts
+import { deleteCookie } from "@justwant/cookie";
+
+// Produce the Set-Cookie deletion header
+const header = deleteCookie("session", { path: "/" });
+// "session=; Path=/; Max-Age=0"
+```
+
+Always include the same `path` and `domain` that were set when creating the cookie — omitting them will fail silently on most browsers.
+
+---
+
+## Scoping with `path` and `domain`
+
+### `path`
+
+Restricts the cookie to a URL path prefix. Use `"/"` to make it available site-wide.
+
+```ts
+// Only sent for /api/* routes
+store.set("api_token", token, { path: "/api", httpOnly: true });
+
+// Available everywhere
+store.set("session", token, { path: "/" });
+```
+
+### `domain`
+
+Shares a cookie across subdomains. The browser rejects cookies for domains not matching the current origin.
+
+```ts
+// Shared across app.example.com, api.example.com, etc.
+store.set("session", token, {
+  path: "/",
+  domain: ".example.com", // leading dot = include subdomains
+  httpOnly: true,
+  secure: true,
+});
+```
+
+Omitting `domain` restricts the cookie to the exact origin — safer for most use cases.

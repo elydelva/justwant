@@ -1,0 +1,73 @@
+---
+title: Introduction
+description: Multi-source configuration with waterfall resolution, typed validation, and environment switching.
+icon: Settings
+---
+
+## What is @justwant/config?
+
+`@justwant/config` is a **typed configuration service** for TypeScript applications. It resolves config values from multiple sources in a defined priority order — environment variables, JSON files, a database, or any custom source — without locking you into a single strategy.
+
+**Use it when** you need to:
+- Read config from environment variables in production and a JSON file locally
+- Override individual values from a database without touching code
+- Validate config values with any Standard Schema-compatible library (Zod, Valibot, ArkType, etc.)
+- Switch between named environments (e.g. `development`, `production`, `test`)
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Waterfall resolution** | First non-undefined value wins across an ordered list of sources |
+| **Multiple sources** | Env vars, JSON files, database key-value stores, or custom sources |
+| **Named environments** | Define separate source maps per environment and switch at runtime |
+| **Standard Schema validation** | Validate and transform values with Zod, Valibot, ArkType, or any compatible library |
+| **Typed API** | `get<T>(key)` returns `Promise<T>` — no cast needed at the call site |
+| **Async sources** | Database and custom sources can be async; resolution awaits them transparently |
+
+## How it works
+
+1. **Define sources** — create source instances with `defineEnvSource`, `defineJsonSource`, `defineDatabaseSource`, or implement `ConfigSource` yourself.
+2. **Define values** — map logical keys to one or more `ValueDef` objects with `defineValue`.
+3. **Define environments** — group a sources map (and optional schema) into a named environment with `defineEnvironment`.
+4. **Create the service** — pass environments to `createConfigService` to get a `ConfigApi`.
+5. **Read values** — call `config.get("key")` anywhere; the service resolves the waterfall and validates the result.
+
+```ts
+import {
+  createConfigService,
+  defineEnvironment,
+  defineValue,
+  defineEnvSource,
+} from "@justwant/config";
+
+const env = defineEnvSource({ prefix: "APP_" });
+
+const config = createConfigService({
+  environments: [
+    defineEnvironment({
+      name: "production",
+      sources: {
+        databaseUrl: defineValue({ from: env, key: "DATABASE_URL" }),
+        port: defineValue({ from: env, key: "PORT" }),
+      },
+    }),
+  ],
+});
+
+const dbUrl = await config.get<string>("databaseUrl");
+```
+
+## Core principles
+
+- **Source-agnostic** — Any object implementing `ConfigSource` is a valid source. No hard dependency on any runtime API.
+- **Waterfall-first** — Values are resolved left-to-right; the first defined value wins. No merging, no surprises.
+- **Schema-optional** — Validation is entirely optional. Pass a Standard Schema per key when you need it.
+- **Framework-agnostic** — Works in Node.js, Bun, Deno, Edge, and Workers.
+
+## Next steps
+
+- [Installation](/docs/config/installation) — Install and create your first config service
+- [Basic Usage](/docs/config/basic-usage) — defineValue, defineEnvironment, createConfigService
+- [Sources](/docs/config/sources) — Available source types with examples
+- [API Reference](/docs/config/api) — Full type and function reference

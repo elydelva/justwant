@@ -1,0 +1,146 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/actor.
+icon: BookOpen
+---
+
+## Core functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `defineActor(options)` | `ActorDef<N>` | Define a typed actor factory |
+| `actorKey(actor)` | `string` | Serialize an actor to a stable string key |
+| `toRepo(actor)` | `RepoShape` | Flatten an actor to a database-friendly row shape |
+| `fromRepo(shape)` | `Actor` | Reconstruct an actor from a stored row |
+| `parseActorKey(key)` | `Actor` | Parse a serialized key string back to an actor |
+
+## `defineActor` options
+
+`defineActor` accepts one of three option shapes:
+
+### `{ name }`
+
+Creates a simple actor factory. The returned `ActorDef` is callable as `actorDef(id)`.
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Actor type name (used as `actor.type`) |
+
+### `{ name, within }`
+
+Creates a scoped actor factory. The returned `ActorDef` is callable as `actorDef(withinId, id)`.
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Actor type name |
+| `within` | `string` | Yes | Container type name (e.g. `"org"`) |
+
+### `{ from }`
+
+Delegates to an existing identity. The returned `ActorDef` forwards calls to the source factory.
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `from` | `IdentityLike` | Yes | Source actor or identity definition to delegate to |
+
+## `ActorDef<N>`
+
+The value returned by `defineActor`. It is both a callable factory and a metadata object.
+
+| Member | Type | Description |
+|--------|------|-------------|
+| `name` | `N` | The actor type name |
+| `within` | `string \| undefined` | Container type, if defined with `within` |
+| `(id)` | `Actor<N>` | Call signature for simple actors |
+| `(withinId, id)` | `Actor<N>` | Call signature for scoped actors |
+
+## `Actor<T>`
+
+The runtime actor identity object.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | `T` | Actor type name |
+| `id` | `string` | Actor instance id |
+| `within` | `ActorWithin \| undefined` | Container reference, if scoped |
+
+## `ActorWithin`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | `string` | Container type name |
+| `id` | `string` | Container instance id |
+
+## `actorKey`
+
+```ts
+function actorKey(actor: Actor): string
+```
+
+Serializes an actor to a colon-delimited string.
+
+| Actor shape | Output format |
+|-------------|--------------|
+| `{ type, id }` | `"type:id"` |
+| `{ type, id, within: { type, id } }` | `"type:id:withinType:withinId"` |
+
+## `toRepo`
+
+```ts
+function toRepo(actor: Actor): RepoShape
+```
+
+Flattens an actor to a named-column shape for database persistence.
+
+## `RepoShape`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `actorType` | `string` | Actor type name |
+| `actorId` | `string` | Actor instance id |
+| `actorWithinType` | `string \| undefined` | Container type, if scoped |
+| `actorWithinId` | `string \| undefined` | Container id, if scoped |
+| `actorOrgId` | `string \| undefined` | Set to `actorWithinId` when `actorWithinType === "org"` (legacy compat) |
+
+## `fromRepo`
+
+```ts
+function fromRepo(shape: RepoShapeInput): Actor
+```
+
+Reconstructs an `Actor` from a stored row. Resolution order:
+
+1. Uses `actorWithinType` + `actorWithinId` when both are present.
+2. Falls back to `actorOrgId` → `within: { type: "org", id: actorOrgId }`.
+
+## `RepoShapeInput`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `actorType` | `string` | Actor type name |
+| `actorId` | `string` | Actor instance id |
+| `actorWithinType` | `string \| undefined` | Container type |
+| `actorWithinId` | `string \| undefined` | Container id |
+| `actorOrgId` | `string \| undefined` | Legacy org id fallback |
+
+## `parseActorKey`
+
+```ts
+function parseActorKey(key: string): Actor
+```
+
+Parses a key string produced by `actorKey` back to an `Actor`. Throws an `Error` if the key has fewer than 2 parts or an unsupported number of parts.
+
+| Input format | Result |
+|-------------|--------|
+| `"type:id"` | `{ type, id }` |
+| `"type:id:withinType:withinId"` | `{ type, id, within: { type, id } }` |
+| `"type:id:orgId"` | `{ type, id, within: { type: "org", id: orgId } }` (legacy 3-part) |
+
+## `IdentityLike`
+
+```ts
+interface IdentityLike extends Definable<string> {}
+```
+
+Any object with a `name: string` property and call signature `(id: string) => unknown`. Implemented by `ActorDef`.

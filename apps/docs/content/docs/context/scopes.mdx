@@ -1,0 +1,119 @@
+---
+title: Scopes
+description: Understand eager, request, and on-demand slot resolution scopes.
+icon: Clock
+---
+
+## Overview
+
+A slot's `scope` controls **when** its resolver function is called relative to `forRequest()`. Choosing the right scope affects both performance and the order in which side effects occur.
+
+| Scope | Resolves at | Use when |
+|-------|-------------|----------|
+| `"eager"` | `forRequest()` call (fire-and-forget) | Always needed; start resolution ASAP |
+| `"request"` | `forRequest()` call (fire-and-forget) | Always needed; semantically "per-request" |
+| `"on-demand"` | First `ctx.get(slot)` call | Conditionally needed; expensive to compute |
+
+Note: `"eager"` and `"request"` behave identically at runtime — both kick off resolution immediately inside `forRequest()`. The distinction is semantic: use `"eager"` to signal that the value is infrastructure-level (e.g., a database connection), and `"request"` for values that are conceptually per-request data (e.g., a decoded auth token).
+
+## `"eager"` scope
+
+Resolution starts when `forRequest()` is called, before any handler runs. If the slot fails to resolve, the error will be surfaced when `ctx.get(slot)` is awaited.
+
+```ts title="Eager scope — database connection"
+import { defineSlot } from "@justwant/context";
+
+export const dbSlot = defineSlot<DatabaseClient>({
+  key: "db",
+  scope: "eager",
+  resolve: async () => {
+    // Starts resolving immediately at forRequest()
+    return openDatabaseConnection(process.env.DATABASE_URL!);
+  },
+});
+```
+
+**When to use:** Resources that are always required and benefit from starting early — database connections, config loaders, cache clients.
+
+## `"request"` scope
+
+Identical behavior to `"eager"` at runtime. Use `"request"` when the value is conceptually tied to the incoming request rather than to infrastructure.
+
+```ts title="Request scope — decoded auth token"
+import { defineSlot } from "@justwant/context";
+
+export const userSlot = defineSlot<AuthUser>({
+  key: "user",
+  scope: "request",
+  resolve: async (ctx) => {
+    const token = ctx.initial["authToken"] as string;
+    // Starts resolving immediately at forRequest()
+    return verifyJwt(token);
+  },
+});
+```
+
+**When to use:** Values that are always needed for the request and derived from `ctx.initial` — authenticated user, parsed headers, request metadata.
+
+## `"on-demand"` scope
+
+Resolution is deferred until the first time `ctx.get(slot)` is awaited. If the slot is never accessed, the resolver is never called.
+
+```ts title="On-demand scope — user preferences"
+import { defineSlot } from "@justwant/context";
+import { userSlot } from "./userSlot";
+
+export const prefsSlot = defineSlot<UserPreferences>({
+  key: "prefs",
+  scope: "on-demand",
+  resolve: async (ctx) => {
+    const user = await ctx.get(userSlot); // depends on another slot
+    // Only called when a handler accesses ctx.get(prefsSlot)
+    return fetchPreferences(user.id);
+  },
+});
+```
+
+**When to use:** Values that are expensive to compute and only needed on certain code paths — user preferences, audit log context, third-party API data.
+
+## Slot dependencies
+
+Resolvers receive the `RequestContext` as their argument, so they can call `ctx.get(otherSlot)` to depend on other slots. This works regardless of scope.
+
+```ts title="Slot depending on another slot"
+export const tenantSlot = defineSlot<Tenant>({
+  key: "tenant",
+  scope: "on-demand",
+  resolve: async (ctx) => {
+    const user = await ctx.get(userSlot);   // resolves userSlot first
+    return fetchTenant(user.tenantId);
+  },
+});
+```
+
+Because resolution is memoized, `userSlot` will only be resolved once even if multiple slots depend on it.
+
+## Timing diagram
+
+```
+forRequest({ authToken })
+  │
+  ├─ [eager/request slots start resolving concurrently]
+  │    ├─ dbSlot.resolve()   ──────────────────► cached
+  │    └─ userSlot.resolve() ──────────────────► cached
+  │
+  └─ returns RequestContext immediately
+       │
+       ├─ ctx.get(dbSlot)    → returns cached promise (already in flight)
+       ├─ ctx.get(userSlot)  → returns cached promise (already in flight)
+       └─ ctx.get(prefsSlot) → starts resolving NOW (on-demand)
+```
+
+## Choosing a scope
+
+Use this decision tree:
+
+1. Is the slot **always accessed** on every request? → `"eager"` or `"request"`
+2. Is it **infrastructure** (db, cache, config)? → `"eager"`
+3. Is it **request identity** (user, session, locale)? → `"request"`
+4. Is it **conditionally accessed** or expensive? → `"on-demand"`

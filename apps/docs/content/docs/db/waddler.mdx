@@ -1,0 +1,193 @@
+---
+title: Waddler Adapter
+description: Use @justwant/db with Waddler for schema-less SQL — Bun SQLite, PostgreSQL, Neon, Turso, Cloudflare D1, and more.
+icon: Layers
+---
+
+## Overview
+
+The Waddler adapter provides raw SQL access via tagged template literals (`sql\`...\``). Unlike Drizzle or Prisma, Waddler requires no schema file or code generation step — it works directly with SQL.
+
+The Waddler integration in `@justwant/db` adds:
+- The same `MappedTable` interface (`create`, `findById`, `findMany`, etc.)
+- Contract-based validation before insert and update
+- DDL helpers (`createTable`, `exist`, `drop`)
+- Soft delete support
+
+## Quick start
+
+<CodeBlockTabs defaultValue="bun-sqlite">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun-sqlite">Bun SQLite</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pg">PostgreSQL</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="neon">Neon</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="turso">Turso</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="d1">Cloudflare D1</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun-sqlite">
+
+```ts title="lib/db.ts"
+import { createDb } from "@justwant/db/waddler";
+import { createBunSqliteAdapter } from "@justwant/db/bun-sqlite";
+
+export const db = createDb(createBunSqliteAdapter({ connection: ":memory:" }));
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pg">
+
+```ts title="lib/db.ts"
+import { createDb } from "@justwant/db/waddler";
+import { createPgAdapter } from "@justwant/db/pg";
+
+export const db = createDb(createPgAdapter({
+  connection: process.env.DATABASE_URL!,
+}));
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="neon">
+
+```ts title="lib/db.ts"
+import { createDb } from "@justwant/db/waddler";
+import { createNeonAdapter } from "@justwant/db/neon";
+import { neon } from "@neondatabase/serverless";
+
+const sql = neon(process.env.DATABASE_URL!);
+
+export const db = createDb(createNeonAdapter({ client: sql }));
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="turso">
+
+```ts title="lib/db.ts"
+import { createDb } from "@justwant/db/waddler";
+import { createTursoAdapter } from "@justwant/db/turso";
+import { createClient } from "@libsql/client";
+
+const client = createClient({
+  url: process.env.TURSO_URL!,
+  authToken: process.env.TURSO_TOKEN,
+});
+
+export const db = createDb(createTursoAdapter({ client }));
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="d1">
+
+```ts title="lib/db.ts"
+import { createDb } from "@justwant/db/waddler";
+import { createD1Adapter } from "@justwant/db/d1";
+
+// In a Cloudflare Worker — DB is bound in wrangler.toml
+export function createWorkerDb(env: Env) {
+  return createDb(createD1Adapter({ client: env.DB }));
+}
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Define a table
+
+```ts title="tables/users.ts"
+import { db } from "@/lib/db";
+import { defineContract, field } from "@justwant/contract";
+
+const userContract = defineContract({
+  id: field.string(),
+  email: field.string(),
+  name: field.string(),
+  createdAt: field.string(),
+  deletedAt: field.string().optional(),
+});
+
+const mapping = {
+  id: { name: "id" },
+  email: { name: "email" },
+  name: { name: "name" },
+  createdAt: { name: "created_at" },
+  deletedAt: { name: "deleted_at" },
+};
+
+export const users = db.defineTable("users", userContract, mapping);
+```
+
+## DDL helpers
+
+The Waddler adapter adds three DDL methods unavailable in Drizzle and Prisma adapters:
+
+```ts
+// Create table (IF NOT EXISTS)
+await users.createTable();
+
+// Check if table exists
+const exists = await users.exist();
+
+// Drop table
+await users.drop();
+```
+
+## createSafe / updateSafe
+
+The Waddler adapter also exposes validation-returning variants that avoid throwing:
+
+```ts
+const result = await users.createSafe({
+  email: "alice@example.com",
+  name: "Alice",
+  createdAt: new Date().toISOString(),
+});
+
+if (!result.ok) {
+  console.error(result.issues);
+} else {
+  console.log(result.value.id);
+}
+```
+
+## Soft delete
+
+Same as other adapters: `delete` sets `deletedAt`, `hardDelete` removes the row. Soft-deleted rows are excluded from all `find*` queries.
+
+To change or disable the soft-delete column:
+
+```ts
+db.defineTable("users", userContract, mapping, {
+  softDeleteColumn: "archivedAt", // custom column
+});
+
+db.defineTable("users", userContract, mapping, {
+  softDeleteColumn: null, // disable
+});
+```
+
+## Transactions
+
+<Callout type="warn">
+  The Waddler adapter does **not** implement `transaction()`. The method is declared as optional in the `Db` interface but is never assigned by `createWaddlerAdapter`, so calling `db.transaction()` will throw a `TypeError: db.transaction is not a function` at runtime.
+
+  If you need transaction support, use the [Drizzle](/docs/db/drizzle) or [Prisma](/docs/db/prisma) adapters, both of which implement `transaction()`.
+</Callout>
+
+## Available sub-drivers
+
+| Import | Driver | Database |
+|--------|--------|----------|
+| `@justwant/db/bun-sqlite` | `createBunSqliteAdapter` | Bun SQLite (built-in) |
+| `@justwant/db/pg` | `createPgAdapter` | PostgreSQL (node-postgres) |
+| `@justwant/db/bun-sql` | `createBunSqlAdapter` | PostgreSQL (Bun.sql) |
+| `@justwant/db/postgres-js` | `createPostgresJsAdapter` | PostgreSQL (postgres.js) |
+| `@justwant/db/neon` | `createNeonAdapter` | Neon serverless |
+| `@justwant/db/turso` | `createTursoAdapter` | Turso / libSQL |
+| `@justwant/db/d1` | `createD1Adapter` | Cloudflare D1 |
+| `@justwant/db/durable-objects` | `createDurableObjectsAdapter` | Cloudflare Durable Objects |
+| `@justwant/db/mysql` | `createMysqlAdapter` | MySQL (mysql2) |
+| `@justwant/db/planetscale` | `createPlanetScaleAdapter` | PlanetScale |
+| `@justwant/db/tidb` | `createTidbAdapter` | TiDB |
+| `@justwant/db/pglite` | `createPgliteAdapter` | PGlite (in-process PostgreSQL) |
+| `@justwant/db/better-sqlite3` | `createBetterSqlite3Adapter` | better-sqlite3 (Node.js) |
+| `@justwant/db/xata` | `createXataAdapter` | Xata |
+| `@justwant/db/vercel-postgres` | `createVercelPostgresAdapter` | Vercel Postgres |

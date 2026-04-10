@@ -1,0 +1,130 @@
+---
+title: Basic Usage
+description: Define preferences, create a service, and read, write, and reset values for an actor.
+icon: Play
+---
+
+## Step 1 — Define preferences
+
+Each preference is a portable definition object. Call `definePreference` once, typically in a shared module.
+
+```ts title="lib/preferences.ts"
+import { definePreference } from "@justwant/preference";
+import { z } from "zod";
+
+export const theme = definePreference({
+  name: "theme",
+  schema: z.enum(["light", "dark", "system"]),
+  default: "system",
+});
+
+export const pageSize = definePreference({
+  name: "pageSize",
+  schema: z.number().int().min(5).max(100),
+  default: 20,
+});
+
+export const emailNotifications = definePreference({
+  name: "emailNotifications",
+  default: true,
+});
+```
+
+The `name` is used as the key in the `list()` result. The optional `key` field controls the storage key — it defaults to `name` when omitted.
+
+## Step 2 — Create the service
+
+Pass all declared preferences and a repository adapter to `createPreferenceService`.
+
+```ts title="lib/prefs.ts"
+import { createPreferenceService, createMemoryPreferenceAdapter } from "@justwant/preference";
+import { theme, pageSize, emailNotifications } from "./preferences.ts";
+
+export const prefs = createPreferenceService({
+  preferences: [theme, pageSize, emailNotifications],
+  repo: createMemoryPreferenceAdapter(), // swap for createPreferenceDbAdapter in production
+});
+```
+
+## List all preferences
+
+`list` returns every registered preference for the actor. If no stored value exists for a preference, its `default` is used.
+
+```ts
+const actor = { type: "user", id: "u-1" };
+
+const all = await prefs.list(actor);
+// {
+//   theme: "system",
+//   pageSize: 20,
+//   emailNotifications: true,
+// }
+```
+
+## Get one preference
+
+```ts
+const value = await prefs.get(actor, theme);
+// "system" (default, since nothing has been stored yet)
+```
+
+`get` returns `undefined` when there is no stored value and the preference has no default.
+
+## Set a preference
+
+```ts
+await prefs.set(actor, theme, "dark");
+
+const value = await prefs.get(actor, theme); // "dark"
+```
+
+If a `schema` was provided, the value is validated before being stored. An invalid value throws `PreferenceValidationError`.
+
+```ts
+import { PreferenceValidationError } from "@justwant/preference";
+
+try {
+  await prefs.set(actor, pageSize, 9999); // fails schema (max 100)
+} catch (err) {
+  if (err instanceof PreferenceValidationError) {
+    console.error(err.code);     // "PREFERENCE_VALIDATION_ERROR"
+    console.error(err.metadata); // { key: "pageSize", issues: [...] }
+  }
+}
+```
+
+`set` upserts: it creates a new entry on first call and updates the existing one on subsequent calls.
+
+## Set multiple preferences
+
+Use `setMany` to apply several updates in a single call. Each entry is validated individually.
+
+```ts
+await prefs.setMany(actor, [
+  { pref: theme, value: "light" },
+  { pref: pageSize, value: 50 },
+  { pref: emailNotifications, value: false },
+]);
+```
+
+## Reset a preference
+
+`reset` deletes the stored entry. Subsequent reads return the default value (or `undefined` if no default is defined).
+
+```ts
+await prefs.reset(actor, theme);
+
+const value = await prefs.get(actor, theme); // "system" (back to default)
+```
+
+## Custom storage key
+
+Use `key` to separate the display name from the storage key. This is useful when renaming a preference without migrating stored data.
+
+```ts
+const locale = definePreference({
+  name: "locale",
+  key: "user_locale", // stored under "user_locale", exposed as "locale" in list()
+  default: "en",
+});
+```

@@ -1,0 +1,42 @@
+---
+title: Errors
+description: Error classes exported by @justwant/bezier.
+icon: CircleAlert
+---
+
+All errors thrown by `@justwant/bezier` extend `BezierError`, which itself extends the native `Error` class. You can catch the base class to handle any library error, or catch a specific subclass for finer control.
+
+## `BezierError`
+
+The base error class for all `@justwant/bezier` errors.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `"BezierError"` | Always `"BezierError"` |
+| `message` | `string` | Human-readable error description |
+
+## `InvalidBezierParamsError`
+
+Thrown when one or more of the Bézier curve control point coordinates (`p1x`, `p1y`, `p2x`, `p2y`) fall outside the valid range `[0, 1]`.
+
+Extends `BezierError`.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `"InvalidBezierParamsError"` | Always `"InvalidBezierParamsError"` |
+| `params` | `{ p1x: number; p1y: number; p2x: number; p2y: number }` | The invalid parameters that triggered the error |
+
+```ts
+import { createBezierCurve, BezierError, InvalidBezierParamsError } from "@justwant/bezier";
+
+try {
+  const curve = createBezierCurve({ p1x: -0.5, p1y: 0.25, p2x: 1.5, p2y: 0.75 });
+} catch (err) {
+  if (err instanceof InvalidBezierParamsError) {
+    console.error("Invalid control points:", err.params);
+    // { p1x: -0.5, p1y: 0.25, p2x: 1.5, p2y: 0.75 }
+  } else if (err instanceof BezierError) {
+    console.error("Bezier error:", err.message);
+  }
+}
+```

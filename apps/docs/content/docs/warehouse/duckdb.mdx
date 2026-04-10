@@ -1,0 +1,106 @@
+---
+title: DuckDB
+description: DuckDB dialect for in-process analytics — local development, testing, and embedded use cases.
+icon: HardDrive
+---
+
+## When to use
+
+Use the DuckDB adapter for **local development**, in-process analytics, and testing. DuckDB runs in-process — no server required. Use `:memory:` for tests and a file path for persistent local workloads.
+
+## Installation
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add waddler @duckdb/node-api
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install waddler @duckdb/node-api
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add waddler @duckdb/node-api
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add waddler @duckdb/node-api
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Setup
+
+```ts title="warehouse.ts"
+import { createWarehouse } from "@justwant/warehouse";
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+
+// In-memory database (default)
+const warehouse = createWarehouse(
+  createDuckDbAdapter({ path: ":memory:" })
+);
+
+// Persistent file
+const warehouse = createWarehouse(
+  createDuckDbAdapter({ path: "./analytics.duckdb" })
+);
+
+// Existing DuckDB client
+const warehouse = createWarehouse(
+  createDuckDbAdapter({ client: myDuckDbClient })
+);
+```
+
+## Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `path` | `string` | `":memory:"` | `:memory:` for in-process or a file path for persistent storage |
+| `client` | `unknown` | — | Pass an existing DuckDB client to reuse an open connection |
+
+## DDL example
+
+DuckDB DDL uses standard SQL types:
+
+```sql
+CREATE TABLE IF NOT EXISTS "events" (
+  "user_id" TEXT NOT NULL,
+  "event_name" TEXT NOT NULL,
+  "value" REAL,
+  "created_at" TEXT NOT NULL
+)
+```
+
+## Column type mapping
+
+| Contract type | DuckDB |
+|--------------|--------|
+| `string()` | `TEXT` |
+| `integer()` | `INTEGER` |
+| `real()` | `REAL` |
+| optional field | column allows `NULL` |
+
+## Notes
+
+- DuckDB runs in-process — no server required.
+- `:memory:` is ideal for tests and short-lived tasks; data is not persisted across restarts.
+- For persistent workloads, use a file path (e.g. `./data.duckdb`).
+- For production-scale analytics clusters, use [ClickHouse](/docs/warehouse/clickhouse) instead.

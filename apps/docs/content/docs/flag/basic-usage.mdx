@@ -1,0 +1,106 @@
+---
+title: Basic Usage
+description: End-to-end example — defineRule, defineFlag, createFlagService, evaluate.
+icon: Play
+---
+
+## Full example: user beta access
+
+This walkthrough gates a beta feature by `userId`. Users explicitly enrolled in beta have `enabled: true` pushed to the rule config via `setConfigOverride`.
+
+### 1. Define the rule
+
+A rule has a name, optional schemas (StandardSchema-compatible), a default config, and a logic function.
+
+```ts title="lib/flags/betaRule.ts"
+import { defineRule } from "@justwant/flag";
+import * as v from "valibot";
+
+export const betaRule = defineRule({
+  name: "beta-access",
+  // Remote config shape — validated when saved and when evaluated
+  config: v.object({
+    enabled: v.boolean(),
+    allowList: v.array(v.string()),
+  }),
+  // Request context shape — provided by your app at evaluation time
+  context: v.object({
+    userId: v.string(),
+  }),
+  defaultConfig: {
+    enabled: false,
+    allowList: [],
+  },
+  logic: ({ config, context }) => {
+    if (config.enabled) return true;
+    return config.allowList.includes(context.userId);
+  },
+});
+```
+
+### 2. Define the flag
+
+A flag wraps a `FeatureDef` and attaches one or more rules.
+
+```ts title="lib/flags/betaFlag.ts"
+import { defineFlag } from "@justwant/flag";
+import { defineFeature } from "@justwant/feature";
+import { betaRule } from "./betaRule";
+
+const betaFeature = defineFeature({ name: "beta" });
+
+export const betaFlag = defineFlag(betaFeature, {
+  default: false,
+  rules: [betaRule],
+  strategy: "any", // true if ANY rule returns true (default)
+});
+```
+
+### 3. Create the service
+
+```ts title="lib/flags/service.ts"
+import { createFlagService, createMemoryFlagConfigRepo } from "@justwant/flag";
+import { betaFlag } from "./betaFlag";
+
+const repo = createMemoryFlagConfigRepo();
+
+export const flagService = createFlagService({
+  flags: [betaFlag],
+  repo,
+});
+```
+
+### 4. Evaluate
+
+```ts title="app/route.ts"
+import { flagService, betaFlag } from "@/lib/flags/service";
+
+const context = { userId: "user_abc" };
+const isBetaEnabled = await flagService.evaluate(betaFlag, context);
+
+console.log(isBetaEnabled); // false — default config has enabled: false
+```
+
+### 5. Override config at runtime
+
+Push a new config to enable the flag globally without redeploying:
+
+```ts
+await flagService.setConfigOverride(betaRule, {
+  enabled: true,
+  allowList: [],
+});
+
+const result = await flagService.evaluate(betaFlag, { userId: "user_abc" });
+console.log(result); // true
+```
+
+## Config resolution order
+
+When evaluating, per-rule config is merged in this priority (highest wins):
+
+1. Ad-hoc `configOverride` passed directly to `evaluate()`
+2. Latest non-rolled-back remote config from the repo
+3. Rule `defaultConfig`
+
+**Note**: See [Evaluation](/docs/flag/evaluation) for full resolution details.

@@ -1,0 +1,139 @@
+---
+title: Define Job
+description: defineJob, defineCron, and defineQueue — the building blocks of @justwant/job.
+icon: BookOpen
+---
+
+## Overview
+
+Job definitions are separated from handlers so the same definition can be reused across multiple queues, crons, or environments. Three functions cover the three layers:
+
+| Function | Purpose |
+|----------|---------|
+| `defineJob` | Defines work — name, schema, retry defaults |
+| `defineCron` | Attaches a cron expression to a job (schedule only) |
+| `defineQueue` | Attaches queue params to a job (name, parallelism, optional cron) |
+
+## defineJob
+
+```ts
+import { defineJob } from "@justwant/job";
+import * as v from "valibot";
+
+const sendEmail = defineJob({
+  name: "send-email",
+  schema: v.object({
+    to: v.string(),
+    subject: v.string(),
+    body: v.string(),
+  }),
+  defaults: {
+    timezone: "Europe/Paris",
+    retry: { attempts: 3, backoff: "exponential", delayMs: 1000 },
+    timeout: "30s",
+  },
+});
+```
+
+### DefineJobConfig
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `N extends string` | Yes | Unique job identifier (literal type) |
+| `schema` | `StandardSchemaV1` | No | Zod / Valibot schema for payload validation |
+| `defaults` | `JobDefaults` | No | Default retry, timezone, timeout |
+
+### JobDefaults
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `timezone` | `string` | IANA timezone for cron scheduling |
+| `retry.attempts` | `number` | Max retry attempts |
+| `retry.backoff` | `"linear" \| "exponential" \| "fixed"` | Backoff strategy |
+| `retry.delayMs` | `number` | Initial delay in milliseconds |
+| `timeout` | `string` | Execution timeout (engine-specific format) |
+
+### Creating a handler
+
+`defineJob` returns a `JobDefinition` with a `.handle(fn)` method:
+
+```ts
+const handler = sendEmail.handle(async ({ data, logger, job }) => {
+  logger.info("Sending email", { to: data.to });
+  await mailer.send(data);
+});
+```
+
+The handler function receives a `JobHandlerContext`:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `data` | `T` | Validated payload |
+| `job.name` | `string` | Job name |
+| `job.runCount` | `number` | Execution count |
+| `job.startedAt` | `Date` | Execution start time |
+| `logger` | `JobLogger` | `info`, `warn`, `error` methods |
+
+### Infer payload type
+
+```ts
+import type { InferJobPayload } from "@justwant/job";
+
+type EmailPayload = InferJobPayload<typeof sendEmail>;
+// → { to: string; subject: string; body: string }
+```
+
+---
+
+## defineCron
+
+Use `defineCron` for scheduled-only jobs. The cron engine registers a recurring trigger; the job cannot be enqueued manually through this definition.
+
+```ts
+import { defineCron } from "@justwant/job";
+
+const weeklyReport = defineCron({
+  job: sendEmail,
+  cron: "0 8 * * 1", // every Monday at 08:00
+  id: "weekly-report", // optional — allows multiple crons for the same job
+});
+```
+
+### DefineCronConfig
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `job` | `JobDefinition` | Yes | The job to schedule |
+| `cron` | `string` | Yes | Cron expression (5 or 6 fields) |
+| `id` | `string` | No | Unique schedule id (defaults to `job.name`) |
+
+---
+
+## defineQueue
+
+Use `defineQueue` when you need manual enqueue, pause/resume, or queue-level configuration. You can combine a queue name with a cron expression.
+
+```ts
+import { defineQueue } from "@justwant/job";
+
+const emailQueue = defineQueue({
+  job: sendEmail,
+  queue: "emails",           // queue name
+  parallelism: 10,           // max concurrent workers
+  cron: "*/5 * * * *",       // also run on schedule (optional)
+  aggregateSchedules: false,
+});
+```
+
+### DefineQueueConfig
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `job` | `JobDefinition` | Yes | The job to attach |
+| `queue` | `string` | One of `queue`/`name`/`cron` required | Queue name |
+| `name` | `string` | Alias for `queue` | Queue name (alias) |
+| `cron` | `string` | No | Schedule expression |
+| `parallelism` | `number` | No | Max concurrent workers |
+| `aggregateSchedules` | `boolean` | No | QStash aggregate schedules feature |
+
+**Important**: At least one of `cron` or `queue`/`name` must be provided. Calling `defineQueue({})` without either throws an error.

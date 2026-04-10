@@ -1,0 +1,47 @@
+---
+title: Which adapter?
+description: Overview of all available storage adapters and when to use each.
+icon: MessageCircleQuestionMark
+---
+
+## Overview
+
+Each adapter implements the `StorageSourceAdapter` interface. You define a **source** with the adapter-specific function, then pass it to `defineBucket`. The rest of your application only sees `StorageService`.
+
+## Available adapters
+
+| Adapter | Subpath | When to use |
+|---------|---------|-------------|
+| Local | `/local` | Development and local testing — writes to the filesystem |
+| S3 | `/s3` | AWS S3 and any S3-compatible service (MinIO, Scaleway) |
+| R2 | `/r2` | Cloudflare R2 — no egress fees, S3-compatible API |
+| Vercel Blob | `/vercel-blob` | Vercel-hosted apps with Vercel Blob storage |
+| Supabase | `/supabase-storage` | Supabase projects using Supabase Storage |
+
+## Choosing an adapter
+
+- **Starting out / local dev**: use the [local adapter](/docs/storage/local). No cloud credentials required.
+- **AWS-native or self-hosted (MinIO)**: use the [S3 adapter](/docs/storage/s3).
+- **Cloudflare Workers or Pages**: use the [R2 adapter](/docs/storage/r2) — zero egress between R2 and Cloudflare compute.
+- **Vercel deployment**: use [Vercel Blob](/docs/storage/vercel-blob) for simple, managed file storage.
+- **Supabase project**: use [Supabase Storage](/docs/storage/supabase) alongside your Supabase database.
+
+## Switching adapters
+
+Because all adapters implement the same interface, switching is a one-line change in your source definition:
+
+```ts title="lib/storage.ts"
+// Development
+import { defineLocalSource } from "@justwant/storage/local";
+const source = defineLocalSource({ rootDir: "./uploads" });
+
+// Production (swap the import and call, nothing else changes)
+import { defineS3Source } from "@justwant/storage/s3";
+const source = defineS3Source({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+```

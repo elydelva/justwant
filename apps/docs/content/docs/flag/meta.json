@@ -1,0 +1,21 @@
+{
+  "title": "Flag",
+  "icon": "Flag",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "rules",
+    "flags",
+    "evaluation",
+    "config-overrides",
+    "---Guides---",
+    "rollout",
+    "diffusion",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

@@ -1,0 +1,99 @@
+---
+title: Rules
+description: defineRule in depth — config schema, context schema, defaultConfig, and logic.
+icon: ListChecks
+---
+
+## Overview
+
+A rule is the atomic unit of flag evaluation. It describes:
+
+- **What remote config it accepts** (`config` schema)
+- **What request-time data it reads** (`context` schema)
+- **What the default config is** (`defaultConfig`)
+- **How to compute a boolean** (`logic`)
+
+## `defineRule`
+
+```ts
+import { defineRule } from "@justwant/flag";
+
+defineRule({
+  name: string,          // unique rule identifier
+  config?: StandardSchema,    // remote config schema (optional)
+  context?: StandardSchema,   // request context schema (optional)
+  defaultConfig?: CConfig,    // fallback when no remote override exists
+  logic: ({ config, context }) => boolean | Promise<boolean>,
+})
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Unique rule name. Used as the key in config repos and override maps. |
+| `config` | `StandardSchemaV1` | No | Schema for the remote config object. Validated on save and evaluate. |
+| `context` | `StandardSchemaV1` | No | Schema for the evaluation context. Validated at evaluate time. |
+| `defaultConfig` | `CConfig` | No | Fallback config when no remote override is stored. |
+| `logic` | `function` | Yes | Receives `{ config, context }`. Return `true` to enable the flag. |
+
+## Typed config and context
+
+Use any StandardSchema-compatible library (`valibot`, `zod`, `arktype`, etc.).
+
+```ts title="rules/percentageRule.ts"
+import { defineRule } from "@justwant/flag";
+import * as v from "valibot";
+
+const percentageRule = defineRule({
+  name: "percentage-rollout",
+  config: v.object({
+    threshold: v.number(), // 0–1
+  }),
+  context: v.object({
+    userId: v.string(),
+    orgId: v.optional(v.string()),
+  }),
+  defaultConfig: { threshold: 0 },
+  logic: ({ config, context }) => {
+    // use hashContext + rollout from @justwant/flag/helpers
+    return false; // replace with actual rollout logic
+  },
+});
+```
+
+TypeScript infers `config` as `{ threshold: number }` and `context` as `{ userId: string; orgId?: string }` inside `logic` — no manual casting needed.
+
+## Schema validation limitation
+
+Async schema validators (those whose `validate()` method returns a `Promise`) are **not supported**. If an async validator is provided for `config` or `context`, validation will always fail with the message `"Async validation not supported"`. Use synchronous validators (e.g., `valibot`, `zod`, `arktype`) for config and context schemas.
+
+## Async logic
+
+The `logic` function may return a `Promise<boolean>`:
+
+```ts
+const dbGateRule = defineRule({
+  name: "db-gate",
+  context: v.object({ userId: v.string() }),
+  logic: async ({ context }) => {
+    const row = await db.betaUsers.findOne({ userId: context.userId });
+    return row !== null;
+  },
+});
+```
+
+## Rules without schemas
+
+Omit `config` and `context` when the rule needs no external data:
+
+```ts
+const alwaysOnRule = defineRule({
+  name: "always-on",
+  logic: () => true,
+});
+```
+
+## Rule name uniqueness
+
+Rule names must be unique across all flags registered in the same `createFlagService` call. The service builds an internal `ruleMap` keyed by `rule.name` — duplicates will silently overwrite.

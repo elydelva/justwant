@@ -1,0 +1,69 @@
+---
+title: Database
+description: Database-backed preference adapter for production, built on @justwant/db MappedTable.
+icon: Database
+---
+
+## When to use
+
+Use `createPreferenceDbAdapter` in **production**. It wraps any table object that satisfies the `PreferenceTable` interface — any `@justwant/db` `MappedTable` for the `preferences` table works out of the box.
+
+## Usage
+
+```ts
+import { createPreferenceDbAdapter } from "@justwant/preference";
+```
+
+## Required table interface
+
+The table object must satisfy `PreferenceTable`:
+
+```ts
+interface PreferenceTable {
+  create(data: Omit<PreferenceEntry, "id" | "createdAt" | "updatedAt"> & {
+    createdAt?: Date;
+    updatedAt?: Date;
+  }): Promise<PreferenceEntry>;
+  findOne(where: Partial<PreferenceEntry>): Promise<PreferenceEntry | null>;
+  findMany(where: Partial<PreferenceEntry>): Promise<PreferenceEntry[]>;
+  update(id: string, data: Partial<PreferenceEntry>): Promise<PreferenceEntry>;
+  delete(id: string): Promise<void>;
+}
+```
+
+Any `@justwant/db` `MappedTable` for the `preferences` table satisfies this interface automatically.
+
+## Setup with @justwant/db
+
+```ts title="lib/prefs.ts"
+import { createPreferenceService, createPreferenceDbAdapter } from "@justwant/preference";
+import { db } from "./db.ts"; // your @justwant/db instance
+import { theme, pageSize, emailNotifications } from "./preferences.ts";
+
+export const prefs = createPreferenceService({
+  preferences: [theme, pageSize, emailNotifications],
+  repo: createPreferenceDbAdapter({ table: db.table("preferences") }),
+});
+```
+
+## Notes
+
+The `PreferenceTable.findMany` method does not accept `orderBy`, `limit`, or `offset`. When the service needs those options, the DB adapter fetches all matching rows from the table and sorts or paginates them in memory. For typical preference workloads (a handful of rows per actor) this is not a concern.
+
+## Custom adapter
+
+You can implement `PreferenceRepository` directly against any storage backend — Redis, a REST API, a flat file:
+
+```ts title="lib/redis-adapter.ts"
+import type { PreferenceRepository } from "@justwant/preference";
+
+export function createRedisPreferenceAdapter(client: RedisClient): PreferenceRepository {
+  return {
+    async create(data) { /* ... */ },
+    async findOne(where) { /* ... */ },
+    async findMany(where, opts) { /* ... */ },
+    async update(id, data) { /* ... */ },
+    async delete(id) { /* ... */ },
+  };
+}
+```

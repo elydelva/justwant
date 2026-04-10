@@ -1,0 +1,49 @@
+---
+title: Introduction
+description: Distributed locks and counting semaphores with declarative definitions and lifecycle hooks.
+icon: Lock
+---
+
+## What is @justwant/lock?
+
+`@justwant/lock` is a **distributed locking library** for TypeScript applications. It provides two primitives — a **mutex** (exclusive lock, one holder at a time) and a **counting semaphore** (N holders at a time) — backed by a pluggable `LockRepository`.
+
+**Use it when** you need to:
+- Prevent concurrent execution of a job across multiple instances
+- Limit parallelism on a shared resource (rate-limit database access, API calls)
+- Guard critical sections in distributed systems without depending on a specific backend
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Mutex** | `createLock` — one holder at a time, optional TTL, extend, force release |
+| **Semaphore** | `createSemaphore` — N holders at a time, unit-level acquire/release |
+| **Declarative definitions** | `defineLockable` / `defineLockOwner` — typed, reusable resources and owners |
+| **TTL expiry** | Locks expire automatically; expired locks are reclaimed on next acquire |
+| **Hooks** | `LockHooks` — `beforeAcquire`, `afterAcquire`, `beforeRelease`, `afterRelease`, and more |
+| **Audit integration** | `auditLockHooks` — structured audit log adapter |
+| **Repository pattern** | Bring your own storage — Redis, PostgreSQL, in-memory, etc. |
+
+## How it works
+
+1. **Define** lockable resources with `defineLockable` and owners with `defineLockOwner`.
+2. **Create** a lock or semaphore by passing a `LockRepository`.
+3. **Acquire** a lock — returns `true` if acquired, `false` if already held.
+4. **Release** the lock when work is done, or let TTL expire it automatically.
+
+## Core principles
+
+- **Pure core** — No storage opinion. Core works with `LockRepository` interfaces you inject.
+- **Interface-first** — The `LockRepository` contract is minimal: `findOne`, `findMany`, `create`, `update`, `delete`.
+- **Composable** — Hooks let you add audit trails, metrics, or alerts without modifying core logic.
+- **Type-safe** — `defineLockable<N>` and `defineLockOwner<N>` infer literal names at compile time.
+
+## Next steps
+
+- [Installation](/docs/lock/installation) — Install and create your first lock
+- [Basic Usage](/docs/lock/basic-usage) — Define a resource, acquire and release a lock
+- [Mutex](/docs/lock/mutex) — `createLock` options and TTL usage
+- [Semaphore](/docs/lock/semaphore) — `createSemaphore` and counting patterns
+- [Definitions](/docs/lock/define) — `defineLockable` and `defineLockOwner`
+- [Hooks](/docs/lock/hooks) — Lifecycle hooks and audit integration

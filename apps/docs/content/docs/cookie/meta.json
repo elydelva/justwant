@@ -1,0 +1,21 @@
+{
+  "title": "Cookie",
+  "icon": "Cookie",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Guides---",
+    "store",
+    "security",
+    "---Adapters---",
+    "adapters",
+    "document",
+    "nextjs",
+    "request-response",
+    "header",
+    "---Reference---",
+    "api"
+  ]
+}

@@ -1,0 +1,71 @@
+---
+title: Referral
+description: Integrate @justwant/referral to track who invited whom on your waitlist.
+icon: UserPlus
+---
+
+## Overview
+
+The referral integration connects `@justwant/waitlist` with `@justwant/referral`. When an invitee joins via an invitation link, the invite is recorded in the referral service and the invitee's entry is created with a `referredBy` metadata field.
+
+The preferred way to use this is through `createWaitlistService` — pass `referralService` and optionally `offerKeyForList`, then call `service.invite(...)`. The low-level `invite` export is available if you need direct control.
+
+## Import
+
+```ts
+// High-level (recommended)
+import { createWaitlistService } from "@justwant/waitlist";
+
+// Low-level helper
+import { invite } from "@justwant/waitlist";
+```
+
+## Setup
+
+Pass `referralService` to `createWaitlistService`:
+
+```ts
+import { createWaitlistService } from "@justwant/waitlist";
+import { createReferralService } from "@justwant/referral";
+
+const referral = createReferralService({ repo: referralRepo });
+
+const waitlist = createWaitlistService({
+  repo: waitlistRepo,
+  referralService: referral,
+  offerKeyForList: (listKey) => `waitlist:${listKey}`,
+});
+
+// Records the referral and subscribes the invitee:
+await waitlist.invite(betaList, inviter, invitee);
+```
+
+The invitee's entry will be created with `metadata.referredBy` set to the inviter's actor key.
+
+See [Invitations](/docs/waitlist/invitations) for the full invite flow.
+
+## Options
+
+### `ReferralPluginOptions`
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `referralService` | `ReferralServiceLike` | Yes | Referral service instance — must implement `refer(offer, referrer, recipient, metadata?)` |
+| `offerKeyForList` | `(listKey: string) => string` | No | Maps a list key to a referral offer key. Defaults to using the list key as-is |
+
+### `ReferralServiceLike`
+
+The referral service only needs to satisfy this interface:
+
+```ts
+interface ReferralServiceLike {
+  refer(
+    offer: string,
+    referrer: Actor,
+    recipient: Actor,
+    metadata?: Record<string, unknown>
+  ): Promise<unknown>;
+}
+```
+
+Any object implementing this shape is accepted — including a custom implementation without `@justwant/referral`.

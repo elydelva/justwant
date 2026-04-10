@@ -1,0 +1,153 @@
+---
+title: API Reference
+description: Complete reference for all types, functions, errors, and presets exported by @justwant/bezier.
+icon: BookOpen
+---
+
+## Core — `@justwant/bezier`
+
+### `createBezierCurve(params)`
+
+Creates a cubic Bézier curve from two control points. The curve is anchored at `P0 = (0,0)` and `P3 = (1,1)`.
+
+```ts
+function createBezierCurve(params: BezierParams): BezierCurve
+```
+
+**Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `params` | `BezierParams` | Control point coordinates — all must be in `[0,1]` |
+
+**Returns** — a `BezierCurve` object.
+
+**Throws** — `InvalidBezierParamsError` if any coordinate is outside `[0,1]`.
+
+```ts title="example"
+import { createBezierCurve } from "@justwant/bezier";
+
+const curve = createBezierCurve({ p1x: 0.42, p1y: 0, p2x: 0.58, p2y: 1 });
+curve.at(0.5); // ~0.5
+```
+
+---
+
+### `BezierParams`
+
+```ts
+interface BezierParams {
+  p1x: number; // x of first control point ∈ [0,1]
+  p1y: number; // y of first control point ∈ [0,1]
+  p2x: number; // x of second control point ∈ [0,1]
+  p2y: number; // y of second control point ∈ [0,1]
+}
+```
+
+---
+
+### `BezierCurve`
+
+```ts
+interface BezierCurve {
+  at(t: number): number;
+}
+```
+
+**`at(t)`**
+
+Evaluates the curve at `t`. Values of `t` outside `[0,1]` are clamped before evaluation. The returned value is always clamped to `[0,1]`.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `t` | `number` | Input in `[0,1]` (clamped if out of range) |
+
+**Returns** — `number` in `[0,1]`.
+
+---
+
+### `BezierError`
+
+Base error class for `@justwant/bezier`. Extends `Error`.
+
+```ts
+class BezierError extends Error {
+  name: "BezierError";
+}
+```
+
+---
+
+### `InvalidBezierParamsError`
+
+Thrown by `createBezierCurve` when any control point coordinate is outside `[0,1]`.
+
+```ts
+class InvalidBezierParamsError extends BezierError {
+  name: "InvalidBezierParamsError";
+  params: { p1x: number; p1y: number; p2x: number; p2y: number };
+}
+```
+
+The `params` property contains the exact values that failed validation.
+
+```ts title="error handling"
+import { createBezierCurve, InvalidBezierParamsError } from "@justwant/bezier";
+
+try {
+  createBezierCurve({ p1x: -0.1, p1y: 0, p2x: 0.5, p2y: 1 });
+} catch (err) {
+  if (err instanceof InvalidBezierParamsError) {
+    console.error(err.params); // { p1x: -0.1, p1y: 0, p2x: 0.5, p2y: 1 }
+  }
+}
+```
+
+---
+
+## Classic presets — `@justwant/bezier/classic`
+
+CSS-equivalent easing curves. All are `BezierCurve` instances.
+
+```ts
+import { linear, easeIn, easeOut, easeInOut } from "@justwant/bezier/classic";
+```
+
+| Export | `p1x` | `p1y` | `p2x` | `p2y` | Description |
+|--------|-------|-------|-------|-------|-------------|
+| `linear` | `0.333` | `0.333` | `0.667` | `0.667` | Uniform pace |
+| `easeIn` | `0.42` | `0` | `1` | `1` | Slow start, fast end |
+| `easeOut` | `0` | `0` | `0.58` | `1` | Fast start, slow end |
+| `easeInOut` | `0.42` | `0` | `0.58` | `1` | Slow at both ends |
+
+---
+
+## Animation presets — `@justwant/bezier/animation`
+
+Design-oriented aliases with the same curves as `classic` (minus `linear`). Use these when writing UI animation code.
+
+```ts
+import { easeIn, easeOut, easeInOut } from "@justwant/bezier/animation";
+```
+
+| Export | `p1x` | `p1y` | `p2x` | `p2y` | Description |
+|--------|-------|-------|-------|-------|-------------|
+| `easeIn` | `0.42` | `0` | `1` | `1` | Slow start, fast end |
+| `easeOut` | `0` | `0` | `0.58` | `1` | Fast start, slow end |
+| `easeInOut` | `0.42` | `0` | `0.58` | `1` | Slow at both ends |
+
+---
+
+## Feature rollout presets — `@justwant/bezier/feature`
+
+Curves shaped for gradual feature adoption. Used by `@justwant/flag`'s `diffusionBezier`.
+
+```ts
+import { slowRollout, fastRollout, gradual } from "@justwant/bezier/feature";
+```
+
+| Export | `p1x` | `p1y` | `p2x` | `p2y` | Adoption shape |
+|--------|-------|-------|-------|-------|---------------|
+| `slowRollout` | `0.2` | `0` | `0.8` | `1` | Low adoption early, ramps in middle |
+| `fastRollout` | `0.6` | `0.5` | `0.4` | `1` | High adoption early, flattens |
+| `gradual` | `0.33` | `0.33` | `0.67` | `0.67` | Near-linear progressive rollout |

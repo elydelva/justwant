@@ -1,0 +1,54 @@
+---
+title: Document
+description: Browser adapter that reads and writes document.cookie directly.
+icon: Globe
+---
+
+## When to use
+
+Use `DocumentAdapter` in **browser** environments. It reads from and writes to `document.cookie` directly.
+
+## Usage
+
+```ts
+import { DocumentAdapter } from "@justwant/cookie";
+
+const adapter = DocumentAdapter();
+```
+
+Pass a `DocumentLike` object for testing or non-standard environments:
+
+```ts
+const adapter = DocumentAdapter(myDocumentLike);
+```
+
+## Example: browser cookie store
+
+```ts title="lib/browser-cookies.ts"
+import { DocumentAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+});
+
+const adapter = DocumentAdapter();
+export const store = createCookieStore({ theme: themeCookie }, { adapter });
+
+// Read
+const { theme } = store.get();
+
+// Write — sets document.cookie
+store.set("theme", "dark", {
+  path: "/",
+  sameSite: "lax",
+  maxAge: 60 * 60 * 24 * 365,
+});
+```
+
+## Notes
+
+- Only available in browser environments where `document.cookie` exists.
+- Each `write` call sets a single cookie by assigning to `document.cookie` — this does not replace all cookies (browser behavior).
+- Pass a `DocumentLike` object (`{ cookie: string }`) to use `DocumentAdapter` in unit tests.

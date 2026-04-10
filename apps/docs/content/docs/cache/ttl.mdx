@@ -1,0 +1,82 @@
+---
+title: TTL
+description: Time-to-live format — string shortcuts and millisecond numbers.
+icon: Timer
+---
+
+## Format
+
+TTL values can be expressed as a **string** (human-readable shorthand), a **number** (milliseconds from now), or a **`Date`** (absolute expiry time).
+
+### String format
+
+```ts
+await cache.set("key", value, { ttl: "5m" });
+```
+
+| Unit | Suffix | Example |
+|------|--------|---------|
+| Seconds | `s` | `"30s"` |
+| Minutes | `m` | `"5m"` |
+| Hours | `h` | `"1h"` |
+| Days | `d` | `"7d"` |
+
+Each string must contain exactly one value and one unit (e.g. `"5m"`, `"1h"`, `"7d"`). Multi-unit strings like `"1h30m"` are **not supported** and will be treated as no TTL.
+
+### Number format
+
+Pass the duration in **milliseconds** from now:
+
+```ts
+await cache.set("key", value, { ttl: 60_000 }); // 1 minute
+```
+
+### Date format
+
+Pass a `Date` to set an **absolute expiry time**:
+
+```ts
+const expiresAt = new Date("2025-12-31T23:59:59Z");
+await cache.set("key", value, { ttl: expiresAt });
+```
+
+## parseTtl
+
+Convert a TTL value to milliseconds (or a `Date` for absolute expiry) using the exported `parseTtl` utility:
+
+```ts
+import { parseTtl } from "@justwant/cache";
+
+parseTtl("5m");      // → 300000  (number, ms)
+parseTtl("1h");      // → 3600000 (number, ms)
+parseTtl(60_000);    // → 60000   (pass-through)
+parseTtl(new Date()) // → Date    (pass-through)
+parseTtl(undefined)  // → undefined
+```
+
+The return type is `number | Date | undefined`. Invalid strings return `undefined`.
+
+## Default TTL
+
+Set a default TTL at cache creation time. Individual `set` / `wrap` calls override it:
+
+```ts
+const cache = createCache({
+  adapter: memoryAdapter(),
+  defaults: { ttl: "1h" },
+});
+
+// Uses default TTL
+await cache.set("a", 1);
+
+// Overrides with 5 minutes
+await cache.set("b", 2, { ttl: "5m" });
+```
+
+## No expiration
+
+Omit `ttl` and do not set a default to store a value permanently (until explicitly deleted):
+
+```ts
+await cache.set("config:feature-x", enabled);
+```

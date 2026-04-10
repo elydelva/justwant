@@ -1,0 +1,33 @@
+{
+  "title": "Notify",
+  "icon": "Bell",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "templates",
+    "---Guides---",
+    "multi-channel",
+    "environment-switching",
+    "error-handling",
+    "job-alerts",
+    "---Channels---",
+    "channels",
+    "email",
+    "sms",
+    "console",
+    "slack",
+    "webhook",
+    "---Providers---",
+    "providers",
+    "resend",
+    "twilio",
+    "---Extend---",
+    "audit",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

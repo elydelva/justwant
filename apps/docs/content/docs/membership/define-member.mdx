@@ -1,0 +1,75 @@
+---
+title: defineMember
+description: Declare a member type and its identity factory.
+icon: UserCheck
+---
+
+## Overview
+
+`defineMember` declares a **member type**. The result is a callable `MemberDef<N>` that produces `Member<N>` values — typed references used in membership operations.
+
+```ts
+import { defineMember } from "@justwant/membership";
+
+const User = defineMember({ name: "user" });
+const ref = User("user-123"); // { type: "user", id: "user-123" }
+```
+
+## Signature
+
+```ts
+function defineMember<N extends string>(
+  options: DefineMemberOptions<N>
+): MemberDef<N>
+```
+
+### DefineMemberOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `N extends string` | Discriminator string for this member type |
+
+## MemberDef
+
+```ts
+interface MemberDef<N extends string> extends Definable<N> {
+  readonly name: N;
+  (id: string): Member<N>;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `N` | The declared type name |
+| `(id)` | `(id: string) => Member<N>` | Factory — produces a `Member<N>` reference |
+
+## MemberLike
+
+`MemberLike` is the structural interface that `MemberDef` satisfies:
+
+```ts
+interface MemberLike extends Definable<string> {}
+```
+
+It is used by `defineGroup` and `createStandardOrganisationMembership` to accept any member definition without coupling to a specific type parameter.
+
+## Usage pattern
+
+Define once at module level and export:
+
+```ts title="lib/user.ts"
+import { defineMember } from "@justwant/membership";
+
+export const User = defineMember({ name: "user" });
+```
+
+Pass to `defineGroup` to declare which member type a group accepts:
+
+```ts
+import { defineGroup } from "@justwant/membership";
+import { User } from "./user.ts";
+
+const Team = defineGroup({ name: "team", member: User });
+```
+
+**Note**: `defineMember` creates no runtime state and is safe to call at module load time.

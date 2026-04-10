@@ -1,0 +1,62 @@
+---
+title: Installation
+description: Install @justwant/membership.
+icon: Download
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/membership
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/membership
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/membership
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/membership
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+`@justwant/membership` has no required runtime dependencies beyond `@justwant/meta`.
+
+## TypeScript
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "moduleResolution": "bundler",
+    "strict": true
+  }
+}
+```
+
+## Next step
+
+[Basic Usage](/docs/membership/basic-usage) — define members and groups, wire a repo, and start tracking membership.

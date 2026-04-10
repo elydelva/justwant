@@ -1,0 +1,84 @@
+---
+title: Positions
+description: How positions are calculated and how to query them.
+icon: Hash
+---
+
+## How positions work
+
+Positions in `@justwant/waitlist` are **computed on the fly** from the FIFO ordering of entries. The entry with the earliest `createdAt` is position 1.
+
+There is no stored `position` column that needs to be updated when entries are removed — the position is always derived by sorting all entries by `createdAt` ascending and finding the index of the requested actor.
+
+## getPosition
+
+```ts
+const { position, total } = await waitlist.getPosition(list, actor);
+```
+
+| Return field | Type | Description |
+|--------------|------|-------------|
+| `position` | `number` | 1-based position of the actor in the list |
+| `total` | `number` | Total number of entries in the list |
+
+Throws `NotSubscribedError` if the actor is not subscribed.
+
+```ts
+const actor = { type: "user", id: "u-5" };
+const { position, total } = await waitlist.getPosition(betaList, actor);
+
+console.log(`You are #${position} of ${total}`);
+// "You are #5 of 42"
+```
+
+## Priority
+
+Entries can have an optional `priority` field. When you subscribe with `priority`, the repository may use it for ordering. The default in-memory adapter orders strictly by `createdAt`; custom adapters can incorporate `priority` into the `ORDER BY` clause.
+
+```ts
+await waitlist.subscribe(betaList, actor, { priority: 10 });
+```
+
+**Note**: The built-in `getPosition` does not apply priority sorting — it always uses `createdAt` ascending. If you need priority-aware positions, implement the ordering in your `WaitlistRepository.findMany`.
+
+## listSubscribers
+
+To retrieve all entries in FIFO order (for batch processing or display):
+
+```ts
+const entries = await waitlist.listSubscribers(betaList, {
+  limit: 50,
+  offset: 0,
+  orderBy: "asc",
+});
+```
+
+Each entry is a `WaitlistEntry`:
+
+```ts
+interface WaitlistEntry {
+  id: string;
+  listKey: string;
+  actorType: string;
+  actorId: string;
+  actorOrgId?: string;
+  priority?: number;
+  metadata?: Record<string, unknown>;
+  referredBy?: string;
+  createdAt: Date;
+  expiresAt?: Date;
+}
+```
+
+## pop
+
+`pop` removes and returns the first entry (FIFO):
+
+```ts
+const next = await waitlist.pop(betaList);
+if (next) {
+  // grant access to next.actorId
+}
+```
+
+Returns `null` if the list is empty. Does not throw `EmptyWaitlistError`.

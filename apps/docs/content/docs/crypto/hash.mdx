@@ -1,0 +1,76 @@
+---
+title: Hash
+description: Hash strings with SHA-256 using @justwant/crypto/hash.
+icon: Hash
+---
+
+## Overview
+
+The `/hash` module provides SHA-256 string hashing for integrity checks, cache keys, and fingerprints. For comparing secrets, always use the constant-time functions from [`/compare`](/docs/crypto/api).
+
+## Import
+
+```ts
+import { hashString } from "@justwant/crypto/hash";
+```
+
+## API
+
+### `hashString(str)`
+
+Hashes a UTF-8 string with SHA-256. Returns a lowercase hex string.
+
+```ts
+import { hashString } from "@justwant/crypto/hash";
+
+const fingerprint = hashString("user@example.com");
+// "ea6ec..." (64 hex characters)
+```
+
+## Common use cases
+
+### Cache keys
+
+```ts
+import { hashString } from "@justwant/crypto/hash";
+
+function cacheKey(query: string): string {
+  return `query:${hashString(query)}`;
+}
+```
+
+### Content integrity
+
+```ts
+import { hashString } from "@justwant/crypto/hash";
+
+async function storeDocument(content: string) {
+  const checksum = hashString(content);
+  await db.documents.create({ content, checksum });
+}
+
+async function verifyDocument(id: string) {
+  const doc = await db.documents.find(id);
+  return hashString(doc.content) === doc.checksum;
+}
+```
+
+### Email fingerprinting (for deduplication)
+
+```ts
+import { hashString } from "@justwant/crypto/hash";
+
+// Hash the email to look up without exposing it in logs
+const emailHash = hashString(email.toLowerCase().trim());
+const existing = await db.users.findByEmailHash(emailHash);
+```
+
+**Note**: `hashString` is a one-way function — it is not suitable for password storage. Use [`hashPassword`](/docs/crypto/password) for passwords instead.
+
+## Low-level primitives
+
+For HMAC and raw SHA-256/SHA-512 access, use the [`/primitives`](/docs/crypto/api) subpath which re-exports `@noble/hashes` directly.
+
+```ts
+import { sha256, hmac } from "@justwant/crypto/primitives";
+```

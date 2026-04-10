@@ -1,0 +1,134 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/env.
+icon: BookOpen
+---
+
+## Imports
+
+```ts
+// Node.js / Bun (full — includes file loading and watch)
+import { createEnv, defineEnv, EnvironmentError } from "@justwant/env";
+
+// Edge (no fs, no watch)
+import { createEnv, defineEnv, EnvironmentError } from "@justwant/env/edge";
+```
+
+## createEnv
+
+```ts
+function createEnv<T extends EnvSchema, G extends GroupSchema | undefined>(
+  options: CreateEnvOptions<T> & (G extends undefined ? {} : { groups: G })
+): CreateEnvResult<T, G>
+```
+
+### CreateEnvOptions
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `vars` | `EnvSchema` | `{}` | Record of variable schemas |
+| `groups` | `GroupSchema` | — | Namespaced variable groups |
+| `groupSeparator` | `string` | `"_"` | Separator between group prefix and key in env |
+| `include` | `EnvInclude[]` | `[]` | Reusable env blocks from `defineEnv` |
+| `sources.files` | `string[]` | auto | `.env` files to load |
+| `sources.processEnv` | `boolean \| Record<string,string>` | `true` | Use `process.env` or an object |
+| `sources.inline` | `Record<string,string>` | — | Hard-coded values (highest priority) |
+| `cwd` | `string` | `process.cwd()` | Directory for resolving env files |
+| `expand` | `boolean` | `true` | Expand `${VAR}` references |
+| `clientPrefix` | `string \| string[]` | — | Strip prefix when reading env keys |
+| `modes` | `Record<string, (string \| number \| symbol)[]>` | — | Required keys per mode |
+| `mode` | `string` | `NODE_ENV` | Active mode |
+| `redact` | `string[] \| RegExp` | — | Keys to hide in `toJSON()` |
+| `validation.onError` | `"throw" \| "warn" \| "silent" \| false` | `"throw"` | Error handling |
+| `validation.skip` | `boolean` | `false` | Skip validation entirely |
+| `validation.reporter` | `(issues) => void` | — | Custom issue reporter |
+| `watch` | `boolean` | `false` | Watch files for changes (Node/Bun only) |
+| `onReload` | `(changed: string[]) => void` | — | Called when files change |
+
+### CreateEnvResult
+
+The result extends the validated variables directly, plus proxy methods:
+
+```ts
+type CreateEnvResult<T, G> = InferEnv<T> & (G extends GroupSchema ? InferGroupEnv<G> : {}) & EnvProxy;
+```
+
+## defineEnv
+
+```ts
+function defineEnv<T extends EnvSchema>(options: DefineEnvOptions<T>): EnvInclude<T>
+```
+
+Creates a reusable env block. Pass it to `createEnv`'s `include` option.
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `vars` | `EnvSchema` | Variable schemas |
+| `clientPrefix` | `string \| string[]` | Prefix for client-safe variables |
+
+## EnvProxy
+
+Methods available on every `createEnv` result:
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `get` | `(key, fallback?) => unknown` | Dynamic typed access; dot notation for groups (`"db.host"`) |
+| `has` | `(key) => boolean` | Check if a key is present |
+| `raw` | `(key) => string \| undefined` | Raw string value before validation |
+| `toJSON` | `() => Record<string, unknown>` | Plain object; sensitive keys redacted if configured |
+
+## EnvSchema
+
+```ts
+type EnvSchema = Record<string, StandardSchemaV1<unknown, unknown>>;
+```
+
+A record mapping variable names to `@standard-schema/spec` validators. Any Zod, Valibot, or ArkType schema implements this interface.
+
+## GroupSchema
+
+```ts
+type GroupSchema = Record<string, EnvSchema>;
+```
+
+## InferEnv
+
+```ts
+type InferEnv<T extends EnvSchema> = {
+  [K in keyof T]: T[K] extends StandardSchemaV1<unknown, infer O> ? O : never;
+};
+```
+
+Infer the output types from an `EnvSchema`.
+
+## InferGroupEnv
+
+```ts
+type InferGroupEnv<G extends GroupSchema> = {
+  [Group in keyof G]: { [K in keyof G[Group]]: ... };
+};
+```
+
+## EnvironmentError
+
+Thrown when `validation.onError === "throw"` and there are invalid or missing variables.
+
+```ts
+class EnvironmentError extends Error {
+  readonly issues: { key: string; message: string }[];
+}
+```
+
+```ts
+import { EnvironmentError } from "@justwant/env";
+
+try {
+  createEnv({ vars: { PORT: z.string() } });
+} catch (err) {
+  if (err instanceof EnvironmentError) {
+    for (const issue of err.issues) {
+      console.error(issue.key, issue.message);
+    }
+  }
+}
+```

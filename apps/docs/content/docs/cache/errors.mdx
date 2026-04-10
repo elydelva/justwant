@@ -1,0 +1,62 @@
+---
+title: Errors
+description: Error types thrown by @justwant/cache.
+icon: CircleAlert
+---
+
+## Error types
+
+```ts
+import { CacheError, CacheAdapterError } from "@justwant/cache";
+```
+
+| Class | When thrown |
+|-------|-------------|
+| `CacheError` | Base class for all cache errors |
+| `CacheAdapterError` | The underlying adapter threw an error |
+
+## CacheError
+
+Base class for all `@justwant/cache` errors. Extends the native `Error` class.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `"CacheError"` | Always `"CacheError"` |
+| `message` | `string` | Human-readable error description |
+| `code` | `string \| undefined` | Machine-readable error code (e.g. `"ADAPTER_ERROR"`) |
+| `metadata` | `Record<string, unknown> \| undefined` | Optional structured data attached to the error |
+
+## CacheAdapterError
+
+Thrown when an adapter operation fails (e.g. Redis connection lost). Extends `CacheError` with `code: "ADAPTER_ERROR"`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `"CacheAdapterError"` | Always `"CacheAdapterError"` |
+| `code` | `"ADAPTER_ERROR"` | Always `"ADAPTER_ERROR"` |
+| `cause` | `unknown \| undefined` | The original error thrown by the adapter |
+
+```ts
+import { CacheAdapterError } from "@justwant/cache";
+
+try {
+  await cache.get("key");
+} catch (err) {
+  if (err instanceof CacheAdapterError) {
+    console.error("Adapter failed:", err.cause);
+  }
+}
+```
+
+## Suppress errors
+
+To avoid throwing on adapter failures, set `onError` at cache creation time:
+
+```ts
+const cache = createCache({
+  adapter: redisAdapter({ redis: redisClient }),
+  onError: "silent", // Return null instead of throwing
+});
+```
+
+See [Basic Usage](/docs/cache/basic-usage) for all `onError` values.

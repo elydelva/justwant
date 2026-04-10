@@ -1,0 +1,15 @@
+{
+  "title": "Config",
+  "icon": "Settings",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "sources",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

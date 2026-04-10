@@ -1,0 +1,84 @@
+---
+title: Rollout
+description: Deterministic percentage-based rollout with rollout() and hashContext().
+icon: Percent
+---
+
+## Overview
+
+`rollout` and `hashContext` are helper functions for percentage-based feature rollouts. They are imported from `@justwant/flag/helpers` and work independently of the flag service.
+
+## `hashContext(context)`
+
+Hash a string or object to a stable `number` in `[0, 1]`.
+
+```ts
+import { hashContext } from "@justwant/flag/helpers";
+
+hashContext("user_abc")              // e.g. 0.3412...
+hashContext({ userId: "user_abc" })  // same result as above if only one key
+hashContext({ userId: "user_abc", orgId: "org_1" }) // combines both
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `context` | `string \| Record<string, unknown>` | Value to hash. Object keys are sorted for stability. |
+
+The function uses SHA-256 (via `@justwant/crypto`) and maps the first 13 hex digits to `[0, 1]`. The same input always produces the same output across runs.
+
+## `rollout(input, threshold)`
+
+Return `true` if `input < threshold`.
+
+```ts
+import { rollout } from "@justwant/flag/helpers";
+
+rollout(0.25, 0.30) // true  — 25% < 30%
+rollout(0.75, 0.30) // false — 75% >= 30%
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `input` | `number` | Normalized value in `[0, 1]`, typically from `hashContext`. |
+| `threshold` | `number` | Percentage in `[0, 1]`. `0.3` = 30% of users. |
+
+## Typical usage in a rule
+
+```ts title="rules/percentageRule.ts"
+import { defineRule } from "@justwant/flag";
+import { hashContext, rollout } from "@justwant/flag/helpers";
+import * as v from "valibot";
+
+export const percentageRule = defineRule({
+  name: "percentage-rollout",
+  config: v.object({ threshold: v.number() }),
+  context: v.object({ userId: v.string() }),
+  defaultConfig: { threshold: 0 },
+  logic: ({ config, context }) => {
+    const hash = hashContext(context.userId);
+    return rollout(hash, config.threshold);
+  },
+});
+```
+
+Then push a new threshold remotely:
+
+```ts
+// Enable for 20% of users
+await flagService.setConfigOverride(percentageRule, { threshold: 0.2 });
+
+// Gradually expand to 50%
+await flagService.setConfigOverride(percentageRule, { threshold: 0.5 });
+```
+
+## Multi-dimensional hashing
+
+Pass an object to include multiple dimensions in the hash. This ensures a user in org A and the same user in org B are treated as distinct identities:
+
+```ts
+const hash = hashContext({ userId: "user_abc", orgId: "org_1" });
+```
+
+Keys are always sorted before hashing, so `{ userId, orgId }` and `{ orgId, userId }` produce identical results.
+
+**Note**: For time-based gradual rollouts, see [Diffusion](/docs/flag/diffusion).

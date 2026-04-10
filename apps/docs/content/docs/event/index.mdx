@@ -1,0 +1,38 @@
+---
+title: Introduction
+description: Typed, pub/sub event bus. Define events with payloads, subscribe with type-safe handlers, and use wildcard patterns.
+icon: Radio
+---
+
+## What is @justwant/event?
+
+`@justwant/event` is a **typed event bus** for TypeScript applications. It separates event definition from the bus, giving you full type safety from emit to handler — no casting required.
+
+**Use it when** you need to:
+- Broadcast domain events (user.created, order.shipped) across your application
+- Subscribe to groups of events with wildcard patterns (`user.*`, `*`)
+- Use a lightweight primitive bus without typed event definitions
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Type-safe** | Payload types flow from `defineEvent` through to every handler |
+| **Wildcard patterns** | `user.*` matches all events with that prefix; `*` catches all |
+| **Sync and async** | Handlers may return `void` or `Promise<void>` — `emit` awaits all |
+| **Once listeners** | `listenOnce` auto-unsubscribes after first dispatch |
+| **Primitive subpath** | `@justwant/event/primitive` — untyped, dependency-free core |
+
+## How it works
+
+1. **Define events** with `defineEvent(name, payloadBuilder)`. Each event carries its name and how to construct its payload.
+2. **Create a bus** with `createEventBus({ events })`. Pass all your defined events.
+3. **Subscribe** with `bus.listen(event, handler)` — returns an unsubscribe function.
+4. **Emit** with `bus.emit(event, ...args)` — arguments are typed against the event definition.
+
+## Next steps
+
+- [Installation](/docs/event/installation) — Install and set up the event bus
+- [Basic Usage](/docs/event/basic-usage) — defineEvent, createEventBus, emit, listen
+- [defineEvent](/docs/event/define-event) — Typed event definitions
+- [Event Bus](/docs/event/event-bus) — Bus methods and wildcard patterns

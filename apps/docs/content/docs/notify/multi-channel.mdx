@@ -1,0 +1,84 @@
+---
+title: Multi-channel templates
+description: Send the same notification across email, SMS, and console from a single template.
+icon: GitFork
+---
+
+## Overview
+
+A single template can define one factory per channel kind. When you call `notify.send`, it picks the factory matching the canal's kind — so the same template works across email, SMS, and console without duplication.
+
+## Define a multi-channel template
+
+```ts
+import { createTemplate } from "@justwant/notify";
+
+const welcomeTemplate = createTemplate({
+  id: "welcome",
+  email: (args: { name: string; email: string }) => ({
+    to: args.email,
+    subject: `Welcome, ${args.name}!`,
+    html: `<p>Hi ${args.name}, your account is ready.</p>`,
+    text: `Hi ${args.name}, your account is ready.`,
+  }),
+  sms: (args: { name: string; phone: string }) => ({
+    to: args.phone,
+    body: `Hi ${args.name}, your account is ready.`,
+  }),
+  console: (args: { name: string; email: string }) => ({
+    level: "info",
+    text: `Welcome notification sent to ${args.name} (${args.email})`,
+  }),
+});
+```
+
+## Register canals and send
+
+```ts title="lib/notify.ts"
+import { createNotify } from "@justwant/notify";
+import { createResendCanal } from "@justwant/notify/channels/email/resend";
+import { createTwilioSmsCanal } from "@justwant/notify/channels/sms/twilio";
+import { consoleCanal } from "@justwant/notify/channels/console";
+import { Resend } from "resend";
+import twilio from "twilio";
+
+export const notify = createNotify({
+  templates: [welcomeTemplate],
+  canals: {
+    email: createResendCanal({
+      client: new Resend(process.env.RESEND_API_KEY!),
+      from: "Acme <no-reply@acme.com>",
+    }),
+    sms: createTwilioSmsCanal({
+      client: twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!),
+      from: process.env.TWILIO_PHONE_NUMBER!,
+    }),
+    dev: consoleCanal(),
+  },
+});
+```
+
+Send to each canal independently:
+
+```ts
+const args = { name: "Alice", email: "alice@example.com", phone: "+14155552671" };
+
+await notify.send({ templateId: "welcome", canalId: "email", args });
+await notify.send({ templateId: "welcome", canalId: "sms", args });
+```
+
+## Partial templates
+
+A template does not need to define a factory for every channel kind. If the canal's kind has no matching factory, `send` throws a `TemplateVersionNotFoundError` (or silently skips with `onError: "silent"`).
+
+```ts
+// Only email — sending to "sms" would throw TemplateVersionNotFoundError
+const receiptTemplate = createTemplate({
+  id: "receipt",
+  email: (args: { email: string; amount: number }) => ({
+    to: args.email,
+    subject: "Your receipt",
+    html: `<p>Payment of $${args.amount} received.</p>`,
+  }),
+});
+```

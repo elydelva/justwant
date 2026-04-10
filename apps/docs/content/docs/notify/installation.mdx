@@ -1,0 +1,184 @@
+---
+title: Installation
+description: Install @justwant/notify and the channel peer dependencies you need.
+icon: Download
+---
+
+## Install the package
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/notify
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/notify
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/notify
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/notify
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Install channel peer dependencies
+
+Each channel requires its own optional peer dependency. Install only the ones you need.
+
+<CodeBlockTabs defaultValue="console">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="console">Console (dev)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="resend">Email — Resend</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="twilio">SMS — Twilio</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="console">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/notify
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/notify
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/notify
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/notify
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+No extra dependencies. The console canal logs to stdout — ideal for development.
+
+  </CodeBlockTab>
+  <CodeBlockTab value="resend">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/notify resend
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/notify resend
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/notify resend
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/notify resend
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+  <CodeBlockTab value="twilio">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/notify twilio
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/notify twilio
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/notify twilio
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/notify twilio
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Next steps
+
+- [Basic Usage](/docs/notify/basic-usage) — Create templates, canals, and send your first notification
+- [Email](/docs/notify/channels/email) — Set up Resend for transactional email
+- [SMS](/docs/notify/channels/sms) — Set up Twilio for SMS

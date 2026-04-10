@@ -1,0 +1,86 @@
+---
+title: Sortable IDs
+description: Time-sortable IDs using ULID. Lexicographically ordered by creation time — ideal for database primary keys.
+icon: ArrowUpDown
+---
+
+## Overview
+
+`@justwant/id/sortable` generates ULIDs (Universally Unique Lexicographically Sortable Identifiers). Each ULID encodes a millisecond-precision timestamp followed by random data, making them naturally sortable by creation time without a separate column.
+
+```ts
+import { createId, getTimestamp } from "@justwant/id/sortable";
+```
+
+## createId
+
+```ts
+function createId(): string
+```
+
+Generates a new ULID. The result is a 26-character, uppercase, base32-encoded string.
+
+```ts
+const id = createId();
+// Example: "01ARYZ6S41TPTWJ6SXKWG5FPFR"
+```
+
+**Properties of a ULID:**
+- 128 bits total: 48 bits timestamp + 80 bits random
+- Lexicographically sortable — later IDs are always greater when sorted as strings
+- Monotonic within the same millisecond (the random component increments)
+- URL-safe, no special characters
+- Case-insensitive by spec (uppercase by default)
+
+## getTimestamp
+
+```ts
+function getTimestamp(id: string): number
+```
+
+Extracts the creation timestamp (milliseconds since Unix epoch) from a ULID.
+
+```ts
+const id = createId();
+const ms = getTimestamp(id);
+// ms === Date.now() (approximately)
+
+const date = new Date(ms);
+```
+
+## When to use sortable IDs
+
+Use `@justwant/id/sortable` for:
+
+- **Database primary keys** — B-tree indexes stay ordered, reducing page splits and improving range queries
+- **Distributed systems** — no coordination needed; IDs generated across nodes sort by creation time
+- **Audit logs and event records** — natural ordering without a separate `createdAt` index
+- **Replacing auto-increment** — globally unique, no sequence dependencies
+
+## Example: user table
+
+```ts
+import { createId } from "@justwant/id/sortable";
+
+async function createUser(email: string) {
+  const user = await db.users.create({
+    id: createId(),
+    email,
+    createdAt: new Date().toISOString(),
+  });
+  return user;
+}
+
+// Users are naturally sorted by creation time when ordering by id
+const recent = await db.users.findMany({ orderBy: { id: "desc" } });
+```
+
+## Comparison with UUID v4
+
+| | ULID | UUID v4 |
+|-|------|---------|
+| Sortable | Yes (by time) | No |
+| Length | 26 chars | 36 chars |
+| Random bits | 80 | 122 |
+| Timestamp | Yes (48 bits, ms) | No |
+| UUID-compatible | Yes (128 bits) | — |

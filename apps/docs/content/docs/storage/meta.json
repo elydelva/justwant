@@ -1,0 +1,27 @@
+{
+  "title": "Storage",
+  "icon": "HardDrive",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Adapters---",
+    "adapters",
+    "local",
+    "s3",
+    "r2",
+    "vercel-blob",
+    "supabase",
+    "---Extend---",
+    "encryption",
+    "rename",
+    "watermark",
+    "multi-bucket",
+    "image-transform",
+    "signed-url",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

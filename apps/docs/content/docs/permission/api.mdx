@@ -1,0 +1,115 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/permission.
+icon: BookOpen
+---
+
+## Core functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `defineScope(options)` | `ScopeDef` | Define a scope type |
+| `defineActor(options)` | `ActorDef` | Define an actor type |
+| `defineAtomicPermission(options)` | `AtomicPermission` | Define an atomic permission |
+| `defineRole(options)` | `RoleDef` | Define a role with permissions |
+| `defineRealm(options)` | `RealmDef` | Compose scope + actors + permissions + roles |
+| `createPermissionService(options)` | `PermissionApi` | Create the runtime permission service |
+| `defineResource(options)` | `ResourceDef` | Define a resource type (re-exported from `@justwant/resource`) |
+
+## `defineScope` options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `string` | Scope type name |
+
+## `defineActor` options
+
+| Form | Options | Description |
+|------|---------|-------------|
+| Basic | `{ name }` | Simple actor type |
+| Within | `{ name, within }` | Actor nested inside another type |
+| From | `{ from: IdentityLike }` | Derive from existing identity |
+
+## `defineAtomicPermission` options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Permission string, e.g. `"document:read"` |
+| `resource` | `ReferenceLike` | No | Optional resource type |
+
+## `defineRole` options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Role name |
+| `permissions` | `AtomicPermission[]` | Yes | Permissions granted by this role |
+| `except` | `AtomicPermission[]` | No | Permissions to exclude |
+| `realm` | `string` | No | Owning realm name |
+
+## `defineRealm` options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Realm name |
+| `scope` | `ScopeDef` | Yes | Scope this realm governs |
+| `actors` | `IdentityLike[]` | Yes | Actor types |
+| `resources` | `ReferenceLike[]` | No | Resource types (default: `[]`) |
+| `permissions` | `AtomicPermission[]` | Yes | All permissions |
+| `roles` | `RoleDef[]` | Yes | All roles |
+
+## `createPermissionService` options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `repos.assignments` | `AssignmentsRepo` | Role assignment repository |
+| `repos.overrides` | `OverridesRepo` | Grant/deny override repository |
+| `realms` | `RealmDef[]` | Registered realms (must have unique scope names) |
+
+## `PermissionApi` methods
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `can` | `(params: CanParams) => Promise<boolean>` | Check if actor has permission |
+| `assert` | `(params: AssertParams) => Promise<void>` | Throw `PermissionDeniedError` if denied |
+| `assign` | `(params: AssignParams) => Promise<void>` | Assign a role to an actor in a scope |
+| `hasRole` | `(params: HasRoleParams) => Promise<boolean>` | Check role membership |
+| `unassign` | `(params: UnassignParams) => Promise<void>` | Remove all role assignments for an actor in a scope |
+| `grant` | `(params: CanParams) => Promise<void>` | Grant a permission override |
+| `deny` | `(params: CanParams) => Promise<void>` | Deny a permission override |
+| `revokeGrant` | `(params: CanParams) => Promise<void>` | Remove a grant override |
+| `revokeDeny` | `(params: CanParams) => Promise<void>` | Remove a deny override |
+| `canAll` | `(params: CanAllParams) => Promise<boolean>` | True if actor has all listed actions |
+| `canAny` | `(params: CanAllParams) => Promise<boolean>` | True if actor has any listed action |
+| `canMany` | `(params: CanManyParams) => Promise<Map<string, boolean>>` | Check a permission for multiple actors |
+| `explain` | `(params) => Promise<{ result, reason?, role? }>` | Explain the permission decision |
+| `revokeScope` | `(params: RevokeScopeParams) => Promise<void>` | Remove all assignments and overrides for a scope |
+| `revokeAll` | `(params: RevokeAllParams) => Promise<void>` | Remove all assignments and overrides for an actor |
+| `realm` | `(params: RealmParams) => RealmDef \| undefined` | Retrieve a realm definition by scope name |
+
+## `CanParams` shape
+
+```ts
+interface CanParams {
+  actor: Actor;       // { type: string, id: string }
+  action: AtomicPermission;
+  scope: Scope;       // { type: string, id: string | null }
+  resource?: Resource; // optional resource instance
+}
+```
+
+## Resolution order
+
+| Priority | Source | Wins over |
+|----------|--------|-----------|
+| 1 (highest) | Deny override | Everything |
+| 2 | Grant override | Role assignments |
+| 3 | Role assignment | Default |
+| 4 (lowest) | Default | — returns `false` |
+
+## Errors
+
+| Class | When |
+|-------|------|
+| `PermissionError` | Base class |
+| `PermissionDeniedError` | `assert()` when permission is denied |
+| `CeilingViolationError` | Assignment or override exceeds realm ceiling |

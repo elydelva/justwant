@@ -1,0 +1,56 @@
+---
+title: Twilio
+description: Send SMS messages with Twilio using @justwant/notify.
+icon: MessageSquare
+---
+
+## Overview
+
+The Twilio provider implements the [`sms`](/docs/notify/channels/sms) canal. Pass your Twilio client instance — no raw HTTP calls.
+
+## Install peer dependency
+
+```bash
+bun add twilio
+```
+
+## Import
+
+```ts
+import { createTwilioSmsCanal } from "@justwant/notify/channels/sms/twilio";
+```
+
+## Setup
+
+```ts title="lib/notify.ts"
+import { createNotify } from "@justwant/notify";
+import { createTwilioSmsCanal } from "@justwant/notify/channels/sms/twilio";
+import twilio from "twilio";
+
+const smsCanal = createTwilioSmsCanal({
+  client: twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!),
+  from: process.env.TWILIO_PHONE_NUMBER!,
+});
+
+export const notify = createNotify({
+  templates: [myTemplate],
+  canals: { sms: smsCanal },
+});
+```
+
+## Options
+
+### `TwilioSmsAdapterOptions`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `client` | `TwilioClient` | Yes | Twilio client (`twilio(accountSid, authToken)`) |
+| `from` | `string` | Yes | Twilio phone number in E.164 format (e.g. `+15005550006`) |
+
+## Environment variables
+
+```bash title=".env"
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your_auth_token
+TWILIO_PHONE_NUMBER=+15005550006
+```

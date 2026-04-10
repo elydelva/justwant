@@ -1,0 +1,142 @@
+---
+title: Basic Usage
+description: set, get, wrap, delete, batch operations, and namespaces.
+icon: Play
+---
+
+## set and get
+
+Store a value with an optional TTL and retrieve it:
+
+```ts
+import { cache } from "@/lib/cache";
+
+// Set with TTL
+await cache.set("user:1", { name: "Alice" }, { ttl: "5m" });
+
+// Get
+const user = await cache.get("user:1");
+// → { name: "Alice" } or null if expired/missing
+```
+
+## wrap (cache-aside)
+
+`wrap` is the primary pattern for caching: it returns the cached value on a hit, or calls the provided function on a miss, caches the result, and returns it.
+
+```ts
+const user = await cache.wrap(
+  "user:1",
+  () => db.users.findById(1),
+  { ttl: "10m", tags: ["user:1"] }
+);
+```
+
+## delete and has
+
+```ts
+await cache.delete("user:1");
+
+const exists = await cache.has("user:1");
+```
+
+## pull (get-and-delete)
+
+Retrieve a value and remove it atomically — useful for one-time tokens:
+
+```ts
+const token = await cache.pull("reset-token:abc123");
+```
+
+## setNx (set if not exists)
+
+```ts
+const set = await cache.setNx("lock:resource", "owner-id", { ttl: "30s" });
+// → true if set, false if key already existed
+```
+
+## Batch operations
+
+```ts
+// Get multiple keys at once — returns Map<string, T | null>
+const values = await cache.getMany(["user:1", "user:2", "user:3"]);
+// → Map { "user:1" => { name: "Alice" }, "user:2" => null, ... }
+
+// Set multiple entries
+await cache.setMany([
+  { key: "a", value: 1, opts: { ttl: "1m" } },
+  { key: "b", value: 2, opts: { ttl: "1m" } },
+]);
+
+// Delete multiple keys
+await cache.deleteMany(["a", "b"]);
+
+// wrap for multiple keys (fetches only misses) — returns Map<string, T>
+const results = await cache.wrapMany(
+  ["user:1", "user:2"],
+  async (missingKeys) => {
+    return db.users.findMany(missingKeys.map((k) => k.split(":")[1]));
+  },
+  { ttl: "5m", keyFn: (u) => `user:${u.id}` }
+);
+// → Map { "user:1" => { id: 1, name: "Alice" }, "user:2" => { id: 2, ... } }
+```
+
+## Namespace
+
+Create an isolated sub-cache with a key prefix. All operations are scoped to that prefix:
+
+```ts
+const userCache = cache.namespace("user");
+
+await userCache.set("1", data);       // stored as "user:1"
+const value = await userCache.get("1");
+```
+
+## Tags
+
+Tag entries to invalidate them as a group:
+
+```ts
+await cache.set("post:1", post, { tags: ["post:1", "user:1:posts"] });
+await cache.set("post:2", post2, { tags: ["post:2", "user:1:posts"] });
+
+// Invalidate all posts for user 1
+await cache.invalidateTag("user:1:posts");
+```
+
+See [Tags](/docs/cache/tags) for details.
+
+## Default TTL
+
+Configure a default TTL when creating the cache:
+
+```ts
+const cache = createCache({
+  adapter: memoryAdapter(),
+  defaults: { ttl: "1h" },
+});
+```
+
+## Error handling
+
+Control behavior when an adapter operation fails:
+
+```ts
+const cache = createCache({
+  adapter: redisAdapter({ redis: redisClient }),
+  onError: "silent", // "throw" | "silent" | "fallback"
+});
+```
+
+| Value | Behavior |
+|-------|---------|
+| `"silent"` | Swallow the error, return `null` (default) |
+| `"throw"` | Re-throw the adapter error |
+| `"fallback"` | Return `null` on read errors, skip on write errors |
+
+## Next steps
+
+- [TTL](/docs/cache/ttl) — TTL string format reference
+- [Tags](/docs/cache/tags) — Tag-based invalidation
+- [Adapters](/docs/cache/adapters) — Storage backends
+- [Plugins](/docs/cache/plugins) — Extend behavior

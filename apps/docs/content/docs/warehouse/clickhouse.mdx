@@ -1,0 +1,99 @@
+---
+title: ClickHouse
+description: ClickHouse dialect for production-scale analytics clusters.
+icon: ChartColumn
+---
+
+## When to use
+
+Use the ClickHouse adapter for **production analytics** on large datasets. ClickHouse is a column-oriented database optimized for high-throughput OLAP queries.
+
+## Installation
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add waddler @clickhouse/client
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install waddler @clickhouse/client
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add waddler @clickhouse/client
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add waddler @clickhouse/client
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Setup
+
+```ts title="warehouse.ts"
+import { createWarehouse } from "@justwant/warehouse";
+import { createClickHouseAdapter } from "@justwant/warehouse/clickhouse";
+
+// Connection string
+const warehouse = createWarehouse(
+  createClickHouseAdapter({ connection: process.env.CLICKHOUSE_URL! })
+);
+
+// Existing ClickHouse client
+const warehouse = createWarehouse(
+  createClickHouseAdapter({ client: myClickHouseClient })
+);
+```
+
+## Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `connection` | `string` | `"http://localhost:8123"` | HTTP URL of the ClickHouse server |
+| `client` | `unknown` | — | Pass an existing `@clickhouse/client` instance to reuse a connection |
+
+## DDL example
+
+ClickHouse DDL uses native types with `Nullable(…)` for optional fields:
+
+```sql
+CREATE TABLE IF NOT EXISTS "events" (
+  "user_id" String,
+  "event_name" String,
+  "value" Nullable(Float64),
+  "created_at" String
+) ENGINE = MergeTree() ORDER BY tuple()
+```
+
+## Column type mapping
+
+| Contract type | ClickHouse (required) | ClickHouse (optional) |
+|--------------|----------------------|----------------------|
+| `string()` | `String` | `Nullable(String)` |
+| `integer()` | `Int64` | `Nullable(Int64)` |
+| `real()` | `Float64` | `Nullable(Float64)` |
+
+## Notes
+
+- DDL mutations (`CREATE`, `DROP`, `INSERT`) are executed via `.command()` to avoid JSON parsing errors on empty responses.
+- The default engine is `MergeTree() ORDER BY tuple()` — override this by defining your own DDL if needed.
+- `COUNT(*)` and `SUM(…)` return `string` from ClickHouse; the warehouse normalizes these to `number` automatically.

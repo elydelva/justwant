@@ -1,0 +1,39 @@
+---
+title: Signed URL
+description: Set default expiry and method for signed URL generation.
+icon: Link
+---
+
+## Overview
+
+The signed URL plugin intercepts `getSignedUrl` and injects default values for `expiresIn` and `method` when the caller does not supply them. Per-call options always take precedence over the plugin defaults.
+
+## Import
+
+```ts
+import { signedUrlPlugin } from "@justwant/storage/plugins/signedUrl";
+```
+
+## Setup
+
+```ts
+import { createStorageService } from "@justwant/storage";
+import { signedUrlPlugin } from "@justwant/storage/plugins/signedUrl";
+
+export const storage = createStorageService({
+  buckets: [bucket],
+  plugins: [
+    signedUrlPlugin({
+      defaultExpiresIn: 7200,   // 2 hours
+      defaultMethod: "GET",
+    }),
+  ],
+});
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `defaultExpiresIn` | `number` | no | Default TTL for signed URLs in seconds. Defaults to `3600` (1 hour). |
+| `defaultMethod` | `"GET" \| "PUT"` | no | Default HTTP method for signed URLs. Defaults to `"GET"`. |

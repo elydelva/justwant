@@ -1,0 +1,150 @@
+---
+title: Event Bus
+description: createEventBus options, methods, wildcard patterns, and the /primitive subpath.
+icon: GitBranch
+---
+
+## createEventBus
+
+Creates a typed event bus for a fixed set of events.
+
+```ts
+import { createEventBus } from "@justwant/event";
+
+const bus = createEventBus({
+  events: [userCreated, orderShipped] as const,
+  wildcard: true, // default
+});
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `events` | `TypedEvent[]` | required | Array of events created with `defineEvent`. Use `as const`. |
+| `wildcard` | `boolean` | `true` | Enable wildcard patterns (`user.*`, `*`) on `listen` and `listenOnce` |
+
+## Methods
+
+### emit
+
+```ts
+bus.emit(event, ...args): void | Promise<void>
+```
+
+Emits an event. You can pass the event object or its name string. Arguments are type-checked.
+
+- Returns `void` when all handlers are synchronous.
+- Returns `Promise<void>` when any handler is async — awaits all handlers.
+
+```ts
+bus.emit(userCreated, "usr_01", "alice@example.com");
+bus.emit("user.created", "usr_01", "alice@example.com");
+```
+
+### listen
+
+```ts
+bus.listen(event, handler): () => void
+```
+
+Subscribes a handler to an event or pattern. Returns an unsubscribe function.
+
+```ts
+const unsub = bus.listen("user.created", (payload) => {
+  console.log(payload.email);
+});
+
+unsub(); // unsubscribe
+```
+
+### listenOnce
+
+```ts
+bus.listenOnce(event, handler): () => void
+```
+
+Subscribes for a single dispatch. The handler fires once then auto-unsubscribes. Returns a cancel function.
+
+```ts
+bus.listenOnce("order.shipped", (payload) => {
+  console.log("First ship:", payload.orderId);
+});
+```
+
+### unlisten
+
+```ts
+bus.unlisten(event, handler): void
+```
+
+Removes a specific handler reference from an event or pattern.
+
+```ts
+function handler(payload: { id: string }) { ... }
+
+bus.listen("user.created", handler);
+bus.unlisten("user.created", handler);
+```
+
+## Wildcard patterns
+
+When `wildcard: true` (default), `listen` and `listenOnce` accept wildcard patterns in addition to exact event names.
+
+| Pattern | Matches |
+|---------|---------|
+| `"user.*"` | All events whose name starts with `user.` followed by at least one character |
+| `"*"` | Every event |
+| `"user.created"` | Only the exact `user.created` event |
+
+```ts
+// Catch all user events
+bus.listen("user.*", (payload) => {
+  // payload type = union of all user.* payloads
+});
+
+// Catch every event
+bus.listen("*", (payload) => {
+  // payload type = union of all event payloads
+});
+```
+
+**Note**: `"user.*"` does NOT match an event named exactly `"user"`. There must be a `.` separator plus at least one character after the prefix.
+
+To disable wildcards:
+
+```ts
+const bus = createEventBus({
+  events: [...] as const,
+  wildcard: false,
+});
+```
+
+## /primitive subpath
+
+`@justwant/event/primitive` exports `createPrimitiveEventBus` — an untyped, string-keyed bus. Use it when you don't need typed event definitions, or as a low-level building block.
+
+```ts
+import { createPrimitiveEventBus } from "@justwant/event/primitive";
+
+const bus = createPrimitiveEventBus();
+
+bus.listen("user.created", (payload) => {
+  console.log(payload);
+});
+
+bus.emit("user.created", { id: "1", email: "alice@example.com" });
+```
+
+### Primitive bus interface
+
+```ts
+interface EventBus {
+  emit(type: string, payload?: unknown): void | Promise<void>;
+  listen<T = unknown>(type: string, handler: (payload: T) => void | Promise<void>): () => void;
+  listenOnce<T = unknown>(type: string, handler: (payload: T) => void | Promise<void>): () => void;
+  unlisten(type: string, handler: (payload: unknown) => void | Promise<void>): void;
+}
+```
+
+The primitive bus supports the same wildcard matching logic as the typed bus (`user.*`, `*`). Patterns are matched at listen time and tested against the emitted event type.

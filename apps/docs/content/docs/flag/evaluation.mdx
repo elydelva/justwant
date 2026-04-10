@@ -1,0 +1,78 @@
+---
+title: Evaluation
+description: How createFlagService.evaluate resolves config, validates context, and returns a boolean.
+icon: Zap
+---
+
+## `evaluate(flag, context, configOverride?)`
+
+```ts
+const result: boolean = await flagService.evaluate(flag, context, configOverride?);
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `flag` | `FlagDef` | The flag to evaluate. |
+| `context` | `unknown` | Request-time data passed to each rule's `logic`. Validated against `rule.context` if provided. |
+| `configOverride` | `Record<string, unknown>` | Per-rule ad-hoc config. Keys are rule names. Not persisted. |
+
+## Config resolution order
+
+For each rule attached to the flag, config is built by merging three sources in this order (highest priority wins):
+
+1. **Ad-hoc override** — the value at `configOverride[rule.name]` passed to `evaluate()`
+2. **Remote override** — the latest non-rolled-back `ConfigOverride` from the repo for that rule
+3. **Default config** — `rule.defaultConfig`
+
+```
+merged = { ...defaultConfig, ...remoteConfig, ...adHocOverride }
+```
+
+After merging, if the rule has a `config` schema, the merged object is validated. A `FlagValidationError` is thrown if validation fails.
+
+## Strategy evaluation
+
+After all per-rule configs are resolved:
+
+- `strategy: "any"` — returns `true` if **any** rule's `logic` returns `true`
+- `strategy: "all"` — returns `true` only if **all** rules return `true`
+
+## Ad-hoc overrides
+
+Use the third argument for test overrides or request-scoped feature gates that should not persist:
+
+```ts
+const enabled = await flagService.evaluate(
+  betaFlag,
+  { userId: "user_123" },
+  {
+    // override config for the "beta-access" rule only — not saved to the repo
+    "beta-access": { enabled: true, allowList: [] },
+  }
+);
+```
+
+## Example
+
+```ts
+import { flagService, betaFlag } from "@/lib/flags";
+
+// Normal evaluation — uses remote config from repo
+const isEnabled = await flagService.evaluate(betaFlag, { userId: req.user.id });
+
+// With ad-hoc override for a specific test
+const isEnabledForTest = await flagService.evaluate(
+  betaFlag,
+  { userId: "test-user" },
+  { "beta-access": { enabled: true, allowList: [] } }
+);
+```
+
+## Error handling
+
+| Error | When |
+|-------|------|
+| `FlagValidationError` | Merged config fails `rule.config` schema validation |
+| `FlagValidationError` | Context fails `rule.context` schema validation |
+
+Errors are thrown synchronously from within the `async evaluate` call — wrap with `try/catch` or `.catch()`.

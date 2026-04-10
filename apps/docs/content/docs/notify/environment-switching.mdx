@@ -1,0 +1,64 @@
+---
+title: Environment switching
+description: Use the console canal in development and real providers in production.
+icon: ToggleLeft
+---
+
+## Overview
+
+The console canal is a drop-in replacement for any real canal during development. Because canals are registered by string key, you can swap them based on the environment without changing your templates or send calls.
+
+## Swap a single canal
+
+```ts title="lib/notify.ts"
+import { createNotify } from "@justwant/notify";
+import { createResendCanal } from "@justwant/notify/channels/email/resend";
+import { consoleCanal } from "@justwant/notify/channels/console";
+import { Resend } from "resend";
+
+const emailCanal = process.env.NODE_ENV === "production"
+  ? createResendCanal({
+      client: new Resend(process.env.RESEND_API_KEY!),
+      from: "Acme <no-reply@acme.com>",
+    })
+  : consoleCanal();
+
+export const notify = createNotify({
+  templates: [welcomeTemplate],
+  canals: { email: emailCanal },
+});
+```
+
+`notify.send({ templateId: "welcome", canalId: "email", args })` works identically in both environments — no changes at the call site.
+
+## Swap all canals at once
+
+For larger setups, export a canal map and switch the entire set:
+
+```ts title="lib/notify.ts"
+import { createNotify } from "@justwant/notify";
+import { createResendCanal } from "@justwant/notify/channels/email/resend";
+import { createTwilioSmsCanal } from "@justwant/notify/channels/sms/twilio";
+import { consoleCanal } from "@justwant/notify/channels/console";
+import { Resend } from "resend";
+import twilio from "twilio";
+
+const isProduction = process.env.NODE_ENV === "production";
+
+const dev = consoleCanal();
+
+const canals = isProduction
+  ? {
+      email: createResendCanal({
+        client: new Resend(process.env.RESEND_API_KEY!),
+        from: "Acme <no-reply@acme.com>",
+      }),
+      sms: createTwilioSmsCanal({
+        client: twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!),
+        from: process.env.TWILIO_PHONE_NUMBER!,
+      }),
+    }
+  : { email: dev, sms: dev };
+
+export const notify = createNotify({ templates, canals });
+```

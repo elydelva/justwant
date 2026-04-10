@@ -1,0 +1,71 @@
+---
+title: Tags
+description: Group cache entries and invalidate them together with invalidateTag.
+icon: Tag
+---
+
+## What are tags?
+
+Tags let you associate one or more logical labels with a cached entry. When you call `invalidateTag`, all entries carrying that tag are deleted — regardless of their individual keys.
+
+**Use tags when** you need to:
+- Invalidate all cached data related to an entity after a mutation
+- Clear a group of keys without knowing them individually
+
+## Assign tags
+
+Pass `tags` as an array in `set` or `wrap` options:
+
+```ts
+await cache.set("post:1", post, {
+  ttl: "10m",
+  tags: ["post:1", "user:42:posts"],
+});
+
+const post = await cache.wrap(
+  "post:1",
+  () => db.posts.findById(1),
+  { ttl: "10m", tags: ["post:1", "user:42:posts"] }
+);
+```
+
+## Invalidate by tag
+
+```ts
+// After updating a post
+await cache.invalidateTag("post:1");
+
+// After a user's posts change
+await cache.invalidateTag("user:42:posts");
+```
+
+## Invalidate multiple tags
+
+```ts
+await cache.invalidateTags(["post:1", "user:42:posts"]);
+```
+
+## Naming conventions
+
+Tags are arbitrary strings — choose a convention that makes sense for your domain:
+
+| Pattern | Example |
+|---------|---------|
+| Entity + ID | `"user:42"`, `"post:1"` |
+| Entity collection | `"users"`, `"posts"` |
+| Owner's collection | `"user:42:posts"` |
+| Feature group | `"dashboard:metrics"` |
+
+## Adapter support
+
+Not all adapters support tag-based invalidation natively. The core emulates it on adapters that do not expose `invalidateTag` by maintaining an internal reverse-index of `tag → [key]`.
+
+| Adapter | Native tag support |
+|---------|-------------------|
+| Memory | Emulated |
+| Redis | Emulated |
+| Upstash | Emulated |
+| Cloudflare KV | Emulated |
+| Vercel KV | Emulated |
+
+**Note**: On adapters without native support, the reverse-index is stored in the same backend. For large-scale tag invalidation, prefer Redis or Upstash with a custom adapter that uses Redis sets.

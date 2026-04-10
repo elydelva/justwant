@@ -1,0 +1,80 @@
+---
+title: Console
+description: Log notifications to stdout for local development.
+icon: Terminal
+---
+
+## Overview
+
+The console canal logs notification messages to stdout using `console.info`, `console.warn`, `console.error`, or `console.debug` depending on the message level. It has no external dependencies and requires no configuration.
+
+Use it during development to verify notifications without sending real emails or SMS messages.
+
+## Import
+
+```ts
+import { consoleCanal } from "@justwant/notify/channels/console";
+```
+
+## Setup
+
+```ts title="lib/notify.ts"
+import { createNotify } from "@justwant/notify";
+import { consoleCanal } from "@justwant/notify/channels/console";
+
+export const notify = createNotify({
+  templates: [myTemplate],
+  canals: {
+    dev: consoleCanal(),
+  },
+});
+```
+
+## Message type
+
+Your template's `console` factory must return a `ConsoleMessage`:
+
+```ts
+interface ConsoleMessage {
+  level: "info" | "warn" | "error" | "debug";
+  text: string;
+}
+```
+
+```ts
+const welcomeTemplate = createTemplate({
+  id: "welcome",
+  console: (args: { name: string; email: string }) => ({
+    level: "info",
+    text: `Welcome email would be sent to ${args.email} (${args.name})`,
+  }),
+});
+```
+
+Output:
+
+```
+[notify:console] Welcome email would be sent to alice@example.com (Alice)
+```
+
+## Development pattern
+
+Swap channels by environment so you never accidentally send real messages in development:
+
+```ts title="lib/notify.ts"
+import { createResendCanal } from "@justwant/notify/channels/email/resend";
+import { consoleCanal } from "@justwant/notify/channels/console";
+import { Resend } from "resend";
+
+const emailCanal = process.env.NODE_ENV === "production"
+  ? createResendCanal({
+      client: new Resend(process.env.RESEND_API_KEY!),
+      from: "Acme <no-reply@acme.com>",
+    })
+  : consoleCanal();
+
+export const notify = createNotify({
+  templates: [welcomeTemplate],
+  canals: { email: emailCanal },
+});
+```

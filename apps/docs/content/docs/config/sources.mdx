@@ -1,0 +1,234 @@
+---
+title: Sources
+description: Available config sources — env vars, JSON files, database key-value stores, and custom sources.
+icon: Database
+---
+
+## Overview
+
+A **source** is any object that implements the `ConfigSource` interface:
+
+```ts
+interface ConfigSource {
+  get(lookup: SourceLookup): unknown;
+}
+```
+
+`get` may return a value synchronously or return a `Promise`. The resolution engine awaits it transparently.
+
+Three built-in sources are provided. You can also implement `ConfigSource` directly for any custom backend.
+
+## defineEnvSource
+
+Reads values from `process.env` (or any env-like object). Use `key`-based lookups.
+
+```ts
+import { defineEnvSource, defineValue } from "@justwant/config";
+
+const env = defineEnvSource();
+
+const databaseUrl = defineValue({ from: env, key: "DATABASE_URL" });
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `prefix` | `string` | `""` | Prepended to every key before lookup (`"APP_"` → reads `APP_DATABASE_URL`) |
+| `env` | `Record<string, string \| undefined>` | `process.env` | Custom env object — useful for testing or edge runtimes |
+
+### Prefix example
+
+```ts
+const env = defineEnvSource({ prefix: "APP_" });
+
+// Reads process.env.APP_PORT
+const port = defineValue({ from: env, key: "PORT" });
+```
+
+### Custom env object
+
+Useful in tests to avoid touching real environment variables:
+
+```ts
+const env = defineEnvSource({
+  env: { DATABASE_URL: "postgres://localhost/test" },
+});
+```
+
+### Empty string handling
+
+`defineEnvSource` treats empty strings as missing — it returns `undefined` for `""` values, so the waterfall continues to the next source.
+
+## defineJsonSource
+
+Reads values from a JSON file on disk or an inline JavaScript object. Use `path`-based lookups with dot notation.
+
+```ts
+import { defineJsonSource, defineValue } from "@justwant/config";
+
+const json = defineJsonSource({ path: "config.json" });
+
+// Reads config.json → database.url
+const databaseUrl = defineValue({ from: json, path: "database.url" });
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `path` | `string` | — | Path to a JSON file, resolved relative to `cwd` |
+| `data` | `Record<string, unknown>` | — | Inline object — takes precedence over `path` |
+| `cwd` | `string` | `process.cwd()` | Base directory for resolving `path` |
+
+The file is read once and cached in memory. If both `data` and `path` are provided, `data` takes precedence.
+
+### File example
+
+```json title="config.json"
+{
+  "database": {
+    "url": "postgres://localhost/myapp",
+    "poolSize": 10
+  },
+  "port": 3000
+}
+```
+
+```ts
+const json = defineJsonSource({ path: "config.json" });
+
+const databaseUrl = defineValue({ from: json, path: "database.url" });
+const poolSize = defineValue({ from: json, path: "database.poolSize" });
+const port = defineValue({ from: json, path: "port" });
+```
+
+### Inline object example
+
+```ts
+const json = defineJsonSource({
+  data: {
+    database: { url: "postgres://localhost/dev" },
+  },
+});
+
+const databaseUrl = defineValue({ from: json, path: "database.url" });
+```
+
+## defineDatabaseSource
+
+Reads values from a database through a `ConfigRepo` interface. The repo performs a `findOne` lookup by key and returns a `ConfigEntry`. Use `key`-based lookups.
+
+```ts
+import { defineDatabaseSource, defineValue } from "@justwant/config";
+
+const db = defineDatabaseSource({ repo: myConfigRepo });
+
+const featureFlag = defineValue({ from: db, key: "feature.newDashboard" });
+```
+
+### ConfigRepo interface
+
+Implement this interface to connect any ORM or query client:
+
+```ts
+interface ConfigEntry {
+  key: string;
+  value: unknown;
+}
+
+interface ConfigRepo {
+  findOne(where: { key: string }): Promise<ConfigEntry | null>;
+}
+```
+
+### Example with a custom repo
+
+```ts title="lib/config-repo.ts"
+import { db } from "@/lib/db"; // your database client
+
+const configRepo = {
+  async findOne({ key }: { key: string }) {
+    const row = await db.query(
+      "SELECT key, value FROM config WHERE key = $1",
+      [key]
+    );
+    return row ?? null;
+  },
+};
+```
+
+```ts title="lib/config.ts"
+import { defineDatabaseSource, defineValue, defineEnvironment, createConfigService } from "@justwant/config";
+import { configRepo } from "./config-repo";
+
+const dbSource = defineDatabaseSource({ repo: configRepo });
+
+export const config = createConfigService({
+  environments: [
+    defineEnvironment({
+      name: "default",
+      sources: {
+        maintenanceMode: defineValue({ from: dbSource, key: "app.maintenanceMode" }),
+      },
+    }),
+  ],
+});
+```
+
+## Custom source
+
+Implement `ConfigSource` directly to read from any backend — Vault, SSM Parameter Store, Consul, etc.:
+
+```ts
+import type { ConfigSource, SourceLookup } from "@justwant/config";
+
+function defineVaultSource(vaultClient: VaultClient): ConfigSource {
+  return {
+    async get(lookup: SourceLookup): Promise<unknown> {
+      if (!("key" in lookup)) return undefined;
+      try {
+        return await vaultClient.read(lookup.key);
+      } catch {
+        return undefined;
+      }
+    },
+  };
+}
+```
+
+Then use it exactly like a built-in source:
+
+```ts
+const vault = defineVaultSource(client);
+
+const secret = defineValue({ from: vault, key: "myapp/secret" });
+```
+
+## Combining sources in a waterfall
+
+Any key can map to an array of `ValueDef` objects. The resolver tries each in order and returns the first defined value:
+
+```ts
+import {
+  defineValue,
+  defineEnvSource,
+  defineJsonSource,
+  defineDatabaseSource,
+} from "@justwant/config";
+
+const env = defineEnvSource();
+const json = defineJsonSource({ path: "config.local.json" });
+const db = defineDatabaseSource({ repo: configRepo });
+
+const databaseUrl = [
+  defineValue({ from: env, key: "DATABASE_URL" }),   // 1. env var
+  defineValue({ from: db, key: "database.url" }),    // 2. database
+  defineValue({ from: json, path: "database.url" }), // 3. local JSON
+];
+```
+
+## Next steps
+
+- [Basic Usage](/docs/config/basic-usage) — defineValue, defineEnvironment, createConfigService
+- [API Reference](/docs/config/api) — Full type and function reference

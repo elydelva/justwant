@@ -1,0 +1,206 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/job.
+icon: BookOpen
+---
+
+## createJob
+
+```ts
+function createJob(options: CreateJobOptions): JobService
+```
+
+### CreateJobOptions
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `engine` | `JobEngineContract` | Yes | Job engine |
+| `repo` | `JobRepository` | No | Repository for definitions and pause state |
+| `plugins` | `JobPlugin[]` | No | Execution middleware |
+| `defaults` | `JobDefaults` | No | Global defaults |
+| `skipRuntimeCheck` | `boolean` | No | Skip engine compatibility check |
+| `crons` | `CronDefinition[]` | No | Crons registered at startup |
+| `queues` | `QueueDefinition[]` | No | Queues registered at startup |
+| `handlers` | `Record<string, JobHandler>` | No | Handlers by `job.name` |
+
+### JobService
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `register` | `(queueDef, handler?) => Promise<void>` | Register a queue (and optionally a handler) |
+| `handle` | `(queueDef, handler) => Promise<void>` | Attach a handler (worker mode) |
+| `unregister` | `(jobOrId) => Promise<void>` | Remove a queue |
+| `enqueue` | `(jobOrId, payload?) => Promise<void>` | Enqueue a job instance |
+| `listQueues` | `() => Promise<QueueStatus[]>` | List all registered queues |
+| `getStats` | `(jobOrId) => Promise<JobStats>` | Get execution stats |
+| `dispatch` | `(queueId, req, body?) => Promise<DispatchResult>` | HTTP dispatch (used by framework middleware) |
+| `start` | `() => Promise<void>` | Register crons and queues, start workers |
+| `stop` | `() => Promise<void>` | Stop workers and close engine |
+| `supports` | `(operation) => boolean` | Check engine capability |
+| `pauseQueue` | `(jobOrId) => Promise<void>` | Pause a queue |
+| `resumeQueue` | `(jobOrId) => Promise<void>` | Resume a queue |
+| `skipNext` | `(cronOrId) => Promise<void>` | Skip next cron tick |
+| `skipUntil` | `(cronOrId, until) => Promise<void>` | Skip all ticks until date |
+| `disableCron` | `(cronOrId) => Promise<void>` | Pause a cron schedule |
+| `enableCron` | `(cronOrId) => Promise<void>` | Resume a cron schedule |
+| `getQueueMetadata?` | `(id) => Promise<QueueMetadata>` | Optional — queue metadata |
+| `listInstances?` | `(id, status?) => Promise<JobInstance[]>` | Optional — list job instances |
+| `getInstance?` | `(id, instanceId) => Promise<JobInstance \| null>` | Optional — get instance |
+| `cancelInstance?` | `(id, instanceId) => Promise<void>` | Optional — cancel instance |
+| `retryInstance?` | `(id, instanceId) => Promise<void>` | Optional — retry instance |
+| `drain?` | `(id, opts?) => Promise<void>` | Optional — drain queue |
+| `getJobCounts?` | `(id) => Promise<JobCounts>` | Optional — job counts |
+
+---
+
+## defineJob
+
+```ts
+function defineJob<N extends string, T = unknown>(
+  config: DefineJobConfig<N, T>
+): JobDefinition<N, T> & { handle(fn: JobHandlerFn<T>): JobHandler<T> }
+```
+
+### DefineJobConfig
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | `N` | Yes | Job name (literal type) |
+| `schema` | `StandardSchemaV1` | No | Payload schema (Zod / Valibot) |
+| `defaults` | `JobDefaults` | No | Retry, timezone, timeout |
+
+---
+
+## defineCron
+
+```ts
+function defineCron<T = unknown>(config: DefineCronConfig<T>): CronDefinition<T>
+```
+
+### DefineCronConfig
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `job` | `JobDefinition` | Yes | Job to schedule |
+| `cron` | `string` | Yes | Cron expression |
+| `id` | `string` | No | Unique schedule id |
+
+---
+
+## defineQueue
+
+```ts
+function defineQueue<T = unknown>(config: DefineQueueConfig<T>): QueueDefinition<T>
+```
+
+### DefineQueueConfig
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `job` | `JobDefinition` | Yes | Job to attach |
+| `queue` | `string` | One of `queue`/`name`/`cron` | Queue name |
+| `name` | `string` | Alias for `queue` | Queue name alias |
+| `cron` | `string` | No | Schedule expression |
+| `parallelism` | `number` | No | Max concurrent workers |
+| `aggregateSchedules` | `boolean` | No | QStash aggregate schedules |
+
+---
+
+## Core types
+
+### JobDefinition
+
+```ts
+interface JobDefinition<N extends string = string, T = unknown> {
+  readonly name: N;
+  readonly schema?: StandardSchemaV1<unknown, T>;
+  readonly defaults?: JobDefaults;
+}
+```
+
+### JobHandler
+
+```ts
+interface JobHandler<T = unknown> {
+  run(payload: T): Promise<void>;
+}
+```
+
+### JobHandlerContext
+
+```ts
+interface JobHandlerContext<T = unknown> {
+  data: T;
+  job: { name: string; runCount: number; startedAt: Date };
+  logger: JobLogger;
+}
+```
+
+### JobDefaults
+
+```ts
+interface JobDefaults {
+  timezone?: string;
+  retry?: RetryConfig;
+  timeout?: string;
+}
+
+interface RetryConfig {
+  attempts?: number;
+  backoff?: "linear" | "exponential" | "fixed";
+  delayMs?: number;
+}
+```
+
+### QueueStatus
+
+```ts
+interface QueueStatus {
+  id: string;
+  cron?: string;
+  lastRun?: Date;
+  nextRun?: Date;
+  status: "active" | "paused" | "failed" | "unknown";
+}
+```
+
+### JobStats
+
+```ts
+interface JobStats {
+  runs: number;
+  failures: number;
+  avgDurationMs?: number;
+  lastRun?: Date;
+  nextRun?: Date;
+}
+```
+
+### JobPlugin
+
+```ts
+interface JobPlugin {
+  init?(context: JobPluginContext): void;
+  beforeExecute?: JobPluginExecuteFn;
+  afterExecute?: JobPluginExecuteFn;
+  onError?: (ctx: { jobId: string; error: unknown }) => Promise<void>;
+}
+```
+
+### JobRepository
+
+```ts
+interface JobRepository {
+  getDefinition(id: string): Promise<JobDefinition | null>;
+  listDefinitions(): Promise<JobDefinition[]>;
+  saveDefinition(def: JobDefinition): Promise<void>;
+  deleteDefinition(id: string): Promise<void>;
+  getPaused(id: string): Promise<boolean>;
+  setPaused(id: string, paused: boolean): Promise<void>;
+  getStats?(id: string): Promise<JobStats>;
+  incrementRuns?(id: string): Promise<void>;
+  incrementFailures?(id: string): Promise<void>;
+  getSkipNextUntil?(id: string): Promise<SkipNextUntil>;
+  setSkipNextUntil?(id: string, value: SkipNextUntil): Promise<void>;
+}
+```

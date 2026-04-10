@@ -1,0 +1,134 @@
+---
+title: BullMQ
+description: Redis-backed BullMQ engine — retry, concurrency, priorities, and full queue introspection.
+icon: Database
+---
+
+## Overview
+
+The BullMQ engine uses [BullMQ](https://docs.bullmq.io/) under the hood, providing production-grade job queues backed by Redis. It supports retries with backoff, priorities, concurrency control, delayed jobs, and full instance management.
+
+## Install
+
+```bash
+bun add bullmq
+```
+
+## Setup
+
+```ts title="lib/jobs.ts"
+import { createJob, defineJob, defineQueue } from "@justwant/job";
+import { bullmqEngine } from "@justwant/job/engines/bullmq";
+
+const engine = bullmqEngine({
+  connection: {
+    host: process.env.REDIS_HOST ?? "localhost",
+    port: Number(process.env.REDIS_PORT ?? 6379),
+  },
+  concurrency: 5,
+  prefix: "myapp",
+});
+
+const processOrder = defineJob({
+  name: "process-order",
+  defaults: {
+    retry: { attempts: 3, backoff: "exponential", delayMs: 1000 },
+  },
+});
+
+const orderQueue = defineQueue({
+  job: processOrder,
+  queue: "orders",
+});
+
+export const jobs = createJob({
+  engine,
+  queues: [orderQueue],
+  handlers: {
+    "process-order": processOrder.handle(async ({ data, logger }) => {
+      logger.info("Processing order", { data });
+    }),
+  },
+});
+```
+
+## BullMQEngineOptions
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `connection` | `{ host?, port?, url? } \| string` | Yes | Redis connection options |
+| `concurrency` | `number` | No | Worker concurrency (default: `1`) |
+| `prefix` | `string` | No | Queue key prefix (default: `"job"`) |
+
+## Retry configuration
+
+Set retry options in `defineJob({ defaults: { retry } })`:
+
+```ts
+const job = defineJob({
+  name: "risky-operation",
+  defaults: {
+    retry: {
+      attempts: 5,
+      backoff: "exponential", // "linear" | "exponential" | "fixed"
+      delayMs: 2000,
+    },
+  },
+});
+```
+
+## Cron scheduling
+
+BullMQ uses `upsertJobScheduler` for reliable cron scheduling:
+
+```ts
+import { defineCron } from "@justwant/job";
+
+const dailySync = defineCron({
+  job: defineJob({ name: "daily-sync", defaults: { timezone: "UTC" } }),
+  cron: "0 3 * * *",
+});
+
+const jobs = createJob({
+  engine,
+  crons: [dailySync],
+  handlers: {
+    "daily-sync": dailySync.job.handle(async ({ logger }) => {
+      logger.info("Syncing...");
+    }),
+  },
+});
+```
+
+## Queue management
+
+```ts
+await jobs.start();
+
+// Pause and resume
+await jobs.pauseQueue(orderQueue);
+await jobs.resumeQueue(orderQueue);
+
+// Job counts
+const counts = await jobs.getJobCounts!("orders");
+console.log(counts.waiting, counts.active, counts.failed);
+
+// Queue metadata
+const meta = await jobs.getQueueMetadata!("orders");
+console.log(meta.lag);
+
+// List instances
+const failing = await jobs.listInstances!("orders", "failed");
+
+// Retry a failed instance
+await jobs.retryInstance!("orders", failing[0].id);
+
+// Drain pending jobs
+await jobs.drain!("orders");
+```
+
+## Stop
+
+```ts
+await jobs.stop(); // closes all workers and queues
+```

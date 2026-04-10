@@ -1,0 +1,75 @@
+---
+title: Installation
+description: Install @justwant/actor and create your first actor definition.
+icon: Download
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/actor
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/actor
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/actor
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/actor
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Quick setup
+
+Define your actor types once and reuse the factories across your application.
+
+```ts title="lib/actors.ts"
+import { defineActor } from "@justwant/actor";
+
+// Simple actor — identified by a single id
+export const userActor = defineActor({ name: "user" });
+
+// Scoped actor — identified by a withinId and an id
+export const memberActor = defineActor({ name: "member", within: "org" });
+```
+
+## Create actor instances
+
+```ts title="app/example.ts"
+import { userActor, memberActor } from "@/lib/actors";
+
+// user:user_123
+const user = userActor("user_123");
+
+// member:mbr_456 scoped inside org:org_789
+const member = memberActor("org_789", "mbr_456");
+```
+
+## Next steps
+
+- [Basic Usage](/docs/actor/basic-usage) — Serialization, persistence, and composition patterns
+- [API Reference](/docs/actor/api) — Full API reference

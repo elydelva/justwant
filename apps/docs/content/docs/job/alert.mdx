@@ -1,0 +1,46 @@
+---
+title: Alert
+description: Notify on job failure — call any notification handler when a job throws an uncaught error.
+icon: BellRing
+---
+
+## Overview
+
+The alert plugin calls a `notify` function whenever a job throws an uncaught error, enabling real-time failure notifications.
+
+## Import
+
+```ts
+import { alertPlugin } from "@justwant/job/plugins/alert";
+```
+
+## Setup
+
+```ts
+import { alertPlugin } from "@justwant/job/plugins/alert";
+
+const plugin = alertPlugin({
+  notify({ jobId, error }) {
+    slackClient.postMessage({
+      channel: "#alerts",
+      text: `Job ${jobId} failed: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  },
+});
+
+const jobs = createJob({ engine, plugins: [plugin] });
+```
+
+## AlertPluginOptions
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `notify` | `(payload: AlertPayload) => void \| Promise<void>` | Yes | Notification handler |
+
+## AlertPayload
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `jobId` | `string` | Job identifier |
+| `error` | `unknown` | The thrown error |
+| `runCount` | `number \| undefined` | Execution count (if available) |

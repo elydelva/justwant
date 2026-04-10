@@ -1,0 +1,78 @@
+---
+title: Errors
+description: Error types thrown by @justwant/referral.
+icon: CircleAlert
+---
+
+## Error hierarchy
+
+```
+Error
+└── ReferralError
+    ├── AlreadyReferredError
+    └── InvalidReferralCodeError
+```
+
+All errors extend `ReferralError` and expose `code` and `metadata`.
+
+## ReferralError
+
+Base class for all referral errors.
+
+```ts
+import { ReferralError } from "@justwant/referral";
+
+try {
+  await referral.refer(betaOffer, referrer, recipient);
+} catch (err) {
+  if (err instanceof ReferralError) {
+    console.error(err.code, err.metadata);
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `string` | Machine-readable error code |
+| `metadata` | `Record<string, unknown> \| undefined` | Contextual data |
+
+## AlreadyReferredError
+
+Thrown by `refer` when the recipient has already been referred for the same offer.
+
+```ts
+import { AlreadyReferredError } from "@justwant/referral";
+
+try {
+  await referral.refer(betaOffer, referrer, recipient);
+} catch (err) {
+  if (err instanceof AlreadyReferredError) {
+    console.error(err.offerKey, err.recipientId);
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `"ALREADY_REFERRED"` | Error code |
+| `offerKey` | `string` | Offer key for which the duplicate was detected |
+| `recipientId` | `string` | Id of the recipient already referred |
+
+## InvalidReferralCodeError
+
+Available for use by custom adapters or plugins. Not thrown by the default service — `resolveCode` returns `null` for unresolvable codes instead of throwing.
+
+```ts
+import { InvalidReferralCodeError } from "@justwant/referral";
+
+// Throw it yourself when you want a hard error:
+if (!resolvedReferrer) {
+  throw new InvalidReferralCodeError(betaOffer.key(), code);
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `"INVALID_REFERRAL_CODE"` | Error code |
+| `offerKey` | `string` | Offer key that was queried |
+| `referralCode` | `string` | The code that could not be resolved |

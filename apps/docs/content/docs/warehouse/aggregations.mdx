@@ -1,0 +1,257 @@
+---
+title: Aggregations
+description: COUNT, SUM, AVG, MIN, MAX, multi-dimensional grouping, time series, and funnel analysis.
+icon: ChartColumn
+---
+
+## Overview
+
+`WarehouseMappedTable.aggregate()` runs a `SELECT … [WHERE …] [GROUP BY …]` aggregation query. You write SQL expressions in the `select` map — the warehouse handles column quoting and dialect differences (ClickHouse vs DuckDB).
+
+```ts
+const result = await eventsTable.aggregate<{ count: number }>({
+  select: { count: "COUNT(*)" },
+});
+// → [{ count: 42 }]
+```
+
+The type parameter `<A>` defines the shape of the returned rows. Always include all keys from `groupBy` plus the aliased `select` fields.
+
+---
+
+## Count
+
+### Total row count
+
+```ts
+const [{ total }] = await eventsTable.aggregate<{ total: number }>({
+  select: { total: "COUNT(*)" },
+});
+```
+
+### Count per event type
+
+```ts
+const counts = await eventsTable.aggregate<{ eventName: string; count: number }>({
+  groupBy: ["eventName"],
+  select: { count: "COUNT(*)" },
+});
+
+// → [{ eventName: "page_view", count: 120 }, { eventName: "purchase", count: 34 }, ...]
+```
+
+### Count distinct users
+
+```ts
+const [{ uniqueUsers }] = await eventsTable.aggregate<{ uniqueUsers: number }>({
+  select: { uniqueUsers: 'COUNT(DISTINCT "user_id")' },
+});
+```
+
+---
+
+## Sum
+
+### Total revenue
+
+```ts
+const [{ revenue }] = await eventsTable.aggregate<{ revenue: number }>({
+  where: { eventName: "purchase" },
+  select: { revenue: 'SUM("value")' },
+});
+```
+
+### Revenue per user
+
+```ts
+const perUser = await eventsTable.aggregate<{ userId: string; revenue: number }>({
+  groupBy: ["userId"],
+  where: { eventName: "purchase" },
+  select: { revenue: 'SUM("value")' },
+});
+```
+
+---
+
+## Average
+
+```ts
+const [{ avgOrder }] = await eventsTable.aggregate<{ avgOrder: number }>({
+  where: { eventName: "purchase" },
+  select: { avgOrder: 'AVG("value")' },
+});
+```
+
+---
+
+## Min and Max
+
+```ts
+const [{ minVal, maxVal }] = await eventsTable.aggregate<{ minVal: number; maxVal: number }>({
+  where: { eventName: "purchase" },
+  select: {
+    minVal: 'MIN("value")',
+    maxVal: 'MAX("value")',
+  },
+});
+```
+
+---
+
+## Multiple metrics in one query
+
+Combine several expressions to reduce round trips:
+
+```ts
+const [stats] = await eventsTable.aggregate<{
+  count: number;
+  total: number;
+  avg: number;
+  min: number;
+  max: number;
+}>({
+  where: { eventName: "purchase" },
+  select: {
+    count: "COUNT(*)",
+    total: 'SUM("value")',
+    avg: 'AVG("value")',
+    min: 'MIN("value")',
+    max: 'MAX("value")',
+  },
+});
+
+console.log(`${stats.count} purchases, total: ${stats.total}, avg: ${stats.avg.toFixed(2)}`);
+```
+
+---
+
+## Multi-dimensional grouping
+
+Group by multiple contract fields to build cross-dimensional reports:
+
+```ts
+const breakdown = await eventsTable.aggregate<{
+  userId: string;
+  eventName: string;
+  count: number;
+}>({
+  groupBy: ["userId", "eventName"],
+  select: { count: "COUNT(*)" },
+});
+
+// → [
+//     { userId: "u_1", eventName: "page_view", count: 12 },
+//     { userId: "u_1", eventName: "purchase", count: 3 },
+//     ...
+//   ]
+```
+
+---
+
+## Time series
+
+Use SQL date/time functions to bucket events by period. The exact function depends on the dialect.
+
+### Daily event counts (DuckDB)
+
+```ts
+const daily = await eventsTable.aggregate<{ day: string; count: number }>({
+  select: {
+    day: "strftime(\"created_at\", '%Y-%m-%d')",
+    count: "COUNT(*)",
+  },
+});
+```
+
+### Daily event counts (ClickHouse)
+
+```ts
+const daily = await eventsTable.aggregate<{ day: string; count: number }>({
+  select: {
+    day: "toDate(\"created_at\")",
+    count: "COUNT(*)",
+  },
+});
+```
+
+### Monthly revenue (DuckDB)
+
+```ts
+const monthly = await eventsTable.aggregate<{ month: string; revenue: number }>({
+  where: { eventName: "purchase" },
+  select: {
+    month: "strftime(\"created_at\", '%Y-%m')",
+    revenue: 'SUM("value")',
+  },
+});
+```
+
+---
+
+## Filtering before aggregation
+
+`where` is applied before grouping — it acts as a `WHERE` clause, not `HAVING`. Use it to limit the rows that are aggregated:
+
+```ts
+// Only aggregate purchases from a specific user
+const [userStats] = await eventsTable.aggregate<{ count: number; total: number }>({
+  where: { userId: "u_alice", eventName: "purchase" },
+  select: {
+    count: "COUNT(*)",
+    total: 'SUM("value")',
+  },
+});
+```
+
+---
+
+## Funnel analysis
+
+Count events per stage for a conversion funnel. Run one aggregate per stage and compare:
+
+```ts
+const stages = ["page_view", "add_to_cart", "checkout", "purchase"];
+
+const funnelSteps = await eventsTable.aggregate<{ eventName: string; users: number }>({
+  groupBy: ["eventName"],
+  select: { users: 'COUNT(DISTINCT "user_id")' },
+});
+
+// Build a lookup map and compute conversion rates
+const byName = Object.fromEntries(funnelSteps.map((s) => [s.eventName, s.users]));
+
+for (let i = 1; i < stages.length; i++) {
+  const prev = byName[stages[i - 1]] ?? 0;
+  const curr = byName[stages[i]] ?? 0;
+  const rate = prev > 0 ? ((curr / prev) * 100).toFixed(1) : "0";
+  console.log(`${stages[i - 1]} → ${stages[i]}: ${rate}%`);
+}
+```
+
+---
+
+## Numeric normalization
+
+Both ClickHouse and DuckDB return `COUNT` and `SUM` as non-standard types (`string` and `BigInt` respectively). The warehouse automatically normalizes them to `number` — you never need to parse or cast manually.
+
+```ts
+const [{ count }] = await eventsTable.aggregate<{ count: number }>({
+  select: { count: "COUNT(*)" },
+});
+
+typeof count; // "number" — always, regardless of dialect
+```
+
+---
+
+## Column quoting
+
+In `select` SQL expressions, always quote column names with double quotes to avoid SQL injection and reserved word conflicts. Use the contract's `defaultMapping` key (snake_case if `camelToSnake` is set):
+
+```ts
+// Contract key: userId  →  column name: user_id (camelToSnake)
+select: { uniqueUsers: 'COUNT(DISTINCT "user_id")' }
+
+// Contract key: createdAt → column name: created_at
+select: { day: "strftime(\"created_at\", '%Y-%m-%d')" }
+```

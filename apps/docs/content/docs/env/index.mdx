@@ -1,0 +1,53 @@
+---
+title: Introduction
+description: Typed, validated environment variables for Node.js, Bun, and Edge runtimes. @standard-schema compatible.
+icon: Shield
+---
+
+## What is @justwant/env?
+
+`@justwant/env` provides **typed, validated environment variables** for TypeScript applications. It validates your environment at startup using any `@standard-schema`-compatible library (Zod, Valibot, ArkType, etc.) and surfaces missing or invalid variables as structured errors before your application runs.
+
+**Use it when** you need to:
+- Catch missing or malformed env vars at startup, not at runtime
+- Access env variables with full TypeScript types
+- Share env definitions between server and client without duplication
+- Run in Node.js, Bun, or Edge/Workers runtimes
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Standard Schema** | Works with Zod, Valibot, ArkType, or any `@standard-schema/spec` validator |
+| **Typed access** | Variables are strongly typed based on your schema |
+| **Groups** | Namespace variables with a prefix (`DB_HOST`, `DB_PORT` → `db.host`, `db.port`) |
+| **Client prefix** | Mark variables safe for client-side use (`NEXT_PUBLIC_`) |
+| **Variable expansion** | Reference other variables in values (`${BASE_URL}/api`) |
+| **File watching** | Hot-reload env files in development with `watch: true` |
+| **Edge compatible** | `@justwant/env/edge` — no `fs`, no file watching, works in Workers |
+| **Redaction** | Hide sensitive values in `toJSON()` output |
+
+## How it works
+
+1. **Define a schema** — a record of `@standard-schema` validators, one per variable.
+2. **Call `createEnv`** — validates all variables at module load time.
+3. **Access variables** — returned object has typed keys directly accessible.
+
+```ts
+const env = createEnv({
+  vars: {
+    PORT: z.string().transform(Number),
+    DATABASE_URL: z.string().url(),
+  },
+});
+
+env.PORT         // number
+env.DATABASE_URL // string
+```
+
+## Next steps
+
+- [Installation](/docs/env/installation) — Install and set up with Zod
+- [Basic Usage](/docs/env/basic-usage) — createEnv, groups, sources, validation
+- [Edge](/docs/env/edge) — Cloudflare Workers and Vercel Edge usage
+- [API Reference](/docs/env/api) — Full API

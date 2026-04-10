@@ -1,0 +1,159 @@
+---
+title: Fields
+description: All field builder functions, their column types, inferred TypeScript types, built-in validation schemas, and chainable methods.
+icon: List
+---
+
+## Import
+
+```ts
+import { uuid, string, number, integer, boolean, date, json, email, url, ip, ipv4, ipv6, hostname, slug } from "@justwant/contract/fields";
+```
+
+All field builders are also re-exported from the main entry point `@justwant/contract`.
+
+## Primitive builders
+
+These builders map directly to a SQL column type and carry no built-in validation schema.
+
+| Builder | TypeScript type | Column type | Notes |
+|---------|----------------|-------------|-------|
+| `string()` | `string` | `TEXT` | General-purpose text |
+| `number()` | `number` | `REAL` | Floating-point number |
+| `integer()` | `number` | `INTEGER` | Integer number |
+| `boolean()` | `boolean` | `INTEGER` | Stored as `0`/`1` in SQLite |
+| `json()` | `unknown` | `TEXT` | Serialized JSON |
+| `date()` | `Date` | `TEXT` | ISO 8601 string in the DB, `Date` in TypeScript |
+
+```ts
+import { string, number, integer, boolean, date, json } from "@justwant/contract/fields";
+
+const fields = {
+  title:     string().required(),
+  price:     number().optional(),
+  quantity:  integer().required().default("0"),
+  isEnabled: boolean().required().default("1"),
+  metadata:  json().optional(),
+  expiresAt: date().optional(),
+};
+```
+
+## Semantic builders
+
+Semantic builders are convenience wrappers around `string()` with a built-in [Standard Schema](https://standardschema.dev) validator attached. They validate the value format on `validateContractData`.
+
+| Builder | Validates |
+|---------|-----------|
+| `uuid()` | UUID v4 format |
+| `email()` | RFC 5321 email address |
+| `url()` | HTTP/HTTPS URL |
+| `ip()` | IPv4 or IPv6 address |
+| `ipv4()` | IPv4 address only |
+| `ipv6()` | IPv6 address only |
+| `hostname()` | DNS hostname |
+| `slug()` | URL-safe slug (`[a-z0-9-]+`) |
+
+```ts
+import { uuid, email, url, ip, slug } from "@justwant/contract/fields";
+
+const fields = {
+  id:       uuid().primaryKey().required(),
+  contact:  email().required(),
+  website:  url().optional(),
+  clientIp: ip().optional(),
+  handle:   slug().required(),
+};
+```
+
+## Chainable methods
+
+Every field builder exposes the same fluent API. Methods return a new builder — the original is never mutated.
+
+### `.required()`
+
+Marks the field as required. The inferred TypeScript type becomes non-optional, and `_required` is set to `true`.
+
+```ts
+string().required() // string (non-optional in InferContract)
+```
+
+### `.optional()`
+
+Marks the field as optional (the default). The inferred TypeScript type becomes optional (`T | undefined`).
+
+```ts
+string().optional() // string | undefined (optional in InferContract)
+```
+
+### `.primaryKey()`
+
+Marks the field as the table's primary key. Used by adapters that generate DDL (e.g. Waddler).
+
+```ts
+uuid().primaryKey().required()
+```
+
+### `.unique()`
+
+Marks the field as having a unique constraint. Used by DDL-generating adapters.
+
+```ts
+email().unique().required()
+```
+
+### `.default(val)`
+
+Sets a SQL-level default value. The argument is a string representing the raw SQL default expression.
+
+```ts
+integer().required().default("0")
+boolean().required().default("1")
+date().required().default("CURRENT_TIMESTAMP")
+```
+
+### `.schema(s)`
+
+Attaches a [Standard Schema](https://standardschema.dev) compatible validator to the field. This overrides any built-in schema and changes the inferred TypeScript type to the schema's output type.
+
+```ts
+import { string } from "@justwant/contract/fields";
+import { z } from "zod";
+
+const positiveInt = string()
+  .schema(z.string().transform(Number).pipe(z.number().positive()))
+  .required();
+```
+
+## Field defaults
+
+All field builders start with `_required: false` and `_nullable: true`. You must explicitly call `.required()` to make a field non-optional.
+
+```ts
+// Both of these are optional by default:
+string()          // { _required: false, _nullable: true }
+string().optional() // same thing — .optional() is the no-op default
+```
+
+## Full example
+
+```ts title="contracts/product.ts"
+import { defineContract } from "@justwant/contract";
+import { uuid, string, number, integer, boolean, date, url, slug } from "@justwant/contract/fields";
+import type { InferContract } from "@justwant/contract";
+
+export const productContract = defineContract("products", {
+  id:          uuid().primaryKey().required(),
+  slug:        slug().unique().required(),
+  name:        string().required(),
+  description: string().optional(),
+  imageUrl:    url().optional(),
+  price:       number().required(),
+  stock:       integer().required().default("0"),
+  isPublished: boolean().required().default("0"),
+  createdAt:   date().required(),
+  updatedAt:   date().required(),
+  deletedAt:   date().optional(),
+}, { defaultMapping: "camelToSnake" });
+
+export type Product = InferContract<typeof productContract>;
+```

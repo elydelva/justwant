@@ -1,0 +1,271 @@
+---
+title: Which adapter?
+description: Choose the right adapter for your environment — browser, Next.js, fetch, or generic headers.
+icon: MessageCircleQuestionMark
+---
+
+## What is an adapter?
+
+A `CookieAdapter` is a thin interface that bridges `@justwant/cookie` to the underlying cookie storage mechanism for your environment. All adapters implement two methods:
+
+```ts
+interface CookieAdapter {
+  read(): string;                                               // returns Cookie header string
+  write(name: string, value: string, options?: CookieOptions): void; // sets a cookie
+}
+```
+
+You pass an adapter to `createCookieStore` or use it with `setCookie` / `deleteCookie`.
+
+## Available adapters
+
+| Adapter | Environment | Page |
+|---------|-------------|------|
+| [`DocumentAdapter`](/docs/cookie/document) | Browser (`document.cookie`) | [→](/docs/cookie/document) |
+| [`NextJSAdapter`](/docs/cookie/nextjs) | Next.js App Router | [→](/docs/cookie/nextjs) |
+| [`RequestResponseAdapter`](/docs/cookie/request-response) | Cloudflare Workers / Deno / Bun | [→](/docs/cookie/request-response) |
+| [`HeaderAdapter`](/docs/cookie/header) | Node.js HTTP / Express / custom | [→](/docs/cookie/header) |
+
+## DocumentAdapter
+
+For **browser** environments. Reads and writes `document.cookie` directly.
+
+```ts
+import { DocumentAdapter } from "@justwant/cookie";
+
+// Use the global document (browser only)
+const adapter = DocumentAdapter();
+
+// Or pass a document-like object explicitly (for testing or non-standard environments)
+const adapter = DocumentAdapter(myDocumentLike);
+```
+
+### Example: browser cookie store
+
+```ts title="lib/browser-cookies.ts"
+import { DocumentAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+});
+
+const adapter = DocumentAdapter();
+export const store = createCookieStore({ theme: themeCookie }, { adapter });
+
+// Read
+const { theme } = store.get();
+
+// Write — sets document.cookie
+store.set("theme", "dark", {
+  path: "/",
+  sameSite: "lax",
+  maxAge: 60 * 60 * 24 * 365,
+});
+```
+
+### Notes
+
+- Only available in browser environments where `document.cookie` exists.
+- Each `write` call sets a single cookie by assigning to `document.cookie` (this is how the browser API works — it does not replace all cookies).
+- Pass a `DocumentLike` object (any object with a `cookie: string` property) for testing.
+
+## NextJSAdapter
+
+For **Next.js App Router** server components, route handlers, and Server Actions. Compatible with `cookies()` from `next/headers`.
+
+```ts
+import { cookies } from "next/headers";
+import { NextJSAdapter } from "@justwant/cookie";
+
+const cookieStore = await cookies(); // Next.js 15+ requires await
+const adapter = NextJSAdapter(cookieStore);
+```
+
+### Example: Server Action
+
+```ts title="app/actions.ts"
+"use server";
+
+import { cookies } from "next/headers";
+import { NextJSAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+});
+
+export async function setTheme(theme: "light" | "dark") {
+  const cookieStore = await cookies();
+  const adapter = NextJSAdapter(cookieStore);
+  const store = createCookieStore({ theme: themeCookie }, { adapter });
+
+  store.set("theme", theme, {
+    path: "/",
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+}
+```
+
+### Example: Route Handler
+
+```ts title="app/api/preferences/route.ts"
+import { cookies } from "next/headers";
+import { NextJSAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const localeCookie = defineCookie("locale", {
+  schema: z.string().min(2),
+  default: "en",
+});
+
+export async function GET() {
+  const cookieStore = await cookies();
+  const adapter = NextJSAdapter(cookieStore);
+  const store = createCookieStore({ locale: localeCookie }, { adapter });
+
+  const { locale } = store.get();
+  return Response.json({ locale });
+}
+```
+
+### Notes
+
+- Compatible with Next.js 14 (synchronous `cookies()`) and Next.js 15+ (asynchronous `cookies()`).
+- Supports all standard `CookieOptions`, plus Next.js-specific fields `priority` and `partitioned` when passed directly to the Next.js cookie store.
+- The adapter reads all cookies via `cookieStore.getAll()` and serializes them into a `Cookie` header string.
+
+## RequestResponseAdapter
+
+For environments using the **Web Fetch API** — Cloudflare Workers, Deno, Bun, Edge Middleware, and any standard `Request`/`Response` pair.
+
+```ts
+import { RequestResponseAdapter } from "@justwant/cookie";
+
+const adapter = RequestResponseAdapter(request, response);
+```
+
+Reads cookies from `request.headers.get("Cookie")` and appends `Set-Cookie` headers to `response.headers`.
+
+### Example: Cloudflare Worker
+
+```ts title="worker.ts"
+import { RequestResponseAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const sessionCookie = defineCookie("session", {
+  schema: z.string().uuid(),
+  onMismatch: "remove",
+});
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    const response = new Response("OK");
+    const adapter = RequestResponseAdapter(request, response);
+    const store = createCookieStore({ session: sessionCookie }, { adapter });
+
+    const { session } = store.get();
+
+    if (!session) {
+      store.set("session", crypto.randomUUID(), {
+        path: "/",
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
+
+    return response;
+  },
+};
+```
+
+### Example: Bun server
+
+```ts title="server.ts"
+import { RequestResponseAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+});
+
+Bun.serve({
+  port: 3000,
+  async fetch(request) {
+    const response = new Response("Hello");
+    const adapter = RequestResponseAdapter(request, response);
+    const store = createCookieStore({ theme: themeCookie }, { adapter });
+
+    const { theme } = store.get();
+    store.set("theme", theme === "light" ? "dark" : "light");
+
+    return response;
+  },
+});
+```
+
+## HeaderAdapter
+
+A **generic adapter** for any environment that works with raw header strings. Build it from two callbacks: one to read the current `Cookie` header and one to append a `Set-Cookie` value.
+
+```ts
+import { HeaderAdapter } from "@justwant/cookie";
+
+const adapter = HeaderAdapter({
+  getCookie: () => req.headers["cookie"] ?? "",
+  appendSetCookie: (value) => res.setHeader("Set-Cookie", value),
+});
+```
+
+### Example: Node.js HTTP server
+
+```ts title="server.ts"
+import { createServer } from "node:http";
+import { HeaderAdapter, createCookieStore, defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+});
+
+createServer((req, res) => {
+  const setCookieValues: string[] = [];
+
+  const adapter = HeaderAdapter({
+    getCookie: () => req.headers.cookie ?? "",
+    appendSetCookie: (value) => setCookieValues.push(value),
+  });
+
+  const store = createCookieStore({ theme: themeCookie }, { adapter });
+  const { theme } = store.get();
+
+  store.set("theme", "dark", { path: "/", httpOnly: true });
+
+  res.setHeader("Set-Cookie", setCookieValues);
+  res.end(JSON.stringify({ theme }));
+}).listen(3000);
+```
+
+### Notes
+
+- `RequestResponseAdapter` is implemented on top of `HeaderAdapter` — use it when you already have a `Request`/`Response` pair.
+- `HeaderAdapter` is the right choice for custom HTTP frameworks or environments without a standard Request/Response.
+
+## Choosing an adapter
+
+| Environment | Adapter |
+|-------------|---------|
+| Browser (`document.cookie`) | `DocumentAdapter` |
+| Next.js App Router | `NextJSAdapter` |
+| Cloudflare Workers / Deno / Bun fetch | `RequestResponseAdapter` |
+| Node.js HTTP / Express / custom frameworks | `HeaderAdapter` |
+| Testing with mocked cookies | `HeaderAdapter` or `DocumentAdapter(mockDoc)` |

@@ -1,0 +1,148 @@
+---
+title: Dialects
+description: ClickHouse vs DuckDB — differences, driver options, and DDL behaviour for each dialect.
+icon: Database
+---
+
+## Overview
+
+`@justwant/warehouse` supports two OLAP dialects:
+
+| | [ClickHouse](/docs/warehouse/clickhouse) | [DuckDB](/docs/warehouse/duckdb) |
+|---|---|---|
+| **Best for** | Production analytics cluster | Local dev, in-process analytics, testing |
+| **Page** | [→](/docs/warehouse/clickhouse) | [→](/docs/warehouse/duckdb) |
+
+| | ClickHouse | DuckDB |
+|---|---|---|
+| **Import** | `@justwant/warehouse/clickhouse` | `@justwant/warehouse/duckdb` |
+| **Peer deps** | `waddler`, `@clickhouse/client` | `waddler`, `@duckdb/node-api` |
+| **Typical use** | Production-scale analytics cluster | Local dev, in-process analytics, testing |
+| **Storage** | Remote server | In-memory or local file |
+| **Mutation execution** | Uses `.command()` to avoid JSON parse on empty responses | Standard `await` |
+| **Column types** | `String`, `Int64`, `Float64`, `Nullable(…)` | `TEXT`, `INTEGER`, `REAL`, `NULL` |
+| **`COUNT`/`SUM` return type** | `string` (normalized to `number`) | `BigInt` (normalized to `number`) |
+
+## DuckDB
+
+### Driver: `@justwant/warehouse/duckdb`
+
+```ts title="warehouse.ts"
+import { createWarehouse } from "@justwant/warehouse";
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+
+// In-memory database (default)
+const warehouse = createWarehouse(
+  createDuckDbAdapter({ path: ":memory:" })
+);
+
+// Persistent file
+const warehouse = createWarehouse(
+  createDuckDbAdapter({ path: "./analytics.duckdb" })
+);
+
+// Existing DuckDB client
+const warehouse = createWarehouse(
+  createDuckDbAdapter({ client: myDuckDbClient })
+);
+```
+
+### Config options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `path` | `string` | `":memory:"` | `:memory:` for an in-process database or a file path for persistent storage |
+| `client` | `unknown` | — | Pass an existing DuckDB client to reuse an open connection |
+
+### DDL example
+
+DuckDB DDL uses standard SQL types:
+
+```sql
+CREATE TABLE IF NOT EXISTS "events" (
+  "user_id" TEXT NOT NULL,
+  "event_name" TEXT NOT NULL,
+  "value" REAL,
+  "created_at" TEXT NOT NULL
+)
+```
+
+### Notes
+
+- DuckDB runs in-process — no server required.
+- `:memory:` is ideal for tests and short-lived tasks; data is not persisted across restarts.
+- For persistent workloads, use a file path (e.g. `./data.duckdb`).
+
+## ClickHouse
+
+### Driver: `@justwant/warehouse/clickhouse`
+
+```ts title="warehouse.ts"
+import { createWarehouse } from "@justwant/warehouse";
+import { createClickHouseAdapter } from "@justwant/warehouse/clickhouse";
+
+// Connection string
+const warehouse = createWarehouse(
+  createClickHouseAdapter({ connection: "http://localhost:8123" })
+);
+
+// Existing ClickHouse client
+const warehouse = createWarehouse(
+  createClickHouseAdapter({ client: myClickHouseClient })
+);
+```
+
+### Config options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `connection` | `string` | `"http://localhost:8123"` | HTTP URL of the ClickHouse server |
+| `client` | `unknown` | — | Pass an existing `@clickhouse/client` instance to reuse a connection |
+
+### DDL example
+
+ClickHouse DDL uses ClickHouse-native types, with `Nullable(…)` for optional fields:
+
+```sql
+CREATE TABLE IF NOT EXISTS "events" (
+  "user_id" String,
+  "event_name" String,
+  "value" Nullable(Float64),
+  "created_at" String
+) ENGINE = MergeTree() ORDER BY tuple()
+```
+
+### Notes
+
+- ClickHouse DDL mutations (`CREATE`, `DROP`, `INSERT`) are executed via `.command()` to avoid attempting JSON parsing on empty responses.
+- The default engine is `MergeTree() ORDER BY tuple()` — override this by defining your own DDL if needed.
+- `COUNT(*)` and `SUM(…)` return `string` from ClickHouse; the warehouse normalizes these to `number` automatically.
+
+## Column type mapping
+
+The dialect determines how contract field types translate to SQL column types:
+
+| Contract type | DuckDB | ClickHouse (required) | ClickHouse (optional) |
+|--------------|--------|----------------------|----------------------|
+| `string()` | `TEXT` | `String` | `Nullable(String)` |
+| `integer()` | `INTEGER` | `Int64` | `Nullable(Int64)` |
+| `real()` | `REAL` | `Float64` | `Nullable(Float64)` |
+| optional field | column allows `NULL` | `Nullable(…)` | `Nullable(…)` |
+
+## Switching dialects
+
+Because `createWarehouse` accepts a `WarehouseConnectionConfig`, you can switch between dialects without changing any table or query code:
+
+```ts title="warehouse.ts"
+import { createWarehouse } from "@justwant/warehouse";
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+import { createClickHouseAdapter } from "@justwant/warehouse/clickhouse";
+
+const isDev = process.env.NODE_ENV !== "production";
+
+export const warehouse = createWarehouse(
+  isDev
+    ? createDuckDbAdapter({ path: ":memory:" })
+    : createClickHouseAdapter({ connection: process.env.CLICKHOUSE_URL! })
+);
+```

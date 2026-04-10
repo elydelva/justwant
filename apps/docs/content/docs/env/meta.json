@@ -1,0 +1,15 @@
+{
+  "title": "Env",
+  "icon": "Shield",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "edge",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

@@ -1,0 +1,122 @@
+---
+title: Installation
+description: Install @justwant/contract and the optional peer dependency for Standard Schema validation.
+icon: Download
+---
+
+## Install the package
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/contract
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/contract
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/contract
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/contract
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Standard Schema (optional)
+
+`@justwant/contract` supports any validation library that implements the [Standard Schema](https://standardschema.dev) spec — Zod, Valibot, ArkType, and others. Install `@standard-schema/spec` as a peer if you plan to attach custom schemas to fields via `.schema(s)`.
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @standard-schema/spec
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @standard-schema/spec
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @standard-schema/spec
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @standard-schema/spec
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+The built-in semantic field builders (`email()`, `uuid()`, `url()`, etc.) include their own validation schemas and do not require this peer.
+
+## Entry points
+
+`@justwant/contract` exposes four entry points so you only import what you need:
+
+| Entry point | What it exports |
+|-------------|----------------|
+| `@justwant/contract` | `defineContract`, `InferContract`, `Infer`, types |
+| `@justwant/contract/fields` | All field builders (`uuid`, `string`, `email`, etc.) |
+| `@justwant/contract/validate` | `validateContractData`, `ContractValidationError`, `ValidationIssue` |
+| `@justwant/contract/conforms` | `conformsTo`, `assertTableConforms`, `tableConforms`, `ContractConformityError` |
+
+## Quick example
+
+```ts title="contracts/user.ts"
+import { defineContract } from "@justwant/contract";
+import { uuid, string, email, date } from "@justwant/contract/fields";
+import type { InferContract } from "@justwant/contract";
+
+export const userContract = defineContract("users", {
+  id: uuid().primaryKey().required(),
+  email: email().required(),
+  name: string().required(),
+  createdAt: date().required(),
+  updatedAt: date().required(),
+  deletedAt: date().optional(),
+}, { defaultMapping: "camelToSnake" });
+
+export type User = InferContract<typeof userContract>;
+```
+
+## Next steps
+
+- [Basic Usage](/docs/contract/basic-usage) — Define contracts and infer types
+- [Fields](/docs/contract/fields) — All field builders and their options

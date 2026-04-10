@@ -1,0 +1,20 @@
+{
+  "title": "Waitlist",
+  "icon": "ListOrdered",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "positions",
+    "invitations",
+    "---Extend---",
+    "audit",
+    "expiration",
+    "referral",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

@@ -1,0 +1,152 @@
+---
+title: Basic Usage
+description: Create a warehouse, define a table contract, insert rows, run queries, and aggregate data.
+icon: Play
+---
+
+## Define a contract
+
+Warehouse tables are driven by `@justwant/contract`. Define the shape of your table once — the warehouse uses it to generate DDL and map rows.
+
+```ts title="contracts/events.ts"
+import { defineContract, string, integer, real } from "@justwant/contract";
+
+export const eventsContract = defineContract("events", {
+  userId: string().required(),
+  eventName: string().required(),
+  value: real().optional(),
+  createdAt: string().required(),
+});
+```
+
+By default, contract keys map to column names as-is. Use `defaultMapping: "camelToSnake"` to automatically convert camelCase keys to snake_case column names:
+
+```ts title="contracts/events.ts"
+export const eventsContract = defineContract(
+  "events",
+  {
+    userId: string().required(),
+    eventName: string().required(),
+    value: real().optional(),
+    createdAt: string().required(),
+  },
+  { defaultMapping: "camelToSnake" }
+  // userId → "user_id", eventName → "event_name", etc.
+);
+```
+
+## Create the warehouse
+
+```ts title="warehouse.ts"
+import { createWarehouse } from "@justwant/warehouse";
+import { createDuckDbAdapter } from "@justwant/warehouse/duckdb";
+
+export const warehouse = createWarehouse(
+  createDuckDbAdapter({ path: ":memory:" })
+);
+```
+
+## Map a table
+
+```ts title="tables/events.ts"
+import { warehouse } from "../warehouse";
+import { eventsContract } from "../contracts/events";
+
+export const eventsTable = warehouse.table(eventsContract);
+```
+
+## Create the table
+
+Call `createTable()` to issue a `CREATE TABLE IF NOT EXISTS` DDL statement against the database.
+
+```ts
+await eventsTable.createTable();
+```
+
+## Check if a table exists
+
+```ts
+const exists = await eventsTable.exist();
+console.log(exists); // true | false
+```
+
+## Drop a table
+
+```ts
+await eventsTable.drop();
+```
+
+## Insert rows
+
+`insert` is a batch operation — pass an array of one or more rows. Inserting an empty array is a no-op.
+
+```ts
+await eventsTable.insert([
+  { userId: "u_1", eventName: "page_view", value: null, createdAt: "2024-01-01T00:00:00Z" },
+  { userId: "u_2", eventName: "purchase", value: 49.99, createdAt: "2024-01-01T00:01:00Z" },
+  { userId: "u_1", eventName: "purchase", value: 19.99, createdAt: "2024-01-01T00:02:00Z" },
+]);
+```
+
+Row types are fully inferred from the contract — TypeScript will catch missing or incorrect fields.
+
+## Query rows
+
+`query()` returns typed rows. All options are optional.
+
+```ts
+// All rows
+const all = await eventsTable.query();
+
+// Filter, sort, paginate
+const purchases = await eventsTable.query({
+  where: { eventName: "purchase" },
+  orderBy: { createdAt: "desc" },
+  limit: 10,
+  offset: 0,
+});
+```
+
+### Query options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `where` | `Partial<InferContract<T>>` | Equality filters on one or more fields |
+| `orderBy` | `Record<string, "asc" \| "desc">` | Sort order for one or more columns |
+| `limit` | `number` | Maximum number of rows to return |
+| `offset` | `number` | Number of rows to skip |
+
+## Aggregate data
+
+`aggregate()` runs a `SELECT` with optional `WHERE` and `GROUP BY`. The `select` map defines SQL expressions with aliases.
+
+```ts
+// Total purchase value grouped by user
+const totals = await eventsTable.aggregate<{ userId: string; total: number }>({
+  groupBy: ["userId"],
+  select: { total: 'SUM("value")' },
+  where: { eventName: "purchase" },
+});
+
+// totals: [{ userId: "u_1", total: 19.99 }, { userId: "u_2", total: 49.99 }]
+```
+
+`BigInt` and numeric strings returned by ClickHouse or DuckDB for `COUNT`/`SUM` are automatically normalized to `number`.
+
+### Aggregate options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `select` | `Record<string, string>` | SQL expression aliases, e.g. `{ count: "COUNT(*)" }` |
+| `groupBy` | `(keyof T)[]` | Contract keys to group by |
+| `where` | `Partial<InferContract<T>>` | Equality filters applied before grouping |
+
+## Close the connection
+
+Call `warehouse.close()` during application shutdown to release the underlying driver connection.
+
+```ts
+await warehouse.close?.();
+```
+
+`close` is optional — it is a no-op if the adapter did not provide a teardown function.

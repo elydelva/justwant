@@ -1,0 +1,40 @@
+---
+title: Introduction
+description: Typed actor identities with serialization and database persistence helpers.
+icon: Users
+---
+
+## What is @justwant/actor?
+
+`@justwant/actor` is a **typed identity primitive** for TypeScript applications. It lets you define named actor types, create actor instances with optional context (the "within" relationship), and serialize them for storage keys, logs, and database rows — all with full type inference.
+
+**Use it when** you need to:
+- Represent "who is acting" in a type-safe way across your codebase
+- Scope actors inside another entity (e.g. a user within an organization)
+- Serialize actor identities to strings for cache keys, audit logs, or error messages
+- Persist actors to a database and reconstruct them from stored rows
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **`defineActor`** | Define a named actor type — returns a typed factory function |
+| **`within` scoping** | Nest an actor inside another type (e.g. `user` within `org`) |
+| **`from` composition** | Alias one actor definition to another identity |
+| **`actorKey`** | Serialize an actor to a stable string key (`type:id` or `type:id:withinType:withinId`) |
+| **`toRepo`** | Flatten an actor to a database-friendly shape |
+| **`fromRepo`** | Reconstruct an actor from a database row |
+| **`parseActorKey`** | Parse a serialized key string back to an `Actor` object |
+
+## How it works
+
+1. **Define an actor** — Call `defineActor({ name })` to get a factory. Optionally pass `within` to scope it inside another type.
+2. **Create instances** — Call the factory with an id (or `withinId, id` when scoped) to get a typed `Actor` object.
+3. **Serialize** — Use `actorKey` for string keys, `toRepo` for database rows.
+4. **Reconstruct** — Use `fromRepo` or `parseActorKey` to rebuild an `Actor` from stored data.
+
+## Next steps
+
+- [Installation](/docs/actor/installation) — Install the package
+- [Basic Usage](/docs/actor/basic-usage) — Define actors and use the serialization helpers
+- [API Reference](/docs/actor/api) — Full API reference

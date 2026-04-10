@@ -1,0 +1,238 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/waitlist.
+icon: BookOpen
+---
+
+## defineList
+
+```ts
+function defineList<N extends string, TMetadata = unknown>(
+  config: DefineListConfig<N, TMetadata>
+): WaitlistDef<N, TMetadata>
+```
+
+### DefineListConfig
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `N` | Unique list name |
+| `params` | `string[]` (optional) | Parameter names for parameterized list keys |
+| `schema` | `WaitlistMetadataSchema<TMetadata>` (optional) | Standard Schema validator for metadata |
+| `defaults` | `Record<string, unknown>` (optional) | Default values |
+
+### WaitlistDef
+
+```ts
+interface WaitlistDef<N, TMetadata> {
+  readonly name: N;
+  readonly params?: string[];
+  readonly schema?: WaitlistMetadataSchema<TMetadata>;
+  key(...paramValues: string[]): string;
+}
+```
+
+---
+
+## createWaitlistService
+
+```ts
+function createWaitlistService(
+  options: CreateWaitlistServiceOptions
+): WaitlistService
+```
+
+### CreateWaitlistServiceOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `repo` | `WaitlistRepository` | Storage implementation |
+| `plugins` | `WaitlistPlugin[]` (optional) | Plugins (e.g. `auditPlugin`) |
+| `referralService` | `ReferralServiceLike` (optional) | Enables referral tracking in `invite` |
+| `offerKeyForList` | `(listKey: string) => string` (optional) | Maps list key to referral offer key |
+| `defaults` | `Record<string, unknown>` (optional) | Default metadata |
+
+### WaitlistService
+
+#### subscribe
+
+```ts
+subscribe(
+  list: WaitlistDef | string,
+  actor: Actor,
+  opts?: { metadata?: Record<string, unknown>; priority?: number; expiresAt?: Date }
+): Promise<WaitlistEntry>
+```
+
+Throws `AlreadySubscribedError`.
+
+#### unsubscribe
+
+```ts
+unsubscribe(list: WaitlistDef | string, actor: Actor): Promise<void>
+```
+
+Throws `NotSubscribedError`.
+
+#### isSubscribed
+
+```ts
+isSubscribed(list: WaitlistDef | string, actor: Actor): Promise<boolean>
+```
+
+#### count
+
+```ts
+count(list: WaitlistDef | string): Promise<number>
+```
+
+#### listSubscribers
+
+```ts
+listSubscribers(
+  list: WaitlistDef | string,
+  opts?: { limit?: number; offset?: number; orderBy?: "asc" | "desc" }
+): Promise<WaitlistEntry[]>
+```
+
+#### getPosition
+
+```ts
+getPosition(
+  list: WaitlistDef | string,
+  actor: Actor
+): Promise<{ position: number; total: number }>
+```
+
+Throws `NotSubscribedError`.
+
+#### pop
+
+```ts
+pop(list: WaitlistDef | string): Promise<WaitlistEntry | null>
+```
+
+Returns `null` if empty.
+
+#### invite
+
+```ts
+invite(
+  list: WaitlistDef | string,
+  inviter: Actor,
+  invitee: Actor,
+  metadata?: Record<string, unknown>
+): Promise<WaitlistEntry>
+```
+
+#### subscribeMany
+
+```ts
+subscribeMany(
+  list: WaitlistDef | string,
+  actors: Actor[],
+  opts?: { metadata?: Record<string, unknown> }
+): Promise<WaitlistEntry[]>
+```
+
+Silently skips already-subscribed actors.
+
+#### unsubscribeMany
+
+```ts
+unsubscribeMany(list: WaitlistDef | string, actors: Actor[]): Promise<void>
+```
+
+Silently skips not-subscribed actors.
+
+---
+
+## createMemoryWaitlistAdapter
+
+```ts
+function createMemoryWaitlistAdapter(): WaitlistRepository
+```
+
+In-memory implementation of `WaitlistRepository`. For testing and development.
+
+---
+
+## cleanupExpired
+
+```ts
+function cleanupExpired(repo: WaitlistRepository, listKey: string): Promise<number>
+```
+
+Removes all entries with `expiresAt < now`. Returns count removed.
+
+---
+
+## Types
+
+### Actor
+
+```ts
+interface Actor {
+  type: string;
+  id: string;
+  orgId?: string;
+}
+```
+
+### WaitlistEntry
+
+```ts
+interface WaitlistEntry {
+  id: string;
+  listKey: string;
+  actorType: string;
+  actorId: string;
+  actorOrgId?: string;
+  position?: number;
+  priority?: number;
+  metadata?: Record<string, unknown>;
+  referredBy?: string;
+  createdAt: Date;
+  expiresAt?: Date;
+}
+```
+
+### FindManyOptions
+
+```ts
+interface FindManyOptions {
+  orderBy?: { field: keyof WaitlistEntry; direction: "asc" | "desc" };
+  limit?: number;
+  offset?: number;
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `orderBy` | `{ field: keyof WaitlistEntry, direction: "asc" \| "desc" }` (optional) | Sort field and direction |
+| `limit` | `number` (optional) | Maximum number of results to return |
+| `offset` | `number` (optional) | Number of results to skip |
+
+### WaitlistRepository
+
+```ts
+interface WaitlistRepository {
+  subscribe(entry: Omit<WaitlistEntry, "id" | "createdAt">): Promise<WaitlistEntry>;
+  unsubscribe(listKey: string, actorKey: string): Promise<void>;
+  findOne(where: Partial<WaitlistEntry>): Promise<WaitlistEntry | null>;
+  findMany(where: Partial<WaitlistEntry>, opts?: FindManyOptions): Promise<WaitlistEntry[]>;
+  count(where: Partial<WaitlistEntry>): Promise<number>;
+  delete(id: string): Promise<void>;
+}
+```
+
+---
+
+## Errors
+
+| Class | Code | When |
+|-------|------|------|
+| `WaitlistError` | `WAITLIST_ERROR` | Base class |
+| `AlreadySubscribedError` | `ALREADY_SUBSCRIBED` | `subscribe` — already subscribed |
+| `NotSubscribedError` | `NOT_SUBSCRIBED` | `unsubscribe` / `getPosition` — not subscribed |
+| `EmptyWaitlistError` | `EMPTY_WAITLIST` | Reserved for custom adapters |

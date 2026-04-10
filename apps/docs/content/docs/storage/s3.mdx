@@ -1,0 +1,77 @@
+---
+title: S3 Adapter
+description: Use AWS S3 (or any S3-compatible service) as your storage backend.
+icon: Cloud
+---
+
+## Overview
+
+The S3 adapter uses `@aws-sdk/client-s3` to connect to AWS S3 or any S3-compatible service (MinIO, Scaleway Object Storage, etc.).
+
+## Install peer dependencies
+
+```bash
+bun add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+```
+
+## Import
+
+```ts
+import { defineS3Source } from "@justwant/storage/s3";
+```
+
+## Setup
+
+```ts title="lib/storage.ts"
+import { defineS3Source } from "@justwant/storage/s3";
+import { defineBucket, createStorageService } from "@justwant/storage";
+
+const source = defineS3Source({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+const bucket = defineBucket({ source, name: "my-app-files" });
+
+export const storage = createStorageService({
+  buckets: [bucket],
+  defaultBucket: bucket,
+});
+```
+
+## Configuration
+
+### `DefineS3SourceConfig`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `region` | `string` | Yes | AWS region (e.g. `us-east-1`) |
+| `credentials.accessKeyId` | `string` | Yes | AWS access key ID |
+| `credentials.secretAccessKey` | `string` | Yes | AWS secret access key |
+| `endpoint` | `string` | No | Custom endpoint for S3-compatible services |
+| `forcePathStyle` | `boolean` | No | Use path-style URLs (required for MinIO, defaults to `true` when `endpoint` is set) |
+
+## Using with MinIO (self-hosted)
+
+```ts title="lib/storage.ts"
+const source = defineS3Source({
+  region: "us-east-1",
+  credentials: {
+    accessKeyId: "minio",
+    secretAccessKey: "minio123",
+  },
+  endpoint: "http://localhost:9000",
+  forcePathStyle: true,
+});
+```
+
+## Environment variables
+
+```bash title=".env"
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+```

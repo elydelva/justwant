@@ -1,0 +1,76 @@
+---
+title: Job alerts
+description: Send notifications when a background job fails using createAlertNotifier.
+icon: TriangleAlert
+---
+
+## Overview
+
+`createAlertNotifier` bridges `@justwant/notify` and `@justwant/job`. It returns a callback compatible with `@justwant/job`'s `alertPlugin`, which calls it whenever a job fails after exhausting its retries.
+
+## Setup
+
+Define a template that handles the alert payload:
+
+```ts title="lib/notify.ts"
+import { createNotify, createTemplate, createAlertNotifier } from "@justwant/notify";
+import { createResendCanal } from "@justwant/notify/channels/email/resend";
+import { Resend } from "resend";
+
+const jobFailureTemplate = createTemplate({
+  id: "job-failure",
+  email: (args: { jobId: string; error: unknown; runCount?: number }) => ({
+    to: "ops@acme.com",
+    subject: `Job failed: ${args.jobId}`,
+    html: `
+      <p><strong>${args.jobId}</strong> failed after ${args.runCount ?? 1} attempt(s).</p>
+      <pre>${String(args.error)}</pre>
+    `,
+  }),
+});
+
+const notify = createNotify({
+  templates: [jobFailureTemplate],
+  canals: {
+    email: createResendCanal({
+      client: new Resend(process.env.RESEND_API_KEY!),
+      from: "Acme Alerts <alerts@acme.com>",
+    }),
+  },
+});
+
+export const alertNotifier = createAlertNotifier(notify, {
+  templateId: "job-failure",
+  canalId: "email",
+});
+```
+
+## Wire into `@justwant/job`
+
+Pass `alertNotifier` to `alertPlugin` in your job engine setup:
+
+```ts title="lib/jobs.ts"
+import { createJob } from "@justwant/job";
+import { alertPlugin } from "@justwant/job/plugins/alert";
+import { alertNotifier } from "./notify";
+
+export const myJob = createJob({
+  id: "process-order",
+  plugins: [
+    alertPlugin({ notify: alertNotifier }),
+  ],
+  async run(args: { orderId: string }) {
+    // job logic
+  },
+});
+```
+
+`alertPlugin` calls `alertNotifier` with `{ jobId, error, runCount }` after each exhausted job — matching the `AlertPayload` shape that `createAlertNotifier` expects.
+
+## Alert payload
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `jobId` | `string` | The job identifier |
+| `error` | `unknown` | The error thrown by the last run |
+| `runCount` | `number?` | Number of attempts made |

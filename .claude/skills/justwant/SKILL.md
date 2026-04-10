@@ -49,6 +49,8 @@ Complete reference for the @justwant monorepo. When working with a package, read
 | referral | [references/referral.md](references/referral.md) | createReferralService |
 | storage | [references/storage.md](references/storage.md) | createStorageService, plugins |
 | embedding | [references/embedding.md](references/embedding.md) | createEmbeddingService, defineUniverse, engines, storages, migrate |
+| core | [references/core.md](references/core.md) | (internal) mapRowToContract, appendWhere |
+| feature | [references/feature.md](references/feature.md) | defineFeature, FeatureDef, Feature |
 | user | [references/user.md](references/user.md) | createUserService |
 | waitlist | [references/waitlist.md](references/waitlist.md) | createWaitlistService |
 | warehouse | [references/warehouse.md](references/warehouse.md) | createWarehouse |

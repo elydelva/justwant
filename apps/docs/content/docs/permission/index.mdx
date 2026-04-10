@@ -1,0 +1,49 @@
+---
+title: Introduction
+description: Role-based and attribute-based access control with scopes, actors, roles, realms, and override grants/denies.
+icon: ShieldCheck
+---
+
+## What is @justwant/permission?
+
+`@justwant/permission` is a **type-safe RBAC/ABAC engine** for TypeScript applications. It models access control as a composition of scopes, actors, roles, and realms — with runtime grant/deny overrides and a data-agnostic repository layer.
+
+**Use it when** you need to:
+- Gate actions behind roles (RBAC)
+- Grant or deny specific permissions to individual actors (ABAC overrides)
+- Support multi-tenant access control with per-scope role assignments
+- Audit why a permission was granted or denied
+
+## Key concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Scope** | A named boundary for permissions (e.g. organization, project, tenant) |
+| **Actor** | An identity that performs actions (e.g. user, service account) |
+| **Permission** | An atomic string like `"document:read"` or `"billing:view"` |
+| **Role** | A named set of permissions |
+| **Realm** | Composes a scope + actors + permissions + roles into a single unit |
+
+## Resolution order
+
+When `can()` is called, the service resolves the permission in this order:
+
+1. **Deny override** — explicit per-actor deny wins above everything
+2. **Grant override** — explicit per-actor grant
+3. **Role assignment** — does the actor's assigned role include the permission?
+4. **Default** — returns `false`
+
+## How it works
+
+1. **Define your model** — `defineScope`, `defineActor`, `defineAtomicPermission`, `defineRole`, `defineRealm`
+2. **Create a service** — inject assignment and override repos, register realms
+3. **Assign roles** — `service.assign({ actor, role, scope })`
+4. **Check permissions** — `service.can({ actor, action, scope })`
+
+## Next steps
+
+- [Installation](/docs/permission/installation) — Install and set up
+- [Basic Usage](/docs/permission/basic-usage) — Full working example
+- [Scopes](/docs/permission/scopes) — Define scope boundaries
+- [Roles](/docs/permission/roles) — Attach permissions to roles
+- [Realms](/docs/permission/realms) — Compose scopes, roles, and actors

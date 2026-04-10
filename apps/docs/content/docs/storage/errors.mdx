@@ -1,0 +1,72 @@
+---
+title: Errors
+description: Error types and error handling in @justwant/storage.
+icon: CircleAlert
+---
+
+## Error types
+
+All errors thrown by `@justwant/storage` extend `StorageError`.
+
+### `StorageError`
+
+Base error class for all storage errors.
+
+```ts
+import { StorageError } from "@justwant/storage";
+
+try {
+  await storage.download({ path: "missing.png" });
+} catch (err) {
+  if (err instanceof StorageError) {
+    console.log(err.code);    // "UNKNOWN", "ADAPTER", etc.
+    console.log(err.message);
+    console.log(err.metadata); // additional context
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `string` | Error code |
+| `message` | `string` | Human-readable message |
+| `metadata` | `Record<string, unknown> \| undefined` | Additional context |
+
+### `StorageAdapterError`
+
+Extends `StorageError`. Thrown when the underlying adapter encounters a connection-level failure (`ECONNREFUSED`, `ECONNRESET`, `ETIMEDOUT`). `code` is `"ADAPTER"`.
+
+## Error mode
+
+By default, `createStorageService` uses `onError: "silent"`. Errors are logged to `console.error` and a safe fallback is returned:
+
+| Method | Silent fallback |
+|--------|----------------|
+| `upload` | `{ path }` |
+| `download` | `Buffer.alloc(0)` |
+| `delete` | `undefined` |
+| `getUrl` | `""` |
+| `getSignedUrl` | `""` |
+| `exists` | `false` |
+
+Set `onError: "throw"` to handle errors explicitly:
+
+```ts
+const storage = createStorageService({
+  buckets: [bucket],
+  onError: "throw",
+});
+```
+
+## `parseStorageError`
+
+Utility function that normalises a raw caught value into a `StorageError`. Used internally by adapters; available for use in custom adapters.
+
+```ts
+import { parseStorageError } from "@justwant/storage";
+
+function parseStorageError(raw: unknown): StorageError
+```
+
+- If `raw` has a `code` of `"ECONNREFUSED"`, `"ECONNRESET"`, or `"ETIMEDOUT"`, returns a `StorageAdapterError` (code `"ADAPTER"`).
+- Otherwise returns a `StorageError` with code `"UNKNOWN"` and `metadata.original` set to the raw value.

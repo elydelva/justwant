@@ -1,0 +1,94 @@
+---
+title: Roles
+description: defineRole — attach permissions to a named role with optional exclusions.
+icon: BadgeCheck
+---
+
+## Overview
+
+A role is a named set of permissions. Actors are assigned roles within a scope, and the service resolves permissions by checking whether the actor's role includes the requested action.
+
+## `defineRole`
+
+```ts
+import { defineRole } from "@justwant/permission";
+
+const editorRole = defineRole({
+  name: "editor",
+  permissions: [readDoc, writeDoc, deleteDoc],
+  except: [],     // optional: exclude specific permissions
+  realm: "organization", // optional: scope this role to a realm name
+});
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Unique role name |
+| `permissions` | `AtomicPermission[]` | Yes | Permissions this role grants |
+| `except` | `AtomicPermission[]` | No | Permissions to exclude from the set |
+| `realm` | `string` | No | Realm name this role belongs to (informational) |
+
+## `except` — exclusions
+
+Use `except` to subtract specific permissions from a broad set:
+
+```ts
+const allPermissions = [readDoc, writeDoc, deleteDoc, manageBilling, manageUsers];
+
+const seniorEditorRole = defineRole({
+  name: "senior-editor",
+  permissions: allPermissions,
+  except: [manageBilling, manageUsers], // cannot manage billing or users
+});
+```
+
+The `resolved` set on the role pre-computes the final permission names after applying exclusions.
+
+## `RoleDef` type
+
+```ts
+interface RoleDef<N extends string> {
+  readonly name: N;
+  readonly permissions: readonly AtomicPermission[];
+  readonly except: readonly AtomicPermission[];
+  readonly realm?: string;
+  readonly resolved: Set<string>; // final permission names after exclusions
+}
+```
+
+## Example: tiered roles
+
+```ts
+const viewerRole = defineRole({
+  name: "viewer",
+  permissions: [readDoc],
+});
+
+const editorRole = defineRole({
+  name: "editor",
+  permissions: [readDoc, writeDoc, deleteDoc],
+});
+
+const adminRole = defineRole({
+  name: "admin",
+  permissions: [readDoc, writeDoc, deleteDoc, manageBilling, manageUsers],
+});
+```
+
+## Registering roles in a realm
+
+Roles must be listed in the realm's `roles` array:
+
+```ts
+const orgRealm = defineRealm({
+  name: "organization",
+  scope: orgScope,
+  actors: [userActor],
+  permissions: [readDoc, writeDoc, deleteDoc, manageBilling],
+  roles: [viewerRole, editorRole, adminRole],
+});
+```
+
+The realm builds a `roleByName` map internally for fast lookup during permission resolution.

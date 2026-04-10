@@ -1,0 +1,199 @@
+---
+title: Basic Usage
+description: Define a contract, create an adapter, bind a table, and run CRUD queries.
+icon: Play
+---
+
+## Overview
+
+Every adapter in `@justwant/db` follows the same three-step setup:
+
+1. Define a **contract** — the canonical data shape
+2. Create an **adapter** — wraps your ORM/DB client
+3. Define a **table** — binds the contract to a DB table with a field mapping
+
+All table methods share the same interface regardless of the adapter chosen.
+
+## 1. Define a contract
+
+Contracts come from `@justwant/contract`. They describe the shape, types, and validation rules for your data.
+
+```ts title="contracts/user.ts"
+import { defineContract, field } from "@justwant/contract";
+
+export const userContract = defineContract({
+  id: field.string(),
+  email: field.string(),
+  name: field.string(),
+  createdAt: field.string(),
+  updatedAt: field.string(),
+  deletedAt: field.string().optional(),
+});
+```
+
+## 2. Create an adapter
+
+<CodeBlockTabs defaultValue="drizzle">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="drizzle">Drizzle</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="prisma">Prisma</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler">Waddler</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="drizzle">
+
+```ts title="lib/db.ts"
+import { createDrizzleAdapter } from "@justwant/db/drizzle";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import { Database } from "bun:sqlite";
+
+const sqlite = new Database(":memory:");
+export const adapter = createDrizzleAdapter(drizzle(sqlite), { dialect: "sqlite" });
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="prisma">
+
+```ts title="lib/db.ts"
+import { createPrismaAdapter } from "@justwant/db/prisma";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+export const adapter = createPrismaAdapter(prisma);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler">
+
+```ts title="lib/db.ts"
+import { createDb } from "@justwant/db/waddler";
+import { createBunSqliteAdapter } from "@justwant/db/bun-sqlite";
+
+export const db = createDb(createBunSqliteAdapter({ connection: ":memory:" }));
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## 3. Define a table
+
+<CodeBlockTabs defaultValue="drizzle">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="drizzle">Drizzle</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="prisma">Prisma</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler">Waddler</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="drizzle">
+
+```ts title="tables/users.ts"
+import { defineMappedTable } from "@justwant/db/drizzle/defineMappedTable";
+import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { adapter } from "@/lib/db";
+import { userContract } from "@/contracts/user";
+
+const usersTable = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  deletedAt: text("deleted_at"),
+});
+
+const mapping = {
+  id: usersTable.id,
+  email: usersTable.email,
+  name: usersTable.name,
+  createdAt: usersTable.createdAt,
+  updatedAt: usersTable.updatedAt,
+  deletedAt: usersTable.deletedAt,
+};
+
+export const users = adapter.defineTable(usersTable, userContract, mapping);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="prisma">
+
+```ts title="tables/users.ts"
+import { adapter } from "@/lib/db";
+import { userContract } from "@/contracts/user";
+
+const mapping = {
+  id: { name: "id" },
+  email: { name: "email" },
+  name: { name: "name" },
+  createdAt: { name: "createdAt" },
+  updatedAt: { name: "updatedAt" },
+  deletedAt: { name: "deletedAt" },
+};
+
+export const users = adapter.defineTable("user", userContract, mapping);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler">
+
+```ts title="tables/users.ts"
+import { db } from "@/lib/db";
+import { userContract } from "@/contracts/user";
+
+const mapping = {
+  id: { name: "id" },
+  email: { name: "email" },
+  name: { name: "name" },
+  createdAt: { name: "created_at" },
+  updatedAt: { name: "updated_at" },
+  deletedAt: { name: "deleted_at" },
+};
+
+export const users = db.defineTable("users", userContract, mapping);
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Querying
+
+All tables expose the same methods:
+
+```ts
+import { users } from "@/tables/users";
+
+// Create
+const user = await users.create({
+  email: "alice@example.com",
+  name: "Alice",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+});
+
+// Find by primary key
+const found = await users.findById(user.id);
+
+// Find first match
+const byEmail = await users.findOne({ email: "alice@example.com" });
+
+// Find all matches
+const all = await users.findMany({ name: "Alice" });
+
+// Update
+const updated = await users.update(user.id, { name: "Alice Smith" });
+
+// Soft delete (sets deletedAt — row is preserved)
+await users.delete(user.id);
+
+// Hard delete (removes the row permanently)
+await users.hardDelete(user.id);
+```
+
+## Transactions
+
+```ts
+await adapter.transaction(async (tx) => {
+  const txUsers = tx.defineTable(usersTable, userContract, mapping);
+  await txUsers.create({ ... });
+  await txUsers.update(id, { ... });
+});
+```
+
+**Note**: For Waddler, use `db` directly in the transaction callback — `Db` also exposes `defineTable`.

@@ -1,0 +1,97 @@
+---
+title: Installation
+description: Install @justwant/context and create your first context service.
+icon: Download
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/context
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/context
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/context
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/context
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Quick setup
+
+The three steps to get a context service running are: define slots, create a service, fork per request.
+
+```ts title="lib/context.ts"
+import { defineSlot, createContextService } from "@justwant/context";
+
+// 1. Define typed slots
+export const userSlot = defineSlot<{ id: string; role: string }>({
+  key: "user",
+  scope: "request",
+  resolve: async (ctx) => {
+    const token = ctx.initial["authToken"] as string;
+    return fetchUser(token); // your own function
+  },
+});
+
+export const dbSlot = defineSlot<DatabaseClient>({
+  key: "db",
+  scope: "eager",
+  resolve: async () => getDbClient(), // your own function
+});
+
+// 2. Create the service
+export const contextService = createContextService({
+  slots: [userSlot, dbSlot],
+});
+```
+
+## Fork per request
+
+Call `forRequest` once at your request entry point and pass the resulting `RequestContext` to handlers that need it.
+
+```ts title="server.ts"
+import { contextService, userSlot } from "@/lib/context";
+
+Bun.serve({
+  async fetch(req) {
+    // 3. Fork a context for this request
+    const ctx = contextService.forRequest({
+      authToken: req.headers.get("authorization") ?? "",
+    });
+
+    const user = await ctx.get(userSlot);
+    return new Response(`Hello, ${user.id}`);
+  },
+});
+```
+
+## Runtime compatibility
+
+`@justwant/context` has no runtime-specific dependencies. It runs on Node.js, Bun, Deno, and Edge runtimes without modification.

@@ -1,0 +1,121 @@
+---
+title: Installation
+description: Install @justwant/preference and configure TypeScript.
+icon: Download
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/preference
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/preference
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/preference
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/preference
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Optional: schema validation
+
+`@justwant/preference` accepts any [Standard Schema](https://github.com/standard-schema/standard-schema)-compatible validator. Install your preferred library alongside the package:
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/preference zod
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/preference zod
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/preference zod
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/preference zod
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## TypeScript
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "moduleResolution": "bundler",
+    "strict": true
+  }
+}
+```
+
+## Quick setup
+
+```ts title="lib/prefs.ts"
+import {
+  definePreference,
+  createPreferenceService,
+  createMemoryPreferenceAdapter,
+} from "@justwant/preference";
+
+// 1. Declare preferences
+export const theme = definePreference({ name: "theme", default: "light" });
+export const pageSize = definePreference({ name: "pageSize", default: 20 });
+
+// 2. Create the service (swap adapter for production)
+export const prefs = createPreferenceService({
+  preferences: [theme, pageSize],
+  repo: createMemoryPreferenceAdapter(),
+});
+```
+
+## Next step
+
+[Basic Usage](/docs/preference/basic-usage) — read, write, and reset preferences for an actor.

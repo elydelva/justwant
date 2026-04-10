@@ -1,0 +1,114 @@
+---
+title: Basic Usage
+description: Create custom curves with createBezierCurve, evaluate them at any t, and use the built-in presets.
+icon: Play
+---
+
+## Creating a curve
+
+`createBezierCurve` accepts four control point coordinates and returns a `BezierCurve` with a single `at(t)` method.
+
+```ts title="curve.ts"
+import { createBezierCurve } from "@justwant/bezier";
+
+const curve = createBezierCurve({
+  p1x: 0.42,
+  p1y: 0,
+  p2x: 0.58,
+  p2y: 1,
+});
+
+curve.at(0);    // 0
+curve.at(0.5);  // ~0.5
+curve.at(1);    // 1
+```
+
+All four parameters must be in `[0,1]`. Values outside this range throw an `InvalidBezierParamsError`.
+
+## Evaluating a curve
+
+`curve.at(t)` takes `t ∈ [0,1]` and returns the corresponding `y` value, clamped to `[0,1]`. Values of `t` outside `[0,1]` are silently clamped before evaluation.
+
+```ts
+curve.at(-0.5); // treated as t=0 → 0
+curve.at(1.5);  // treated as t=1 → 1
+```
+
+## Classic presets
+
+`@justwant/bezier/classic` exports four CSS-equivalent curves:
+
+```ts title="animation.ts"
+import { linear, easeIn, easeOut, easeInOut } from "@justwant/bezier/classic";
+
+// Uniform pace
+linear.at(0.5);    // ~0.5
+
+// Starts slow, ends fast
+easeIn.at(0.25);   // low value
+
+// Starts fast, ends slow
+easeOut.at(0.75);  // high value
+
+// Slow at both ends
+easeInOut.at(0.5); // ~0.5, smooth in the middle
+```
+
+| Preset | Control points | Description |
+|--------|---------------|-------------|
+| `linear` | `p1=(0.333, 0.333)` `p2=(0.667, 0.667)` | Uniform progression |
+| `easeIn` | `p1=(0.42, 0)` `p2=(1, 1)` | Slow start, fast end |
+| `easeOut` | `p1=(0, 0)` `p2=(0.58, 1)` | Fast start, slow end |
+| `easeInOut` | `p1=(0.42, 0)` `p2=(0.58, 1)` | Slow at both ends |
+
+## Animation presets
+
+`@justwant/bezier/animation` provides the same curves under design-oriented names — useful when writing UI animation code and you want the import to read naturally.
+
+```ts title="transition.ts"
+import { easeIn, easeOut, easeInOut } from "@justwant/bezier/animation";
+
+// Drive a CSS transition manually in JS
+const opacity = easeOut.at(elapsed / duration);
+element.style.opacity = String(opacity);
+```
+
+## Feature rollout presets
+
+`@justwant/bezier/feature` provides curves shaped for gradual feature adoption. These are the presets used by `@justwant/flag`'s `diffusionBezier` helper.
+
+```ts title="rollout.ts"
+import { slowRollout, fastRollout, gradual } from "@justwant/bezier/feature";
+
+// At t=0.3 (30% through rollout window):
+slowRollout.at(0.3);  // low — most users still off
+fastRollout.at(0.3);  // high — most users already on
+gradual.at(0.3);      // ~0.3 — linear-like progression
+```
+
+| Preset | Control points | Adoption shape |
+|--------|---------------|---------------|
+| `slowRollout` | `p1=(0.2, 0)` `p2=(0.8, 1)` | Slow start, ramps in the middle |
+| `fastRollout` | `p1=(0.6, 0.5)` `p2=(0.4, 1)` | Quick adoption at the start |
+| `gradual` | `p1=(0.33, 0.33)` `p2=(0.67, 0.67)` | Progressive, near-linear |
+
+## Error handling
+
+`createBezierCurve` throws `InvalidBezierParamsError` if any control point coordinate is outside `[0,1]`.
+
+```ts title="safe-curve.ts"
+import { createBezierCurve, InvalidBezierParamsError } from "@justwant/bezier";
+
+try {
+  const curve = createBezierCurve({ p1x: 1.5, p1y: 0, p2x: 0.5, p2y: 1 });
+} catch (err) {
+  if (err instanceof InvalidBezierParamsError) {
+    console.error("Bad params:", err.params);
+    // { p1x: 1.5, p1y: 0, p2x: 0.5, p2y: 1 }
+  }
+}
+```
+
+## Next steps
+
+- [API Reference](/docs/bezier/api) — Full types and function signatures

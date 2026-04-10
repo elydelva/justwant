@@ -1,0 +1,240 @@
+---
+title: Mutations
+description: Write operations — create, update, delete, soft delete, hard delete, and safe variants.
+icon: Pencil
+---
+
+## Overview
+
+All write operations live on the `MappedTable` object. The underlying ORM or adapter handles the actual SQL — your code stays the same regardless of adapter.
+
+---
+
+## `create`
+
+Inserts a new row and returns it fully typed. `id`, `createdAt`, and `updatedAt` are omitted from the input type (`CreateInput<T>`) — the table generates them automatically.
+
+```ts
+const user = await users.create({
+  email: "alice@example.com",
+  name: "Alice",
+});
+
+console.log(user.id);        // "usr_..."
+console.log(user.createdAt); // ISO string set by the adapter
+```
+
+### Explicit timestamps
+
+Some setups require you to pass `createdAt` and `updatedAt` explicitly (e.g., when migrating data). Include them in the input:
+
+```ts
+const user = await users.create({
+  email: "alice@example.com",
+  name: "Alice",
+  createdAt: "2024-01-15T08:00:00Z",
+  updatedAt: "2024-01-15T08:00:00Z",
+});
+```
+
+### Unique violations
+
+If the table has a unique constraint (e.g., on `email`), creating a duplicate throws `AdapterUniqueViolationError`:
+
+```ts
+import { AdapterUniqueViolationError } from "@justwant/db/errors";
+
+try {
+  await users.create({ email: "alice@example.com", name: "Alice" });
+} catch (err) {
+  if (err instanceof AdapterUniqueViolationError) {
+    return { error: "Email already taken" };
+  }
+  throw err;
+}
+```
+
+---
+
+## `createSafe` (Waddler only)
+
+Same as `create` but returns a `ValidateResult` instead of throwing on validation errors. Useful when you want to surface field-level errors without a try/catch.
+
+```ts
+const result = await users.createSafe({
+  email: "not-an-email",
+  name: "",
+});
+
+if (!result.success) {
+  console.error(result.errors);
+  // → [{ field: "email", message: "Invalid email" }, ...]
+} else {
+  console.log(result.data.id);
+}
+```
+
+`createSafe` validates the input against the contract schema before hitting the database.
+
+---
+
+## `update`
+
+Updates a row by its `id`. Pass only the fields you want to change — unspecified fields are left untouched. Returns the full updated row.
+
+```ts
+const updated = await users.update("usr_1", {
+  name: "Alice Smith",
+});
+
+console.log(updated.name);      // "Alice Smith"
+console.log(updated.email);     // unchanged
+console.log(updated.updatedAt); // refreshed by the adapter
+```
+
+### Resetting optional fields
+
+To clear an optional field, pass `null`:
+
+```ts
+await users.update("usr_1", { avatarUrl: null });
+```
+
+### Not found
+
+If the row does not exist, `update` throws `AdapterNotFoundError`:
+
+```ts
+import { AdapterNotFoundError } from "@justwant/db/errors";
+
+try {
+  await users.update("nonexistent", { name: "Ghost" });
+} catch (err) {
+  if (err instanceof AdapterNotFoundError) {
+    return { error: "User not found" };
+  }
+  throw err;
+}
+```
+
+---
+
+## `updateSafe` (Waddler only)
+
+Same as `update` but returns a `ValidateResult`. Field-level errors without exceptions.
+
+```ts
+const result = await users.updateSafe("usr_1", { email: "bad" });
+
+if (!result.success) {
+  console.error(result.errors); // field validation errors
+}
+```
+
+---
+
+## `delete` (soft delete)
+
+Sets the `deletedAt` column to the current timestamp. The row is **preserved** in the database. All read operations (`findById`, `findOne`, `findMany`) automatically exclude soft-deleted rows.
+
+```ts
+await users.delete("usr_1");
+
+// This returns null — deleted rows are filtered out
+const user = await users.findById("usr_1");
+console.log(user); // null
+```
+
+### Restoring a soft-deleted row
+
+Use `update` to clear `deletedAt`:
+
+```ts
+await users.update("usr_1", { deletedAt: null });
+
+// Now findById returns it again
+const user = await users.findById("usr_1");
+console.log(user?.name); // "Alice"
+```
+
+### Contract requirement
+
+For soft delete to work, your contract must include a `deletedAt` field:
+
+```ts
+export const userContract = defineContract({
+  id: field.string(),
+  email: field.string(),
+  name: field.string(),
+  createdAt: field.string(),
+  updatedAt: field.string(),
+  deletedAt: field.string().optional(), // required for soft delete
+});
+```
+
+If `deletedAt` is absent from the contract and mapping, `delete` falls back to a hard delete.
+
+---
+
+## `hardDelete`
+
+Permanently removes the row from the database. No recovery possible.
+
+```ts
+await users.hardDelete("usr_1");
+
+const user = await users.findById("usr_1");
+console.log(user); // null — row is gone
+```
+
+Use `hardDelete` for:
+- GDPR / right-to-erasure requests
+- Cleaning up test data
+- Rows that should never be recoverable
+
+---
+
+## Upsert (Drizzle)
+
+The Drizzle adapter exposes a standalone `upsert` utility — insert or update on conflict:
+
+```ts
+import { upsert } from "@justwant/db/drizzle/upsert";
+import { drizzleClient, usersTable, mapping } from "@/lib/db";
+
+await upsert(drizzleClient, {
+  table: usersTable,
+  values: [{ id: "usr_1", email: "alice@example.com", name: "Alice" }],
+  onConflict: { target: [usersTable.id], set: { name: "Alice" } },
+});
+```
+
+---
+
+## Bulk insert (Drizzle)
+
+Insert many rows efficiently in a single query:
+
+```ts
+import { bulkInsert } from "@justwant/db/drizzle/bulkInsert";
+import { drizzleClient, usersTable } from "@/lib/db";
+
+await bulkInsert(drizzleClient, usersTable, [
+  { id: "usr_1", email: "alice@example.com", name: "Alice", createdAt: "...", updatedAt: "..." },
+  { id: "usr_2", email: "bob@example.com", name: "Bob", createdAt: "...", updatedAt: "..." },
+]);
+```
+
+---
+
+## Error reference
+
+| Error | Thrown by |
+|-------|-----------|
+| `AdapterUniqueViolationError` | `create` — duplicate unique key |
+| `AdapterNotFoundError` | `update`, `delete`, `hardDelete` — row not found |
+| `AdapterForeignKeyViolationError` | `create`, `update` — FK violation |
+| `AdapterNotNullViolationError` | `create`, `update` — NOT NULL constraint |
+| `AdapterConnectionError` | Any operation — DB unreachable |
+
+See the [API reference](/docs/db/api#errors) for the full hierarchy and import paths.

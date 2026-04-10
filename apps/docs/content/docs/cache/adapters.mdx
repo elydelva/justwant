@@ -1,0 +1,63 @@
+---
+title: Which adapter?
+description: Available storage backends for @justwant/cache.
+icon: MessageCircleQuestionMark
+---
+
+## What are adapters?
+
+Adapters implement the `CacheAdapter` interface. The core has no knowledge of any storage — you inject an adapter at creation time.
+
+```ts
+interface CacheAdapter {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, opts?: SetOptions): Promise<void>;
+  delete(key: string): Promise<void>;
+  has(key: string): Promise<boolean>;
+  getMany?(keys: string[]): Promise<Map<string, string | null>>;
+  setMany?(entries: Array<{ key: string; value: string; opts?: SetOptions }>): Promise<void>;
+  deleteMany?(keys: string[]): Promise<void>;
+  ttl?(key: string): Promise<number | null>;
+  expire?(key: string, ttl: TTL): Promise<void>;
+  persist?(key: string): Promise<void>;
+  invalidateTag?(tag: string): Promise<void>;
+  invalidateTags?(tags: string[]): Promise<void>;
+  getTagKeys?(tag: string): Promise<string[]>;
+}
+```
+
+## Available adapters
+
+| Adapter | Package | Use case |
+|---------|---------|----------|
+| [Memory](/docs/cache/memory) | `@justwant/cache/adapters/memory` | Development, tests |
+| [Redis](/docs/cache/redis) | `@justwant/cache/adapters/redis` | Production, multi-node |
+| [Upstash](/docs/cache/upstash) | `@justwant/cache/adapters/upstash` | Serverless, edge |
+| [Cloudflare KV](/docs/cache/cf-kv) | `@justwant/cache/adapters/cf-kv` | Cloudflare Workers |
+| [Vercel KV](/docs/cache/vercel-kv) | `@justwant/cache/adapters/vercel-kv` | Vercel deployments |
+| [Tiered](/docs/cache/tiered) | `@justwant/cache/adapters/tiered` | L1 + L2 with promotion |
+
+## Choosing an adapter
+
+- **Development / tests** — `memory`: zero dependencies, volatile, no infrastructure needed.
+- **Production, single or multi-node** — `redis` or `upstash`: shared persistent storage.
+- **Cloudflare Workers** — `cf-kv`: uses the bound KV namespace.
+- **Vercel** — `vercel-kv`: wraps `@vercel/kv` (backed by Upstash).
+- **High-throughput with warm local hits** — `tiered`: L1 memory + L2 Redis.
+
+## Custom adapter
+
+Implement `CacheAdapter` to integrate any storage backend:
+
+```ts
+import type { CacheAdapter } from "@justwant/cache";
+
+const myAdapter: CacheAdapter = {
+  async get(key) { /* ... */ },
+  async set(key, value, opts) { /* ... */ },
+  async delete(key) { /* ... */ },
+  async has(key) { /* ... */ },
+};
+
+const cache = createCache({ adapter: myAdapter });
+```

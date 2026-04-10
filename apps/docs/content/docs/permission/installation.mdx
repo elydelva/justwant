@@ -1,0 +1,111 @@
+---
+title: Installation
+description: Install @justwant/permission and wire up a minimal permission service.
+icon: Download
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/permission
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/permission
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/permission
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/permission
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Minimal setup
+
+```ts title="lib/permission.ts"
+import {
+  defineScope,
+  defineActor,
+  defineAtomicPermission,
+  defineRole,
+  defineRealm,
+  createPermissionService,
+} from "@justwant/permission";
+
+// 1. Scope — the boundary (e.g. "organization")
+const orgScope = defineScope({ name: "organization" });
+
+// 2. Actor — the identity type
+const userActor = defineActor({ name: "user" });
+
+// 3. Permissions — atomic action strings
+const readDocs = defineAtomicPermission({ name: "document:read" });
+const writeDocs = defineAtomicPermission({ name: "document:write" });
+
+// 4. Role — a named set of permissions
+const editorRole = defineRole({
+  name: "editor",
+  permissions: [readDocs, writeDocs],
+});
+
+// 5. Realm — binds scope + actors + permissions + roles
+const orgRealm = defineRealm({
+  name: "organization",
+  scope: orgScope,
+  actors: [userActor],
+  permissions: [readDocs, writeDocs],
+  roles: [editorRole],
+});
+
+// 6. Service — inject repos and realms
+export const permissionService = createPermissionService({
+  repos: {
+    assignments: myAssignmentsRepo,
+    overrides: myOverridesRepo,
+  },
+  realms: [orgRealm],
+});
+```
+
+**Note**: Replace `myAssignmentsRepo` and `myOverridesRepo` with implementations of `AssignmentsRepo` and `OverridesRepo`. See [Repositories](/docs/permission/repositories) for the interface and a minimal in-memory example.
+
+## Assign a role and check a permission
+
+```ts
+const actor = { type: "user", id: "user_123" };
+const scope = orgScope("org_abc");
+
+// Assign editor role to the user in this org
+await permissionService.assign({ actor, role: editorRole, scope });
+
+// Check permission
+const canWrite = await permissionService.can({
+  actor,
+  action: writeDocs,
+  scope,
+});
+console.log(canWrite); // true
+```

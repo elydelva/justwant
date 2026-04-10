@@ -1,0 +1,135 @@
+---
+title: Basic Usage
+description: Set up membership and permission, define an organisation, and manage members.
+icon: Play
+---
+
+## Overview
+
+The setup involves four steps:
+
+1. Define the membership layer (who can join).
+2. Define the permission layer (what they can do).
+3. Bind them with `defineOrganisation`.
+4. Create the service façade.
+
+## Step 1 — Define membership
+
+```ts title="lib/org-membership.ts"
+import { createMembershipService } from "@justwant/membership";
+import { createStandardOrganisationMembership } from "@justwant/organisation";
+import { User } from "./user.ts"; // MemberDef from @justwant/user
+
+export const { group: teamGroup } = createStandardOrganisationMembership({
+  name: "team",
+  member: User,
+});
+
+export const membership = createMembershipService({
+  repo: membershipsRepo,
+  groups: [teamGroup],
+});
+```
+
+## Step 2 — Define permission
+
+```ts title="lib/org-permission.ts"
+import { createPermissionService } from "@justwant/permission";
+import { createStandardOrganisationPermission } from "@justwant/organisation";
+import { User } from "./user.ts";
+
+export const { realm: teamRealm, roles, permissions } =
+  createStandardOrganisationPermission({ name: "team", actor: User });
+
+export const permission = createPermissionService({
+  repo: permissionsRepo,
+  realms: [teamRealm],
+});
+```
+
+## Step 3 — Define the organisation type
+
+```ts title="lib/org.ts"
+import { defineOrganisation } from "@justwant/organisation";
+import { teamGroup } from "./org-membership.ts";
+import { teamRealm } from "./org-permission.ts";
+
+export const Team = defineOrganisation({
+  name: "team",
+  realm: teamRealm,
+  group: teamGroup,
+});
+```
+
+## Step 4 — Create the service
+
+```ts title="lib/org-service.ts"
+import { createOrganisationService } from "@justwant/organisation";
+import { membership } from "./org-membership.ts";
+import { permission } from "./org-permission.ts";
+import { Team } from "./org.ts";
+
+export const orgs = createOrganisationService({
+  repo: organisationsRepo,
+  deps: { membership, permission },
+  organisations: [Team],
+});
+```
+
+## Create an organisation
+
+```ts
+const team = await orgs.create({ type: "team", name: "Acme", slug: "acme" });
+// throws DuplicateSlugError if slug is taken
+```
+
+## Add a member
+
+```ts
+await orgs.addMember({
+  organisation: team,
+  member: { id: user.id },   // type defaults to "user"
+  role: "owner",
+});
+```
+
+## Check a permission
+
+```ts
+import { permissions } from "./org-permission.ts";
+
+const allowed = await orgs.can({
+  organisation: team,
+  member: { id: user.id },
+  permission: permissions.organisationUpdate,
+});
+```
+
+## Assign a role
+
+```ts
+await orgs.assignRole({
+  organisation: team,
+  member: { id: user.id },
+  role: "admin",
+});
+```
+
+## List members
+
+```ts
+const members = await orgs.listMembers({ organisation: team });
+// [{ type: "user", id: "..." }, ...]
+```
+
+## Remove a member
+
+```ts
+await orgs.removeMember({ organisation: team, member: { id: user.id } });
+```
+
+## List organisations for a member
+
+```ts
+const myTeams = await orgs.listForMember({ member: { id: user.id } });
+```

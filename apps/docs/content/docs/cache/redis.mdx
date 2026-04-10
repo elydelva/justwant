@@ -1,0 +1,63 @@
+---
+title: Redis
+description: Production cache backed by ioredis.
+icon: Server
+---
+
+## When to use
+
+Use the Redis adapter for production deployments where you need persistent, shared cache state across multiple app instances.
+
+## Installation
+
+```bash
+bun add @justwant/cache ioredis
+```
+
+## Setup
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { redisAdapter } from "@justwant/cache/adapters/redis";
+import Redis from "ioredis";
+
+const redisClient = new Redis(process.env.REDIS_URL!);
+
+export const cache = createCache({
+  adapter: redisAdapter({ redis: redisClient }),
+});
+```
+
+## Options
+
+```ts
+redisAdapter({
+  redis: RedisClient;     // ioredis (or compatible) client instance (required)
+  keyPrefix?: string;     // Key prefix applied to all entries
+  tagPrefix?: string;     // Prefix for tag set keys (default: "tag:")
+})
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `redis` | `RedisClient` | ioredis (or compatible) client instance |
+| `keyPrefix` | `string` | Prefix applied to every Redis key |
+| `tagPrefix` | `string` | Prefix for tag set keys (default: `"tag:"`) |
+
+## Environment variable
+
+```bash
+# .env
+REDIS_URL=redis://localhost:6379
+```
+
+## Cluster support
+
+Pass an ioredis `Cluster` instance to use Redis Cluster:
+
+```ts
+import { Cluster } from "ioredis";
+
+const cluster = new Cluster([{ host: "127.0.0.1", port: 6379 }]);
+const adapter = redisAdapter({ redis: cluster });
+```

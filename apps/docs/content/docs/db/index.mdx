@@ -1,0 +1,49 @@
+---
+title: Introduction
+description: ORM-agnostic Data Access Layer. Contract-first table definitions with Drizzle, Prisma, and Waddler adapters.
+icon: Database
+---
+
+## What is @justwant/db?
+
+`@justwant/db` is a **contract-first Data Access Layer (DAL)** for TypeScript applications. It provides a uniform table interface — `create`, `findById`, `findOne`, `findMany`, `update`, `delete`, `hardDelete` — regardless of which ORM or query builder you use underneath.
+
+**Use it when** you need to:
+- Swap between Drizzle, Prisma, and Waddler without changing application logic
+- Enforce a consistent data shape through contract validation
+- Use soft-delete semantics automatically across all adapters
+- Build libraries that are ORM-agnostic by design
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Contract-first** | Define the data shape once; adapters enforce it |
+| **ORM-agnostic** | Drizzle (PostgreSQL, MySQL, SQLite), Prisma, or Waddler |
+| **Soft delete** | `delete` sets `deletedAt`; `hardDelete` removes the row |
+| **Waddler DDL** | `createTable`, `exist`, `drop` helpers for schema-less setups |
+| **Error normalization** | Every adapter maps DB errors to `AdapterError` subclasses |
+| **Transactions** | `adapter.transaction(fn)` with full type safety |
+
+## Adapters
+
+| Adapter | Import | Databases |
+|---------|--------|-----------|
+| Drizzle | `@justwant/db/drizzle` | PostgreSQL, MySQL, SQLite, Bun SQLite |
+| Prisma | `@justwant/db/prisma` | Any Prisma provider |
+| Waddler | `@justwant/db/waddler` + driver | Bun SQLite, PostgreSQL, Neon, Turso, Cloudflare D1, and more |
+
+## How it works
+
+1. **Define a contract** — the canonical shape of your data (from `@justwant/contract`).
+2. **Create an adapter** — `createDrizzleAdapter(db)`, `createPrismaAdapter(prisma)`, or `createDb(config)` for Waddler.
+3. **Define a table** — `adapter.defineTable(source, contract, mapping)`.
+4. **Use the table** — call `table.create(data)`, `table.findById(id)`, etc.
+
+## Next steps
+
+- [Installation](/docs/db/installation) — Install and pick your adapter
+- [Basic Usage](/docs/db/basic-usage) — Define a table and run queries
+- [Drizzle](/docs/db/drizzle) — Drizzle adapter details
+- [Prisma](/docs/db/prisma) — Prisma adapter details
+- [Waddler](/docs/db/waddler) — Waddler adapter and sub-drivers

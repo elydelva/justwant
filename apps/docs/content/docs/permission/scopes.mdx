@@ -1,0 +1,77 @@
+---
+title: Scopes
+description: defineScope — define named permission boundaries like organizations, projects, or tenants.
+icon: Layers
+---
+
+## Overview
+
+A scope is a named boundary that partitions permissions. Role assignments and overrides are always tied to a specific scope instance, so the same actor can have different roles in different scopes.
+
+Examples:
+- `organization` — multi-tenant SaaS, one scope per org
+- `project` — per-project permissions within an org
+- `global` — a singleton scope with no instance ID
+
+## `defineScope`
+
+```ts
+import { defineScope } from "@justwant/permission";
+
+const orgScope = defineScope({ name: "organization" });
+```
+
+`defineScope` returns a callable function (`ScopeDef`) that creates `Scope` instances.
+
+## Creating scope instances
+
+```ts
+// Singleton scope (no ID)
+const globalScope = defineScope({ name: "global" });
+const scope = globalScope(); // { type: "global", id: null }
+
+// Multi-instance scope (with ID)
+const orgScope = defineScope({ name: "organization" });
+const scope = orgScope("org_abc"); // { type: "organization", id: "org_abc" }
+```
+
+| Call form | Result |
+|-----------|--------|
+| `orgScope()` | `{ type: "organization", id: null }` |
+| `orgScope("org_abc")` | `{ type: "organization", id: "org_abc" }` |
+
+## `ScopeDef` type
+
+```ts
+interface ScopeDef<N extends string> {
+  readonly name: N;
+  (): Scope<N>;
+  (id: string): Scope<N>;
+}
+```
+
+## Using scopes at runtime
+
+Scope instances are plain objects — pass them directly to service methods:
+
+```ts
+const actor = { type: "user", id: "user_1" };
+
+await service.assign({
+  actor,
+  role: adminRole,
+  scope: orgScope("org_abc"),
+});
+
+await service.can({
+  actor,
+  action: readDoc,
+  scope: orgScope("org_abc"),
+});
+```
+
+The scope type name (`"organization"`) is used to look up the corresponding realm at evaluation time. Make sure your realm's `scope` matches the `ScopeDef` you pass to service calls.
+
+## Realm lookup
+
+The service maps each realm by `realm.scope.name`. If you call `service.can()` with a scope whose `type` does not match any registered realm, the permission resolves to `false`.

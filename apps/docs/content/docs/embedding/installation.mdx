@@ -1,0 +1,256 @@
+---
+title: Installation
+description: Install @justwant/embedding and choose an engine and storage backend.
+icon: Download
+---
+
+## Step 1: Install the package
+
+Install `@justwant/embedding` along with the peer dependencies for your chosen engine and storage backend.
+
+<CodeBlockTabs defaultValue="openai-pgvector">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="openai-pgvector">OpenAI + pgvector</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="openai-sqlite">OpenAI + sqlite-vec</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="cf-vectorize">Cloudflare AI + Vectorize</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="openai-pgvector">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/embedding openai pg pgvector
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/embedding openai pg pgvector
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/embedding openai pg pgvector
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/embedding openai pg pgvector
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+  <CodeBlockTab value="openai-sqlite">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/embedding openai sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/embedding openai sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/embedding openai sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/embedding openai sqlite-vec better-sqlite3
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+  <CodeBlockTab value="cf-vectorize">
+
+No additional dependencies — engine and storage use Cloudflare Workers bindings (`env.AI`, `env.VECTORIZE_*`).
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/embedding
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/embedding
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/embedding
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/embedding
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Step 2: Create the embedding service
+
+Wire together an engine, a storage backend, and your universes in a shared module.
+
+<CodeBlockTabs defaultValue="openai-pgvector">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="openai-pgvector">OpenAI + pgvector</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="openai-sqlite">OpenAI + sqlite-vec</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="cf-vectorize">Cloudflare AI + Vectorize</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="openai-pgvector">
+
+```ts title="lib/embedding.ts"
+import { createEmbeddingService, defineEmbeddable, defineUniverse } from "@justwant/embedding";
+import { openAiEmbeddingEngine } from "@justwant/embedding/engines/openai";
+import { pgvectorStorageAdapter } from "@justwant/embedding/storages/pgvector";
+import OpenAI from "openai";
+import { Pool } from "pg";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+const articleEmbeddable = defineEmbeddable<{ id: string; title: string; body: string }>({
+  idField: "id",
+  toText: (a) => `${a.title}\n\n${a.body}`,
+  metadataFields: ["title"],
+});
+
+const articles = defineUniverse({
+  id: "articles",
+  dimension: 1536,
+  embeddable: articleEmbeddable,
+});
+
+export const embedding = createEmbeddingService({
+  engine: openAiEmbeddingEngine({ client: openai, model: "text-embedding-3-small" }),
+  storage: pgvectorStorageAdapter({ db: pool, tableName: "embeddings", dimension: 1536 }),
+  universes: [articles],
+});
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="openai-sqlite">
+
+```ts title="lib/embedding.ts"
+import { createEmbeddingService, defineEmbeddable, defineUniverse } from "@justwant/embedding";
+import { openAiEmbeddingEngine } from "@justwant/embedding/engines/openai";
+import { sqliteVectorStorageAdapter } from "@justwant/embedding/storages/sqlite-vec";
+import OpenAI from "openai";
+import Database from "better-sqlite3";
+import * as sqliteVec from "sqlite-vec";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const db = new Database("app.db");
+sqliteVec.load(db);
+
+const articleEmbeddable = defineEmbeddable<{ id: string; title: string; body: string }>({
+  idField: "id",
+  toText: (a) => `${a.title}\n\n${a.body}`,
+  metadataFields: ["title"],
+});
+
+const articles = defineUniverse({
+  id: "articles",
+  dimension: 1536,
+  embeddable: articleEmbeddable,
+});
+
+export const embedding = createEmbeddingService({
+  engine: openAiEmbeddingEngine({ client: openai, model: "text-embedding-3-small" }),
+  storage: sqliteVectorStorageAdapter({ db, tableName: "vec_articles", dimension: 1536 }),
+  universes: [articles],
+});
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="cf-vectorize">
+
+```ts title="worker.ts"
+import { createEmbeddingService, defineEmbeddable, defineUniverse } from "@justwant/embedding";
+import { cloudflareAiEmbeddingEngine } from "@justwant/embedding/engines/cloudflare-ai";
+import { vectorizeStorageAdapter } from "@justwant/embedding/storages/vectorize";
+
+const articleEmbeddable = defineEmbeddable<{ id: string; title: string; body: string }>({
+  idField: "id",
+  toText: (a) => `${a.title}\n\n${a.body}`,
+  metadataFields: ["title"],
+});
+
+const articles = defineUniverse({
+  id: "articles",
+  dimension: 768,
+  embeddable: articleEmbeddable,
+});
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const embedding = createEmbeddingService({
+      engine: cloudflareAiEmbeddingEngine({ ai: env.AI, dimension: 768 }),
+      storage: vectorizeStorageAdapter({ vectorize: env.VECTORIZE_ARTICLES, dimension: 768 }),
+      universes: [articles],
+    });
+
+    // use embedding service...
+  },
+};
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Next steps
+
+- [Basic Usage](/docs/embedding/basic-usage) — upsertFrom, similar, delete
+- [Engines](/docs/embedding/engines) — Engine options and configuration
+- [Storages](/docs/embedding/storages) — Storage options and schema setup

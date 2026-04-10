@@ -1,0 +1,45 @@
+---
+title: Vercel KV
+description: Cache backed by Vercel KV (powered by Upstash Redis).
+icon: Triangle
+---
+
+## When to use
+
+Use the Vercel KV adapter for projects deployed on Vercel. Vercel KV is a Redis-compatible store powered by Upstash, accessible via the `@vercel/kv` SDK.
+
+## Installation
+
+```bash
+bun add @justwant/cache @vercel/kv
+```
+
+## Setup
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { vercelKvAdapter } from "@justwant/cache/adapters/vercel-kv";
+import { kv } from "@vercel/kv";
+
+export const cache = createCache({
+  adapter: vercelKvAdapter({ kv }),
+});
+```
+
+## Options
+
+```ts
+vercelKvAdapter({
+  kv: VercelKVClient;  // @vercel/kv client (required)
+  keyPrefix?: string;  // Key prefix applied to all entries
+})
+```
+
+## Environment variables
+
+Set these in your Vercel project dashboard (automatically injected when you connect a KV store):
+
+```bash
+KV_REST_API_URL=https://...upstash.io
+KV_REST_API_TOKEN=AX...
+```

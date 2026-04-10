@@ -1,0 +1,57 @@
+---
+title: Introduction
+description: FIFO waitlist with subscribe, position tracking, invitations, and optional referral integration.
+icon: ListOrdered
+---
+
+## What is @justwant/waitlist?
+
+`@justwant/waitlist` is a **headless waitlist engine** for TypeScript applications. It handles subscriptions, FIFO ordering, position queries, bulk operations, expiration, and invitation flows — all backed by a `WaitlistRepository` you provide.
+
+**Use it when** you need to:
+- Gate feature access behind a waitlist with fair FIFO ordering
+- Let existing users invite others (jump the queue or refer)
+- Run multiple independent lists in one service instance
+- Expire entries automatically (time-limited slots)
+- Audit every subscribe/unsubscribe/pop event
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **`defineList()`** | Portable list definition — name, optional params, optional schema |
+| **`createWaitlistService()`** | Full API: subscribe, unsubscribe, position, pop, invite, bulk ops |
+| **FIFO ordering** | Positions are computed from `createdAt` ascending |
+| **Priority** | Optional `priority` field for priority-queue behaviour |
+| **Metadata** | Attach arbitrary metadata; validate with any Standard Schema validator |
+| **Expiration** | `expiresAt` field + `cleanupExpired` utility |
+| **Plugins** | `auditPlugin`, `cleanupExpired`, referral `invite` integration |
+| **Adapters** | In-memory adapter included; `createWaitlistDbAdapter` for `@justwant/db` |
+
+## How it works
+
+1. Define your list with `defineList({ name: "beta" })`.
+2. Create the service with `createWaitlistService({ repo })`.
+3. Actors subscribe with `service.subscribe(list, actor)`.
+4. Query position with `service.getPosition(list, actor)`.
+5. Pop or invite entries as slots open up.
+
+```ts
+import { defineList, createWaitlistService, createMemoryWaitlistAdapter } from "@justwant/waitlist";
+
+const betaList = defineList({ name: "beta" });
+const waitlist = createWaitlistService({ repo: createMemoryWaitlistAdapter() });
+
+await waitlist.subscribe(betaList, { type: "user", id: "u-1" });
+const { position, total } = await waitlist.getPosition(betaList, { type: "user", id: "u-1" });
+// { position: 1, total: 1 }
+```
+
+## Next steps
+
+- [Installation](/docs/waitlist/installation)
+- [Basic Usage](/docs/waitlist/basic-usage)
+- [Positions](/docs/waitlist/positions)
+- [Invitations](/docs/waitlist/invitations)
+- [Plugins](/docs/waitlist/plugins)
+- [Errors](/docs/waitlist/errors)

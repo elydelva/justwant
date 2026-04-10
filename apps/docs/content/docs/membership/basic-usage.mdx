@@ -1,0 +1,120 @@
+---
+title: Basic Usage
+description: Define members and groups, wire a repository, and manage membership.
+icon: Play
+---
+
+## Overview
+
+1. `defineMember` — declare what can be a member.
+2. `defineGroup` — declare what groups exist and which member type they accept.
+3. `createMembershipService` — wire the repo and groups into the API.
+
+## Step 1 — Define a member type
+
+```ts title="lib/member.ts"
+import { defineMember } from "@justwant/membership";
+
+export const User = defineMember({ name: "user" });
+// User("u-1") → { type: "user", id: "u-1" }
+```
+
+## Step 2 — Define a group type
+
+```ts title="lib/group.ts"
+import { defineGroup } from "@justwant/membership";
+import { User } from "./member.ts";
+
+export const Team = defineGroup({ name: "team", member: User });
+// Team("t-1") → { type: "team", id: "t-1" }
+```
+
+## Step 3 — Implement a repository
+
+```ts title="lib/membership-repo.ts"
+import type { MembershipsRepo, Membership, CreateInput } from "@justwant/membership";
+
+export function createMemoryMembershipsRepo(): MembershipsRepo {
+  const store = new Map<string, Membership>();
+
+  function matches(m: Membership, where: Partial<Membership>): boolean {
+    return Object.entries(where).every(
+      ([k, v]) => (m as Record<string, unknown>)[k] === v
+    );
+  }
+
+  return {
+    async findById(id) { return store.get(id) ?? null; },
+    async findOne(where) {
+      return [...store.values()].find((m) => matches(m, where)) ?? null;
+    },
+    async findMany(where) {
+      return [...store.values()].filter((m) => matches(m, where));
+    },
+    async create(data: CreateInput<Membership>) {
+      const m: Membership = { id: crypto.randomUUID(), ...data };
+      store.set(m.id, m);
+      return m;
+    },
+    async update(id, data) {
+      const existing = store.get(id)!;
+      const updated = { ...existing, ...data };
+      store.set(id, updated);
+      return updated;
+    },
+    async delete(id) { store.delete(id); },
+  };
+}
+```
+
+## Step 4 — Create the service
+
+```ts title="lib/membership.ts"
+import { createMembershipService } from "@justwant/membership";
+import { Team } from "./group.ts";
+import { createMemoryMembershipsRepo } from "./membership-repo.ts";
+
+export const membership = createMembershipService({
+  repo: createMemoryMembershipsRepo(),
+  groups: [Team],
+});
+```
+
+## Add a member
+
+```ts
+import { User } from "./member.ts";
+import { Team } from "./group.ts";
+import { membership } from "./membership.ts";
+
+await membership.add(User("u-1"), Team("t-1"));
+// throws AlreadyMemberError if already a member
+// throws InvalidMemberTypeError if User is not the accepted member type for Team
+```
+
+## Check membership
+
+```ts
+const isMember = await membership.has(User("u-1"), Team("t-1")); // true
+```
+
+## List members of a group
+
+```ts
+const members = await membership.listMembers(Team("t-1"));
+// [{ type: "user", id: "u-1" }]
+```
+
+## List groups of a member
+
+```ts
+const groups = await membership.listGroups(User("u-1"));
+// [{ type: "team", id: "t-1" }]
+```
+
+## Remove a member
+
+```ts
+await membership.remove(User("u-1"), Team("t-1"));
+// throws NotMemberError if not a member
+```

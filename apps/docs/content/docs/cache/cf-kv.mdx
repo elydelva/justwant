@@ -1,0 +1,60 @@
+---
+title: Cloudflare KV
+description: Cache backed by a Cloudflare KV namespace for Workers.
+icon: Globe
+---
+
+## When to use
+
+Use the Cloudflare KV adapter inside a Cloudflare Worker. KV is a globally distributed key-value store with eventual consistency.
+
+## Installation
+
+```bash
+bun add @justwant/cache
+```
+
+No additional packages required — the KV namespace is injected from the Worker environment.
+
+## Setup
+
+Bind a KV namespace in `wrangler.toml`:
+
+```toml title="wrangler.toml"
+[[kv_namespaces]]
+binding = "CACHE"
+id = "YOUR_KV_NAMESPACE_ID"
+```
+
+Create the cache inside your Worker using the bound namespace:
+
+```ts title="src/index.ts"
+import { createCache } from "@justwant/cache";
+import { cfKvAdapter } from "@justwant/cache/adapters/cf-kv";
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const cache = createCache({
+      adapter: cfKvAdapter({ kv: env.CACHE }),
+    });
+
+    const value = await cache.wrap("key", () => fetchData(), { ttl: "5m" });
+    return Response.json(value);
+  },
+};
+```
+
+## Options
+
+```ts
+cfKvAdapter({
+  kv: CloudflareKVNamespace;  // Cloudflare KV namespace binding (required)
+  keyPrefix?: string;         // Key prefix applied to all entries
+})
+```
+
+## Notes
+
+- Cloudflare KV has **eventual consistency** — writes may take up to 60 seconds to propagate globally.
+- TTL is enforced via KV's native expiration (`expirationTtl` for relative TTL, `expiration` for absolute `Date`).
+- Tag invalidation is **not supported** — `invalidateTag` is a no-op on this adapter.

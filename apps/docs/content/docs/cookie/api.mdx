@@ -1,0 +1,226 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/cookie.
+icon: BookOpen
+---
+
+## parseCookies
+
+```ts
+function parseCookies(header: string | null | undefined): Record<string, string>
+```
+
+Parses a raw `Cookie` header string into a key-value record. Values are URL-decoded. If decoding fails for a particular value, the raw string is returned for that entry.
+
+```ts
+parseCookies("theme=dark; session=abc%20123");
+// { theme: "dark", session: "abc 123" }
+
+parseCookies(null);
+// {}
+```
+
+---
+
+## serializeCookie
+
+```ts
+function serializeCookie(name: string, value: string, options?: CookieOptions): string
+```
+
+Serializes a cookie name, value, and options into a `Set-Cookie` header string. Both `name` and `value` are URL-encoded.
+
+```ts
+serializeCookie("theme", "dark", { path: "/", httpOnly: true, maxAge: 3600 });
+// "theme=dark; Path=/; HttpOnly; Max-Age=3600"
+```
+
+---
+
+## defineCookie
+
+```ts
+function defineCookie<T = string>(
+  name: string,
+  options?: DefineCookieOptions<T>
+): TypedCookie<T>
+```
+
+Creates a reusable typed cookie definition. The returned `TypedCookie` is used with `createCookieStore`, `setCookie`, and `deleteCookie`.
+
+### DefineCookieOptions
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `schema` | `CookieSchema<T>` | Standard Schema for validation |
+| `default` | `T` | Fallback value when absent or invalid |
+| `onMismatch` | `"fallback" \| "remove"` | Behavior when validation fails |
+| `parser` | `(value: string \| undefined) => T` | Custom parser (alternative to `schema`) |
+
+`onMismatch` defaults to `"fallback"` when a `default` is provided and `onMismatch` is not set.
+
+### TypedCookie
+
+| Property / Method | Type | Description |
+|-------------------|------|-------------|
+| `name` | `string` | Cookie name |
+| `default` | `T \| undefined` | Default value |
+| `onMismatch` | `OnMismatch \| undefined` | Mismatch strategy |
+| `parse(value)` | `(value: string \| undefined) => T` | Parse raw string to typed value |
+| `parseWithMeta(value)` | `(value: string \| undefined) => { value: T; remove?: boolean }` | Parse and indicate if the cookie should be deleted |
+
+---
+
+## setCookie (primitive)
+
+```ts
+function setCookie(name: string, value: string, options?: CookieOptions): string
+```
+
+Serializes a `Set-Cookie` header string. This is the low-level primitive — use `store.set()` when working with typed stores.
+
+```ts
+const header = setCookie("session", "abc123", {
+  path: "/",
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax",
+  maxAge: 86400,
+});
+```
+
+---
+
+## deleteCookie (primitive)
+
+```ts
+function deleteCookie(
+  name: string,
+  options?: Pick<CookieOptions, "path" | "domain">
+): string
+```
+
+Serializes a `Set-Cookie` header string that expires the cookie by setting `Max-Age=0`.
+
+```ts
+const header = deleteCookie("session", { path: "/" });
+// "session=; Path=/; Max-Age=0"
+```
+
+---
+
+## createCookieStore
+
+```ts
+function createCookieStore<T extends Record<string, TypedCookie<unknown>>>(
+  cookies: T,
+  options?: CreateCookieStoreOptions<T>
+): CookieStore<T>
+```
+
+Creates a typed store for multiple cookies. All keys and values are inferred from the `TypedCookie` definitions.
+
+### CreateCookieStoreOptions
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `adapter` | `CookieAdapter` | Adapter used by `store.get()` and `store.set()` |
+| `pruneUntracked` | `boolean \| { path?, domain? }` | Delete cookies not in the schema on `get()`. Requires an adapter. Defaults to `false`. When `true`, uses `path: "/"`. |
+
+### CookieStore
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `parse` | `(header: string \| null \| undefined) => InferCookieStore<T>` | Parse from a raw `Cookie` header string |
+| `serialize` | `(name: K, value: V, options?: CookieOptions) => string` | Serialize a single cookie to a `Set-Cookie` string |
+| `get` | `() => InferCookieStore<T>` | Read all cookies from the adapter (requires `adapter`) |
+| `set` | `(name: K, value: V, options?: CookieOptions) => void` | Write a single cookie via the adapter (requires `adapter`) |
+
+`get()` and `set()` are only present when an `adapter` is provided.
+
+---
+
+## Adapters
+
+### DocumentAdapter
+
+```ts
+function DocumentAdapter(doc?: DocumentLike): CookieAdapter
+```
+
+Reads and writes `document.cookie`. Pass a `DocumentLike` object (`{ cookie: string }`) explicitly for testing or non-browser environments. Defaults to `globalThis.document` in browser environments.
+
+### HeaderAdapter
+
+```ts
+function HeaderAdapter(options: {
+  getCookie: () => string;
+  appendSetCookie: (value: string) => void;
+}): CookieAdapter
+```
+
+Generic adapter for any header-based environment. Provide a callback to read the `Cookie` header and a callback to append a `Set-Cookie` value.
+
+### RequestResponseAdapter
+
+```ts
+function RequestResponseAdapter(request: Request, response: Response): CookieAdapter
+```
+
+Adapter for the Web Fetch API. Reads from `request.headers.get("Cookie")` and appends to `response.headers`.
+
+### NextJSAdapter
+
+```ts
+function NextJSAdapter(cookieStore: NextJSCookieStore): CookieAdapter
+```
+
+Adapter for the Next.js App Router cookie store returned by `cookies()` from `next/headers`. Compatible with Next.js 14+ (sync) and 15+ (async).
+
+---
+
+## CookieOptions
+
+```ts
+interface CookieOptions {
+  path?: string;
+  domain?: string;
+  maxAge?: number;
+  expires?: Date;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: "strict" | "lax" | "none";
+}
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `path` | `string` | The URL path the cookie applies to |
+| `domain` | `string` | The domain the cookie applies to |
+| `maxAge` | `number` | Max lifetime in seconds (`0` to delete immediately) |
+| `expires` | `Date` | Absolute expiry date |
+| `httpOnly` | `boolean` | When `true`, the cookie is inaccessible to JavaScript |
+| `secure` | `boolean` | When `true`, the cookie is only sent over HTTPS |
+| `sameSite` | `"strict" \| "lax" \| "none"` | Cross-site request policy |
+
+---
+
+## CookieSchema
+
+```ts
+interface CookieSchema<T = unknown> {
+  "~standard"?: {
+    validate: (v: unknown) =>
+      | { value?: T; issues?: readonly { message?: string }[] }
+      | Promise<{ value?: T; issues?: readonly { message?: string }[] }>;
+  };
+}
+```
+
+Any object implementing the `~standard` interface is a valid `CookieSchema`. This is compatible with:
+
+- [Zod](https://zod.dev) (`z.string()`, `z.enum(...)`, etc.)
+- [Valibot](https://valibot.dev) (`v.string()`, `v.picklist(...)`, etc.)
+- Any other [Standard Schema](https://standardschema.dev) compatible library
+
+> Async schemas are not supported. Validation must be synchronous. If an async result is detected, validation is treated as failing.

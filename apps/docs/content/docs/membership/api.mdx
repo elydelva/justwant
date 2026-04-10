@@ -1,0 +1,156 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/membership.
+icon: BookOpen
+---
+
+## defineMember
+
+```ts
+function defineMember<N extends string>(
+  options: DefineMemberOptions<N>
+): MemberDef<N>
+```
+
+Declares a member type. Returns a callable that produces `Member<N>` values.
+
+```ts
+const User = defineMember({ name: "user" });
+const ref = User("u-1"); // { type: "user", id: "u-1" }
+```
+
+---
+
+## defineGroup
+
+```ts
+function defineGroup<N extends string>(
+  options: DefineGroupOptions<N>
+): GroupDef<N>
+```
+
+Declares a group type and which member type it accepts.
+
+```ts
+const Team = defineGroup({ name: "team", member: User });
+const ref = Team("t-1"); // { type: "team", id: "t-1" }
+```
+
+---
+
+## createMembershipService
+
+```ts
+function createMembershipService(
+  options: CreateMembershipServiceOptions
+): MembershipApi
+```
+
+### CreateMembershipServiceOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `repo` | `MembershipsRepo` | Storage implementation |
+| `groups` | `readonly GroupLike[]` | All registered group definitions |
+
+### MembershipApi
+
+#### add
+
+```ts
+add(member: Member, group: Group): Promise<void>
+```
+
+Links `member` to `group`. Throws `AlreadyMemberError` if already linked, `InvalidMemberTypeError` if the member type is not accepted by the group.
+
+#### remove
+
+```ts
+remove(member: Member, group: Group): Promise<void>
+```
+
+Unlinks `member` from `group`. Throws `NotMemberError` if not linked.
+
+#### has
+
+```ts
+has(member: Member, group: Group): Promise<boolean>
+```
+
+Returns `true` if the member is in the group.
+
+#### listMembers
+
+```ts
+listMembers(group: Group): Promise<Member[]>
+```
+
+Returns all members of the group.
+
+#### listGroups
+
+```ts
+listGroups(member: Member): Promise<Group[]>
+```
+
+Returns all groups the member belongs to.
+
+---
+
+## Types
+
+### Member
+
+```ts
+interface Member<T extends string = string> {
+  type: T;
+  id: string;
+}
+```
+
+### Group
+
+```ts
+interface Group<N extends string = string> {
+  type: N;
+  id: string;
+}
+```
+
+### Membership
+
+```ts
+interface Membership {
+  id: string;
+  memberType: string;
+  memberId: string;
+  groupType: string;
+  groupId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+```
+
+### MembershipsRepo
+
+```ts
+interface MembershipsRepo {
+  findById(id: string): Promise<Membership | null>;
+  findOne(where: Partial<Membership>): Promise<Membership | null>;
+  findMany(where: Partial<Membership>): Promise<Membership[]>;
+  create(data: CreateInput<Membership>): Promise<Membership>;
+  update(id: string, data: Partial<Membership>): Promise<Membership>;
+  delete(id: string): Promise<void>;
+}
+```
+
+---
+
+## Errors
+
+| Class | When |
+|-------|------|
+| `MembershipError` | Base class |
+| `AlreadyMemberError` | `add` — member already in group |
+| `NotMemberError` | `remove` — member not in group |
+| `InvalidMemberTypeError` | `add` — wrong member type, or unregistered type |

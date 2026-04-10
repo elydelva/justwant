@@ -1,0 +1,203 @@
+---
+title: Which engine?
+description: Available embedding engines — OpenAI, Cloudflare Workers AI, and a test engine.
+icon: MessageCircleQuestionMark
+---
+
+An `EmbeddingEngine` converts text into a vector. You inject an engine into `createEmbeddingService`. All engines implement the same interface:
+
+## Available engines
+
+| Engine | Provider | Page |
+|--------|----------|------|
+| [`openAiEmbeddingEngine`](/docs/embedding/openai) | OpenAI Embeddings API | [→](/docs/embedding/openai) |
+| [`cloudflareAiEmbeddingEngine`](/docs/embedding/cloudflare-ai) | Cloudflare Workers AI | [→](/docs/embedding/cloudflare-ai) |
+| `testEmbeddingEngine` | In-memory hash (dev only) | — |
+
+```ts
+interface EmbeddingEngine {
+  embed(text: string, options?: { model?: string }): Promise<number[]>;
+  embedMany?(texts: string[]): Promise<number[][]>;
+}
+```
+
+## OpenAI
+
+Uses the OpenAI Embeddings API. You provide the OpenAI client instance — the engine does not import `openai` directly, so it works with any compatible client.
+
+### Installation
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add openai
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install openai
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add openai
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add openai
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+### Usage
+
+```ts
+import { openAiEmbeddingEngine } from "@justwant/embedding/engines/openai";
+import OpenAI from "openai";
+
+const engine = openAiEmbeddingEngine({
+  client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
+  model: "text-embedding-3-small",
+  dimension: 1536, // optional — passed to the API for truncation
+});
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `client` | `{ embeddings: OpenAiEmbeddingsClient }` | Yes | OpenAI client with `embeddings` API |
+| `model` | `string` | Yes | Model id, e.g. `text-embedding-3-small` |
+| `dimension` | `number` | No | Dimension for truncated embeddings (passed as `dimensions` to the API) |
+
+### Models and dimensions
+
+| Model | Dimensions | Notes |
+|-------|-----------|-------|
+| `text-embedding-3-small` | 1536 | Recommended — good balance of quality and cost |
+| `text-embedding-3-large` | 3072 | Higher quality, higher cost |
+| `text-embedding-ada-002` | 1536 | Legacy |
+
+Truncation is supported by `text-embedding-3-*` models. Pass `dimension` to reduce vector size for storage savings.
+
+### Per-call model override
+
+```ts
+const vector = await embedding.embed("text", { model: "text-embedding-3-large" });
+```
+
+### Batch embedding
+
+The OpenAI engine implements `embedMany` — it sends all texts in a single API call:
+
+```ts
+const vectors = await engine.embedMany(["text one", "text two", "text three"]);
+```
+
+---
+
+## Cloudflare Workers AI
+
+Uses the Cloudflare Workers AI binding (`env.AI`). No external dependencies — everything comes from the Workers runtime.
+
+### Usage
+
+```ts
+import { cloudflareAiEmbeddingEngine } from "@justwant/embedding/engines/cloudflare-ai";
+
+const engine = cloudflareAiEmbeddingEngine({
+  ai: env.AI,
+  model: "@cf/baai/bge-base-en-v1.5", // optional — this is the default
+  dimension: 768,                       // required — must match storage
+});
+```
+
+The engine validates that the returned vector length matches `dimension` and throws if there is a mismatch.
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `ai` | `CloudflareAiBinding` | Yes | `env.AI` from your Worker's bindings |
+| `model` | `string` | No | Model id. Defaults to `@cf/baai/bge-base-en-v1.5` |
+| `dimension` | `number` | Yes | Expected vector dimension — used for validation |
+
+### Models and dimensions
+
+| Model | Dimensions | Notes |
+|-------|-----------|-------|
+| `@cf/baai/bge-base-en-v1.5` | 768 | Default — fast, compact |
+| `@cf/baai/bge-large-en-v1.5` | 1024 | Higher quality |
+| `@cf/baai/bge-small-en-v1.5` | 384 | Smallest — lowest latency |
+
+### wrangler.toml
+
+```toml title="wrangler.toml"
+[ai]
+binding = "AI"
+```
+
+### Batch embedding
+
+The Cloudflare AI engine implements `embedMany` — it sends all texts in a single binding call:
+
+```ts
+const vectors = await engine.embedMany(["text one", "text two"]);
+```
+
+---
+
+## Test engine (development only)
+
+`testEmbeddingEngine` produces deterministic vectors from text using a simple hash function. It is **not suitable for production** — similarity scores are meaningless — but it is useful for unit tests that need a consistent embedding without network calls.
+
+```ts
+import { testEmbeddingEngine } from "@justwant/embedding/engines/memory";
+
+const engine = testEmbeddingEngine({ dimension: 1536 });
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `dimension` | `number` | Yes | Dimension of the produced vectors |
+
+---
+
+## Custom engine
+
+Implement the `EmbeddingEngine` interface to integrate any other provider:
+
+```ts
+import type { EmbeddingEngine } from "@justwant/embedding";
+
+export function myCustomEngine(): EmbeddingEngine {
+  return {
+    async embed(text: string): Promise<number[]> {
+      // call your provider and return a number[]
+    },
+    async embedMany(texts: string[]): Promise<number[][]> {
+      // optional batch implementation
+      return Promise.all(texts.map((t) => this.embed(t)));
+    },
+  };
+}
+```
+
+Pass the result directly to `createEmbeddingService({ engine: myCustomEngine(), ... })`.

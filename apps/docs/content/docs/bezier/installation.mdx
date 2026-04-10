@@ -1,0 +1,81 @@
+---
+title: Installation
+description: Install @justwant/bezier and evaluate your first curve.
+icon: Download
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/bezier
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/bezier
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/bezier
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/bezier
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Quick example
+
+```ts title="easing.ts"
+import { createBezierCurve } from "@justwant/bezier";
+
+// CSS cubic-bezier(0.42, 0, 0.58, 1) — ease-in-out
+const curve = createBezierCurve({ p1x: 0.42, p1y: 0, p2x: 0.58, p2y: 1 });
+
+console.log(curve.at(0));    // 0
+console.log(curve.at(0.5));  // ~0.5
+console.log(curve.at(1));    // 1
+```
+
+Or use a built-in preset:
+
+```ts title="easing.ts"
+import { easeInOut } from "@justwant/bezier/classic";
+
+const progress = easeInOut.at(0.25); // slow start
+```
+
+## Entry points
+
+`@justwant/bezier` ships three entry points:
+
+| Entry point | Contents |
+|-------------|---------|
+| `@justwant/bezier` | `createBezierCurve`, types, errors |
+| `@justwant/bezier/classic` | `linear`, `easeIn`, `easeOut`, `easeInOut` |
+| `@justwant/bezier/animation` | `easeIn`, `easeOut`, `easeInOut` (design-oriented aliases) |
+| `@justwant/bezier/feature` | `slowRollout`, `fastRollout`, `gradual` (rollout presets) |
+
+## Next steps
+
+- [Basic Usage](/docs/bezier/basic-usage) — `createBezierCurve` and presets in depth
+- [API Reference](/docs/bezier/api) — Full type reference

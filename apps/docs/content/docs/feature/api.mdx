@@ -1,0 +1,44 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/feature.
+icon: BookOpen
+---
+
+## Functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `defineFeature(options)` | `FeatureDef<N>` | Create a typed feature definition |
+
+## `defineFeature` options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `string` | Yes | Unique feature name — used as the `type` field of any constructed `Feature` reference |
+
+## `FeatureDef<N>`
+
+A callable object returned by `defineFeature`. It extends `Definable<N>` from `@justwant/meta`.
+
+| Member | Type | Description |
+|--------|------|-------------|
+| `name` | `N` | The feature name passed to `defineFeature` |
+| `(id: string)` | `Feature<N>` | Call the def as a function to construct a `Feature` reference |
+
+```ts
+import { defineFeature } from "@justwant/feature";
+
+const billing = defineFeature({ name: "billing" });
+
+billing.name;          // "billing"
+billing("plan_pro");   // { type: "billing", id: "plan_pro" }
+```
+
+## `Feature<T>`
+
+A canonical feature reference produced by calling a `FeatureDef`. It extends `RefLike<T>` from `@justwant/meta`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | `T` | The feature name |
+| `id` | `string` | An identifier for the specific instance |

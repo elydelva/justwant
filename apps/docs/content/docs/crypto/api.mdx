@@ -1,0 +1,109 @@
+---
+title: API Reference
+description: Complete subpath API reference for @justwant/crypto.
+icon: BookOpen
+---
+
+## /password
+
+Import: `@justwant/crypto/password`
+
+| Export | Signature | Description |
+|--------|-----------|-------------|
+| `hashPassword` | `(password: string) => Promise<string>` | Hash with Argon2id; returns PHC string |
+| `verifyPassword` | `(password: string, stored: string) => Promise<boolean>` | Verify against stored hash |
+
+## /token
+
+Import: `@justwant/crypto/token`
+
+| Export | Signature | Description |
+|--------|-----------|-------------|
+| `generateToken` | `(bytes?: number) => string` | Random hex token (default 32 bytes) |
+| `generateShortCode` | `(length?: number, alphabet?: string) => string` | Random short code from alphabet |
+| `hashToken` | `(token: string \| Uint8Array) => string` | SHA-256 hash for DB storage |
+| `verifyToken` | `(plain: string \| Uint8Array, hash: string) => boolean` | Constant-time verify |
+| `generateSecretCode` | alias for `generateToken` | — |
+| `hashForStorage` | alias for `hashToken` | — |
+| `checkToken` | alias for `verifyToken` | — |
+
+## /jwt
+
+Import: `@justwant/crypto/jwt`
+
+| Export | Signature | Description |
+|--------|-----------|-------------|
+| `encodeJwt` | `(payload, secret, options?) => Promise<string>` | Sign HS256 JWT |
+| `decodeJwt<T>` | `(token, secret) => Promise<T \| null>` | Verify and decode JWT |
+| `createJwt` | alias for `encodeJwt` | — |
+| `verifyJwt` | alias for `decodeJwt` | — |
+
+### `JwtEncodeOptions`
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `expIn` | `number` | — | Expiry in seconds from now |
+| `iat` | `number` | `Date.now() / 1000` | Override issued-at |
+
+## /sign
+
+Import: `@justwant/crypto/sign`
+
+| Export | Signature | Description |
+|--------|-----------|-------------|
+| `sign` | `(payload: unknown, secret) => Promise<string>` | HS256 JWS compact token |
+| `verify<T>` | `(token, secret) => Promise<T \| null>` | Verify and decode JWS |
+| `signMessage` | alias for `sign` | — |
+| `verifySignedMessage` | alias for `verify` | — |
+
+## /encrypt
+
+Import: `@justwant/crypto/encrypt`
+
+| Export | Signature | Description |
+|--------|-----------|-------------|
+| `encrypt` | `(plaintext: string, key: Uint8Array) => string` | AES-256-GCM encrypt (key must be 32 bytes) |
+| `decrypt` | `(ciphertext: string, key: Uint8Array) => string \| null` | Decrypt; returns null if invalid |
+| `encryptWithPassword` | `(plaintext: string, password: string, salt?: Uint8Array) => string` | Password-based encrypt |
+| `decryptWithPassword` | `(ciphertext: string, password: string) => string \| null` | Password-based decrypt |
+
+## /hash
+
+Import: `@justwant/crypto/hash`
+
+| Export | Signature | Description |
+|--------|-----------|-------------|
+| `hashString` | `(str: string) => string` | SHA-256 hex of a UTF-8 string |
+
+## /derive-key
+
+Import: `@justwant/crypto/derive-key`
+
+| Export | Signature | Description |
+|--------|-----------|-------------|
+| `deriveKey` | `(secret, salt, info, length?) => Uint8Array` | HKDF-SHA256 key derivation |
+
+## /compare
+
+Import: `@justwant/crypto/compare`
+
+| Export | Signature | Description |
+|--------|-----------|-------------|
+| `timingSafeEqual` | `(a: Uint8Array, b: Uint8Array) => boolean` | Constant-time byte comparison |
+| `secureCompareStrings` | `(a: string, b: string) => boolean` | Constant-time string comparison |
+| `secureCompare` | alias for `timingSafeEqual` | — |
+
+## /primitives
+
+Import: `@justwant/crypto/primitives`
+
+Low-level re-exports from `@noble/hashes` and `@noble/ciphers` for advanced use.
+
+| Export | Source |
+|--------|--------|
+| `sha256`, `sha512` | `@noble/hashes/sha2` |
+| `hmac` | `@noble/hashes/hmac` |
+| `hkdf` | `@noble/hashes/hkdf` |
+| `gcm` | `@noble/ciphers/aes` |
+| `chacha20poly1305` | `@noble/ciphers/chacha` |
+| `randomBytes`, `bytesToHex`, `hexToBytes`, `utf8ToBytes` | `@noble/hashes/utils` |

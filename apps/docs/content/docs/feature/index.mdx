@@ -1,0 +1,38 @@
+---
+title: Introduction
+description: Lightweight feature identity primitive used across the @justwant ecosystem.
+icon: Puzzle
+---
+
+## What is @justwant/feature?
+
+`@justwant/feature` is a **zero-dependency primitive** that defines the canonical identity type for features across the `@justwant` ecosystem. It exposes a single function — `defineFeature` — that creates a typed `FeatureDef` used by other packages such as `@justwant/flag`.
+
+**Use it when** you need to:
+- Declare a named feature that other packages (flags, permissions, etc.) can reference
+- Share a single feature definition across multiple packages without circular dependencies
+- Keep feature identity decoupled from any specific behavior
+
+## How it works
+
+Call `defineFeature({ name })` once per feature. The returned `FeatureDef` is both a function and a named object:
+
+- As a **function**, it constructs a `Feature` reference: `FeatureDef(id)` → `{ type: name, id }`
+- As an **object**, it carries the `name` property so other packages can introspect the feature identity
+
+```ts
+import { defineFeature } from "@justwant/feature";
+
+const billing = defineFeature({ name: "billing" });
+
+// Used directly by @justwant/flag
+const billingFlag = defineFlag(billing, { rules: [...] });
+
+// Or construct a Feature reference manually
+const ref = billing("plan_pro"); // { type: "billing", id: "plan_pro" }
+```
+
+## Next steps
+
+- [Installation](/docs/feature/installation) — Install the package
+- [API Reference](/docs/feature/api) — `defineFeature`, `FeatureDef`, `Feature`

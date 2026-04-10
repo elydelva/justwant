@@ -1,0 +1,27 @@
+{
+  "title": "Job",
+  "icon": "Briefcase",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "define-job",
+    "queues",
+    "cron",
+    "---Providers---",
+    "engines",
+    "bullmq",
+    "pg",
+    "qstash",
+    "node",
+    "---Extend---",
+    "lock",
+    "audit",
+    "alert",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

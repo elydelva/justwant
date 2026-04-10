@@ -1,0 +1,86 @@
+---
+title: Invitations
+description: Let existing subscribers invite others — with optional referral tracking.
+icon: Mail
+---
+
+## Overview
+
+`invite` allows an existing subscriber (the inviter) to subscribe another actor (the invitee). The invitee's entry is created with a `referredBy` metadata field recording the inviter's identity.
+
+Optionally, if a `referralService` (from `@justwant/referral`) is provided to `createWaitlistService`, the invitation is also recorded as a referral before subscribing.
+
+## invite
+
+```ts
+const entry = await waitlist.invite(list, inviter, invitee, metadata?);
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `list` | `WaitlistDef \| string` | The target list |
+| `inviter` | `Actor` | The actor sending the invitation |
+| `invitee` | `Actor` | The actor being invited |
+| `metadata` | `Record<string, unknown>` (optional) | Extra metadata attached to the entry |
+
+Returns the new `WaitlistEntry` for the invitee.
+
+```ts
+await waitlist.invite(
+  betaList,
+  { type: "user", id: "u-1" },   // inviter
+  { type: "user", id: "u-99" },  // invitee
+  { campaign: "friend-invite" }
+);
+// invitee entry will have metadata.referredBy = "user:u-1"
+```
+
+## With referral tracking
+
+Pass a `referralService` to `createWaitlistService` to automatically record invitations in `@justwant/referral`:
+
+```ts
+import { createWaitlistService } from "@justwant/waitlist";
+import { createReferralService } from "@justwant/referral";
+
+const referral = createReferralService({ repo: referralRepo });
+
+const waitlist = createWaitlistService({
+  repo: waitlistRepo,
+  referralService: referral,
+  // optionally map listKey to offer key:
+  offerKeyForList: (listKey) => `waitlist:${listKey}`,
+});
+```
+
+When `referralService` is provided, calling `waitlist.invite(...)` will:
+
+1. Call `referral.refer(offerKey, inviter, invitee, metadata)` to record the referral.
+2. Subscribe the invitee with `referredBy` metadata.
+
+## Bulk invite pattern
+
+To invite the next N people from a separate list of candidates:
+
+```ts
+const candidates = [
+  { type: "user", id: "u-10" },
+  { type: "user", id: "u-11" },
+];
+
+const admin = { type: "user", id: "admin" };
+
+for (const candidate of candidates) {
+  await waitlist.invite(betaList, admin, candidate);
+}
+```
+
+Or combine with `pop` to process the queue sequentially:
+
+```ts
+// pop the next waiting entry and grant access
+const next = await waitlist.pop(betaList);
+if (next) {
+  await grantAccess({ actorId: next.actorId, actorType: next.actorType });
+}
+```

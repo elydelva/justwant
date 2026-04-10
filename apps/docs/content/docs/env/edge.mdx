@@ -1,0 +1,78 @@
+---
+title: Edge
+description: Use @justwant/env in Cloudflare Workers, Vercel Edge Functions, and other edge runtimes.
+icon: Globe
+---
+
+## Overview
+
+`@justwant/env/edge` is a lighter version of `@justwant/env` designed for edge runtimes where `node:fs` and file watching are unavailable. It provides the same `createEnv` and `defineEnv` API but reads environment variables from `process.env` or an inline object only — no `.env` file loading.
+
+The `"."` export automatically resolves to the edge build when the bundler reports an `edge-light`, `workerd`, `edge`, or `worker` condition. You can also import the edge build explicitly:
+
+```ts
+import { createEnv } from "@justwant/env/edge";
+```
+
+## Cloudflare Workers
+
+In Cloudflare Workers, `process.env` may not be available. Pass the Worker's `env` binding as `processEnv`:
+
+```ts title="src/env.ts"
+import { createEnv } from "@justwant/env/edge";
+import { z } from "zod";
+
+export function getEnv(workerEnv: Record<string, string>) {
+  return createEnv({
+    vars: {
+      DATABASE_URL: z.string().url(),
+      API_KEY: z.string().min(16),
+    },
+    sources: {
+      processEnv: workerEnv,
+    },
+  });
+}
+```
+
+```ts title="src/index.ts"
+import { getEnv } from "./env";
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const config = getEnv(env as unknown as Record<string, string>);
+    // config.DATABASE_URL — typed, validated
+  },
+};
+```
+
+## Vercel Edge Functions
+
+```ts title="lib/env.ts"
+import { createEnv } from "@justwant/env/edge";
+import { z } from "zod";
+
+export const env = createEnv({
+  vars: {
+    KV_URL: z.string().url(),
+    NEXT_PUBLIC_APP_URL: z.string().url(),
+  },
+  clientPrefix: "NEXT_PUBLIC_",
+});
+```
+
+Because Next.js replaces `process.env` at build time for edge routes, this works without additional configuration.
+
+## Differences from the Node/Bun build
+
+| Feature | Node/Bun | Edge |
+|---------|----------|------|
+| `.env` file loading | Yes | No |
+| `watch` / `onReload` | Yes | No |
+| `process.env` | Yes | Yes (when available) |
+| Inline `sources.processEnv` object | Yes | Yes |
+| Variable expansion | Yes | Yes |
+| Groups | Yes | Yes |
+| Validation | Yes | Yes |
+
+**Note**: `watch: true` is silently ignored in the edge build — no error is thrown.

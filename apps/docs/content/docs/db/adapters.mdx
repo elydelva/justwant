@@ -1,0 +1,61 @@
+---
+title: Which adapter?
+description: Choose between Drizzle, Prisma, and Waddler based on your stack and database.
+icon: MessageCircleQuestionMark
+---
+
+## Available adapters
+
+| Adapter | Import | Databases |
+|---------|--------|-----------|
+| [Drizzle](/docs/db/drizzle) | `@justwant/db/drizzle` | PostgreSQL, MySQL, SQLite, Bun SQLite |
+| [Prisma](/docs/db/prisma) | `@justwant/db/prisma` | Any Prisma provider |
+| [Waddler](/docs/db/waddler) | `@justwant/db/waddler` + driver | Bun SQLite, PostgreSQL, Neon, Turso, Cloudflare D1 |
+
+## Comparison
+
+| | Drizzle | Prisma | Waddler |
+|--|---------|--------|---------|
+| **Type safety** | Column-level | Model-level | Contract-level |
+| **Schema** | Code-first | Schema file | None (contract only) |
+| **Migrations** | `drizzle-kit` | `prisma migrate` | Manual / `createTable` |
+| **DDL helpers** | No | No | Yes (`createTable`, `exist`, `drop`) |
+| **Safe variants** | No | No | Yes (`createSafe`, `updateSafe`) |
+| **Serverless** | Yes | Yes | Yes |
+| **Edge (D1, Turso)** | Partial | No | Yes |
+
+## When to use Drizzle
+
+You already use Drizzle, or you want the closest integration with the SQL schema — column-level mapping gives you full control over the query layer. Best for teams comfortable writing Drizzle migrations.
+
+```ts
+import { createDrizzleAdapter } from "@justwant/db/drizzle";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import { Database } from "bun:sqlite";
+
+export const adapter = createDrizzleAdapter(drizzle(new Database("app.db")), { dialect: "sqlite" });
+```
+
+## When to use Prisma
+
+You already use Prisma and want `@justwant/db`'s uniform `MappedTable` interface on top of your existing Prisma client. No additional schema tooling required.
+
+```ts
+import { createPrismaAdapter } from "@justwant/db/prisma";
+import { PrismaClient } from "@prisma/client";
+
+export const adapter = createPrismaAdapter(new PrismaClient());
+```
+
+## When to use Waddler
+
+You want a lightweight, schema-less setup — no ORM, no migration files. Waddler lets the contract drive everything: `createTable` generates DDL from the contract, and `createSafe`/`updateSafe` return field-level validation errors instead of throwing. Best for greenfield projects, edge deployments, and apps that want a single source of truth in the contract.
+
+```ts
+import { createDb } from "@justwant/db/waddler";
+import { createBunSqliteAdapter } from "@justwant/db/bun-sqlite";
+
+export const db = createDb(createBunSqliteAdapter({ connection: "app.db" }));
+```
+
+Waddler drivers: `bun-sqlite`, `pg`, `neon`, `turso`, `cloudflare-d1`.

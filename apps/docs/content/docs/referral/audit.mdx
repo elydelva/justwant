@@ -1,0 +1,101 @@
+---
+title: Audit
+description: Log every successful referral for a complete audit trail.
+icon: ClipboardList
+---
+
+## Overview
+
+`auditPlugin` fires after each referral is persisted and calls a user-supplied `log` function with the full referral details. Use it to write an immutable audit log to a database table, an append-only store, or any external sink.
+
+## Import
+
+```ts
+import { auditPlugin } from "@justwant/referral";
+```
+
+## Setup
+
+Pass `auditPlugin` in the `plugins` array when creating the service:
+
+```ts
+import { createReferralService, auditPlugin } from "@justwant/referral";
+
+const referral = createReferralService({
+  repo: myReferralRepo,
+  plugins: [
+    auditPlugin({
+      audit: {
+        async log(entry) {
+          await db.insert("referral_audit").values(entry);
+        },
+      },
+    }),
+  ],
+});
+```
+
+## Options
+
+`auditPlugin` accepts an `AuditPluginOptions` object:
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `audit.log` | `(entry: ReferralAuditEntry) => void \| Promise<void>` | Yes | Called after each successful referral with the full audit entry |
+
+### ReferralAuditEntry
+
+The object passed to `audit.log` on every referral:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `offerKey` | `string` | Offer key for this referral |
+| `referrerType` | `string` | Actor type of the referrer |
+| `referrerId` | `string` | Actor id of the referrer |
+| `recipientType` | `string` | Actor type of the recipient |
+| `recipientId` | `string` | Actor id of the recipient |
+| `referralId` | `string` | The persisted referral id |
+| `referralCode` | `string \| undefined` | Code used, if any |
+| `createdAt` | `Date` | When the referral was created |
+
+## Custom plugin
+
+Implement `ReferralPlugin` directly to add your own hooks:
+
+```ts
+import type { ReferralPlugin, Actor, Referral } from "@justwant/referral";
+
+const myPlugin: ReferralPlugin = {
+  init(ctx) {
+    // Called once at service creation.
+  },
+  async beforeRefer(ctx, next) {
+    // ctx: { offerKey, referrer, recipient, metadata? }
+    // Call next() to continue, or throw to block the referral.
+    return next();
+  },
+  async afterRefer(ctx) {
+    // ctx: { referral }
+    // Side-effects after the referral is persisted.
+  },
+  async onError(ctx) {
+    // ctx: { offerKey, error }
+  },
+};
+```
+
+| Hook | When | Use for |
+|------|------|---------|
+| `init` | Service creation | Set up shared context |
+| `beforeRefer` | Before persisting | Validate, enrich metadata, block referral |
+| `afterRefer` | After persisting | Side-effects (audit, webhooks, rewards) |
+| `onError` | On any error | Error reporting |
+
+When multiple plugins are registered, `beforeRefer` is applied last-to-first (innermost first) and `afterRefer` is applied first-to-last:
+
+```ts
+const referral = createReferralService({
+  repo,
+  plugins: [auditPlugin({ audit }), maxReferralsPlugin(10)],
+});
+```

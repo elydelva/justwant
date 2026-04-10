@@ -1,0 +1,98 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/storage.
+icon: BookOpen
+---
+
+## Core (main entry)
+
+Import: `@justwant/storage`
+
+### `defineBucket(config)`
+
+Creates a logical bucket from a source.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source` | `StorageSource` | A source created by `defineXxxSource` |
+| `name` | `string` | Bucket name (S3/R2 bucket name, Supabase bucket name, or local subfolder) |
+
+Returns `StorageBucket`.
+
+### `createStorageService(options)`
+
+Creates a `StorageService` with buckets and optional plugins.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `buckets` | `StorageBucket[]` | — | All allowed buckets |
+| `defaultBucket` | `StorageBucket` | — | Used when no `bucket` is specified on an operation |
+| `plugins` | `StoragePlugin[]` | `[]` | Plugin pipeline |
+| `onError` | `"throw" \| "silent"` | `"silent"` | Error mode |
+
+### `StorageService` methods
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `upload` | `(params: UploadParams) => Promise<UploadResult>` | Upload a file |
+| `download` | `(params: DownloadParams) => Promise<Buffer>` | Download a file |
+| `delete` | `(params: DeleteParams) => Promise<void>` | Delete a file |
+| `getUrl` | `(params: GetUrlParams) => Promise<string>` | Get a public URL |
+| `getSignedUrl` | `(params: GetSignedUrlParams) => Promise<string>` | Get a signed URL |
+| `exists` | `(params: ExistsParams) => Promise<boolean>` | Check if a file exists |
+
+## `UploadParams`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `path` | `string` | Yes | File path within the bucket |
+| `data` | `Buffer \| Blob \| ReadableStream \| string` | Yes | File content |
+| `bucket` | `StorageBucket` | No | Override default bucket |
+| `options.contentType` | `string` | No | MIME type |
+| `options.metadata` | `Record<string, string>` | No | Custom metadata (S3/R2) |
+
+## `UploadResult`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `path` | `string` | Final stored path |
+| `url` | `string \| undefined` | Public URL (if available) |
+| `size` | `number \| undefined` | File size in bytes |
+| `etag` | `string \| undefined` | ETag (S3/R2) |
+
+## `GetSignedUrlParams`
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `string` | — | File path |
+| `bucket` | `StorageBucket` | — | Override default bucket |
+| `options.expiresIn` | `number` | `3600` | URL expiry in seconds |
+| `options.method` | `"GET" \| "PUT"` | `"GET"` | HTTP method for the presigned URL |
+
+## Adapters
+
+| Subpath | Factory | Config type |
+|---------|---------|-------------|
+| `/local` | `defineLocalSource` | `DefineLocalSourceConfig` |
+| `/s3` | `defineS3Source` | `DefineS3SourceConfig` |
+| `/r2` | `defineR2Source` | `DefineR2SourceConfig` |
+| `/vercel-blob` | `defineVercelBlobSource` | `DefineVercelBlobSourceConfig` |
+| `/supabase-storage` | `defineSupabaseStorageSource` | `DefineSupabaseStorageSourceConfig` |
+
+## Plugins
+
+| Subpath | Factory | Description |
+|---------|---------|-------------|
+| `/plugins/encryption` | `encryptionPlugin` | AES-256-GCM encryption |
+| `/plugins/rename` | `renamePlugin` | Path sanitization and naming strategies |
+| `/plugins/watermark` | `watermarkPlugin` | Image URL transform params |
+| `/plugins/multiBucket` | `multiBucketPlugin` | Route uploads across buckets |
+| `/plugins/imageTransform` | `imageTransformPlugin` | Resize/convert with sharp |
+| `/plugins/signedUrl` | `signedUrlPlugin` | Override URL generation |
+
+## Error types
+
+| Export | Description |
+|--------|-------------|
+| `StorageError` | Base error — `code`, `message`, `metadata` |
+| `StorageAdapterError` | Connection-level adapter failure — `code: "ADAPTER"` |

@@ -1,0 +1,75 @@
+---
+title: Error handling
+description: Control what happens when a notification fails with onError.
+icon: CircleAlert
+---
+
+## Overview
+
+`createNotify` accepts an `onError` option that controls behavior when a send fails or a template/canal is missing.
+
+```ts
+type OnError = "throw" | "silent";
+```
+
+The default is `"throw"`.
+
+## Modes
+
+### `"throw"` (default)
+
+Any error — missing template, missing canal, missing template version, or adapter failure — throws immediately. Use this when notifications are critical and failures should surface.
+
+```ts
+const notify = createNotify({
+  templates: [welcomeTemplate],
+  canals: { email: emailCanal },
+  onError: "throw",
+});
+
+// Throws CanalNotFoundError if "sms" is not registered
+await notify.send({ templateId: "welcome", canalId: "sms", args });
+```
+
+### `"silent"`
+
+Errors are swallowed and `send` returns without throwing. Use this for non-critical notifications (activity digests, marketing emails) where a delivery failure should not break the main flow.
+
+```ts
+const notify = createNotify({
+  templates: [weeklyDigestTemplate],
+  canals: { email: emailCanal },
+  onError: "silent",
+});
+
+// Returns without throwing if the canal or template version is missing
+await notify.send({ templateId: "weekly-digest", canalId: "sms", args });
+```
+
+## Error types
+
+| Error | When |
+|-------|------|
+| `TemplateNotFoundError` | No template registered with that `templateId` |
+| `CanalNotFoundError` | No canal registered with that `canalId` |
+| `TemplateVersionNotFoundError` | Template exists but has no factory for the canal's kind |
+
+```ts
+import {
+  TemplateNotFoundError,
+  CanalNotFoundError,
+  TemplateVersionNotFoundError,
+} from "@justwant/notify";
+
+try {
+  await notify.send({ templateId: "welcome", canalId: "email", args });
+} catch (err) {
+  if (err instanceof CanalNotFoundError) {
+    console.error("Canal not configured:", err.canalId);
+  } else if (err instanceof TemplateVersionNotFoundError) {
+    console.error("No email version for template:", err.templateId);
+  } else {
+    throw err;
+  }
+}
+```

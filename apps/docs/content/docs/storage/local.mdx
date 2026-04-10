@@ -1,0 +1,54 @@
+---
+title: Local Adapter
+description: Store files on the local filesystem for development and testing.
+icon: FolderOpen
+---
+
+## Overview
+
+The local adapter writes files to the local filesystem. It is intended for **development and testing** — no cloud credentials or external services required. Files are organized as `rootDir/bucketName/path`.
+
+## Import
+
+```ts
+import { defineLocalSource } from "@justwant/storage/local";
+```
+
+## Setup
+
+```ts title="lib/storage.ts"
+import { defineLocalSource } from "@justwant/storage/local";
+import { defineBucket, createStorageService } from "@justwant/storage";
+
+const source = defineLocalSource({ rootDir: "./uploads" });
+
+const bucket = defineBucket({ source, name: "files" });
+
+export const storage = createStorageService({
+  buckets: [bucket],
+  defaultBucket: bucket,
+});
+```
+
+Files will be written to `./uploads/files/<path>` relative to the working directory.
+
+## Configuration
+
+### `DefineLocalSourceConfig`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `rootDir` | `string` | Root directory for all file storage (relative to `process.cwd()`) |
+
+## Behavior
+
+| Operation | Behavior |
+|-----------|---------|
+| `upload` | Creates parent directories automatically; overwrites existing files |
+| `download` | Reads the file at `rootDir/bucketName/path` |
+| `delete` | Removes the file with `unlink` |
+| `getUrl` | Returns a `file://` URL (not suitable for serving over HTTP) |
+| `getSignedUrl` | Same as `getUrl` for local |
+| `exists` | Uses `existsSync` |
+
+**Note**: The local adapter does not serve files over HTTP. For development HTTP serving, use a static file server pointed at `rootDir`.

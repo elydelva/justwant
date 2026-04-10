@@ -1,0 +1,89 @@
+---
+title: Flags
+description: defineFlag — attach rules to a FeatureDef and set the evaluation strategy.
+icon: ToggleRight
+---
+
+## Overview
+
+A flag binds a `FeatureDef` to one or more rules and controls how those rules are combined.
+
+## `defineFlag`
+
+```ts
+import { defineFlag } from "@justwant/flag";
+import { defineFeature } from "@justwant/feature";
+
+defineFlag(feature, {
+  default?: boolean,
+  rules: RuleDef[],
+  strategy?: "any" | "all",
+})
+```
+
+## Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `default` | `boolean` | `undefined` | Fallback value when all rules fail to produce a result (e.g. no rules defined). |
+| `rules` | `RuleDef[]` | — | List of rules to evaluate. At least one is required. |
+| `strategy` | `"any" \| "all"` | `"any"` | How to combine rule results. |
+
+## Strategy
+
+### `"any"` (default)
+
+The flag is enabled if **at least one** rule returns `true`. Equivalent to a logical OR.
+
+```ts
+const flag = defineFlag(feature, {
+  rules: [betaRule, adminRule],
+  strategy: "any", // enabled if betaRule OR adminRule is true
+});
+```
+
+### `"all"`
+
+The flag is enabled only if **every** rule returns `true`. Equivalent to a logical AND.
+
+```ts
+const flag = defineFlag(feature, {
+  rules: [betaRule, regionRule],
+  strategy: "all", // enabled if betaRule AND regionRule are both true
+});
+```
+
+## Example: multi-rule flag
+
+```ts title="lib/flags.ts"
+import { defineFlag, defineRule } from "@justwant/flag";
+import { defineFeature } from "@justwant/feature";
+import * as v from "valibot";
+
+const betaRule = defineRule({
+  name: "beta-enroll",
+  config: v.object({ enabled: v.boolean() }),
+  defaultConfig: { enabled: false },
+  logic: ({ config }) => config.enabled,
+});
+
+const regionRule = defineRule({
+  name: "region-check",
+  context: v.object({ region: v.string() }),
+  logic: ({ context }) => context.region === "eu-west",
+});
+
+const feature = defineFeature({ name: "new-dashboard" });
+
+export const newDashboardFlag = defineFlag(feature, {
+  default: false,
+  rules: [betaRule, regionRule],
+  strategy: "all", // user must be in beta AND in eu-west
+});
+```
+
+## `default` value
+
+The `default` is used as the fallback if the evaluation short-circuits (e.g. no rules match or evaluation throws). This is distinct from each rule's `defaultConfig`, which is the fallback for the remote config object itself.
+
+**Important**: If `default` is `undefined` and all rules return `false`, the flag evaluates to `false`.

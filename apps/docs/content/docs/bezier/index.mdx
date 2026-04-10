@@ -1,0 +1,66 @@
+---
+title: Introduction
+description: Cubic Bézier curves for animation easing, rollout diffusion, and smooth value interpolation.
+icon: Spline
+---
+
+## What is @justwant/bezier?
+
+`@justwant/bezier` is a **zero-dependency cubic Bézier utility** for TypeScript. It computes smooth `[0,1] → [0,1]` curves defined by two control points, matching the CSS `cubic-bezier()` convention. Use it to drive animation easing, feature rollout diffusion, or any scenario where you need a mathematically smooth progression.
+
+**Use it when** you need to:
+- Apply CSS-equivalent easing curves (`easeIn`, `easeOut`, `easeInOut`) outside the browser
+- Control the adoption shape of a feature rollout over time
+- Interpolate any value along a smooth, non-linear path
+- Compose custom curves from scratch with `createBezierCurve`
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **`createBezierCurve`** | Create a cubic Bézier from four control points; evaluates `y` at any `t ∈ [0,1]` |
+| **Classic presets** | `linear`, `easeIn`, `easeOut`, `easeInOut` — CSS-equivalent curves |
+| **Animation presets** | Design-oriented aliases in `@justwant/bezier/animation` |
+| **Feature rollout presets** | `slowRollout`, `fastRollout`, `gradual` in `@justwant/bezier/feature` |
+| **Typed errors** | `InvalidBezierParamsError` with the offending params attached |
+| **TypeScript-first** | Full types exported; no runtime overhead |
+
+## How it works
+
+A cubic Bézier curve is defined by four points: `P0 = (0,0)`, `P1 = (p1x, p1y)`, `P2 = (p2x, p2y)`, `P3 = (1,1)`. The formula is:
+
+```
+B(t) = (1-t)³·P0 + 3(1-t)²t·P1 + 3(1-t)t²·P2 + t³·P3
+```
+
+`createBezierCurve` validates that all control point coordinates are within `[0,1]`, then returns a `BezierCurve` object with a single `at(t)` method. The result is always clamped to `[0,1]`.
+
+## Use cases
+
+### Animation easing
+
+Pass `t` as elapsed time normalized to `[0,1]` and use the returned `y` to drive opacity, position, or scale.
+
+```ts
+import { easeInOut } from "@justwant/bezier/classic";
+
+const progress = easeInOut.at(0.5); // ~0.5, but smoothed at both ends
+element.style.opacity = String(progress);
+```
+
+### Rollout diffusion
+
+Use the feature presets with `@justwant/flag`'s `diffusionBezier` to control how a feature rolls out over time.
+
+```ts
+import { slowRollout } from "@justwant/bezier/feature";
+
+// At 20% through the rollout window, only ~5% of users are enabled
+const threshold = slowRollout.at(0.2);
+```
+
+## Next steps
+
+- [Installation](/docs/bezier/installation) — Install the package
+- [Basic Usage](/docs/bezier/basic-usage) — `createBezierCurve`, evaluation, and presets
+- [API Reference](/docs/bezier/api) — Full type and function reference

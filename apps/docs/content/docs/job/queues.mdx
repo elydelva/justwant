@@ -1,0 +1,142 @@
+---
+title: Queues
+description: Queue management — pause, resume, list, drain, and inspect queue status.
+icon: ListOrdered
+---
+
+## Overview
+
+A **queue** in `@justwant/job` is the runtime representation of a `QueueDefinition`. After `createJob` starts, each queue is registered in the engine and tracked internally. You can pause, resume, inspect, and drain queues at runtime.
+
+## Pause and resume
+
+```ts
+import { createJob, defineJob, defineQueue } from "@justwant/job";
+
+const processPayment = defineJob({ name: "process-payment" });
+const paymentQueue = defineQueue({ job: processPayment, queue: "payments" });
+
+const jobs = createJob({ engine, queues: [paymentQueue] });
+await jobs.start();
+
+// Pause — no new jobs will be picked up by workers
+await jobs.pauseQueue(paymentQueue);
+
+// Resume — workers resume picking up jobs
+await jobs.resumeQueue(paymentQueue);
+```
+
+You can also reference a queue by string id:
+
+```ts
+await jobs.pauseQueue("payments");
+await jobs.resumeQueue("payments");
+```
+
+**Note**: `pauseQueue` / `resumeQueue` require the engine to support them (`engine.capabilities.supports.pauseQueue`). BullMQ and the node engine support it natively. If the engine does not, provide a `repo` with `setPaused` — the service will use the repository as a fallback.
+
+## List queues
+
+```ts
+const queues = await jobs.listQueues();
+
+for (const q of queues) {
+  console.log(q.id, q.status, q.cron, q.lastRun, q.nextRun);
+}
+```
+
+### QueueStatus
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Queue identifier |
+| `cron` | `string \| undefined` | Cron expression if scheduled |
+| `lastRun` | `Date \| undefined` | Last execution time |
+| `nextRun` | `Date \| undefined` | Next scheduled time |
+| `status` | `"active" \| "paused" \| "failed" \| "unknown"` | Current queue state |
+
+## Stats
+
+```ts
+const stats = await jobs.getStats(paymentQueue);
+
+console.log(stats.runs);           // total executions
+console.log(stats.failures);       // total failures
+console.log(stats.avgDurationMs);  // average duration (if available)
+console.log(stats.lastRun);        // last execution time
+console.log(stats.nextRun);        // next scheduled execution
+```
+
+## Queue metadata (BullMQ)
+
+When the engine supports it (`getQueueMetadata`), you can retrieve richer metadata:
+
+```ts
+if (jobs.supports("getQueueMetadata")) {
+  const meta = await jobs.getQueueMetadata!("payments");
+  console.log(meta.paused, meta.lag, meta.parallelism);
+}
+```
+
+## Job counts (BullMQ)
+
+```ts
+if (jobs.supports("getJobCounts")) {
+  const counts = await jobs.getJobCounts!("payments");
+  console.log(counts.waiting, counts.active, counts.delayed, counts.failed, counts.completed);
+}
+```
+
+## Drain a queue
+
+Remove all pending jobs from a queue:
+
+```ts
+if (jobs.supports("drain")) {
+  await jobs.drain!("payments");
+  // or drain only failed jobs:
+  await jobs.drain!("payments", { status: "failed" });
+}
+```
+
+## Instance management (BullMQ)
+
+BullMQ supports listing and managing individual job instances:
+
+```ts
+// List all instances
+const instances = await jobs.listInstances!("payments");
+
+// Filter by status
+const failed = await jobs.listInstances!("payments", "failed");
+
+// Get a single instance
+const instance = await jobs.getInstance!("payments", "job-id-123");
+
+// Cancel an instance
+await jobs.cancelInstance!("payments", "job-id-123");
+
+// Retry a failed instance
+await jobs.retryInstance!("payments", "job-id-123");
+```
+
+## Capability check
+
+Use `jobs.supports(operation)` before calling optional methods:
+
+```ts
+if (jobs.supports("pauseQueue")) {
+  await jobs.pauseQueue(paymentQueue);
+}
+```
+
+| Operation | BullMQ | QStash | pg | node |
+|-----------|--------|--------|----|------|
+| `scheduling` | Yes | Yes | Yes | Yes |
+| `manualTrigger` | Yes | Yes | Yes | Yes |
+| `retry` | Yes | Yes | No | No |
+| `pauseQueue` | Yes | No | No | Yes |
+| `resumeQueue` | Yes | No | No | Yes |
+| `listInstances` | Yes | No | No | No |
+| `drain` | Yes | Yes | No | No |
+| `getJobCounts` | Yes | No | No | No |

@@ -1,0 +1,47 @@
+---
+title: Encrypt
+description: Encrypt all cached values at rest using AES-256-GCM.
+icon: Lock
+---
+
+Encrypts every cached value using AES-256-GCM via `@justwant/crypto`. Values are encrypted before being written to the adapter and decrypted on read. The adapter only ever stores ciphertext.
+
+## Setup
+
+```ts
+import { encryptPlugin } from "@justwant/cache/plugins/encrypt";
+import { deriveKey } from "@justwant/crypto/derive-key";
+import { createCache } from "@justwant/cache";
+import { redisAdapter } from "@justwant/cache/adapters/redis";
+
+const key = deriveKey(process.env.CACHE_SECRET!, "salt", "cache", 32);
+
+const cache = createCache({
+  adapter: redisAdapter({ redis }),
+  plugins: [encryptPlugin({ key })],
+});
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `key` | `Uint8Array` | Yes | 32-byte encryption key |
+
+## Deriving a key
+
+`deriveKey` from `@justwant/crypto/derive-key` uses HKDF-SHA256 and returns a `Uint8Array`:
+
+```ts
+import { deriveKey } from "@justwant/crypto/derive-key";
+
+// deriveKey(secret, salt, info, length)
+const key = deriveKey(process.env.CACHE_SECRET!, "salt", "cache", 32);
+```
+
+The `info` parameter scopes the key — use a different value per use case (e.g. `"cache"`, `"session"`) to get distinct keys from the same secret.
+
+## Notes
+
+- The plugin replaces the serializer. Do not combine with `serializePlugin` — they both call `context.setSerializer`.
+- `decrypt` returns `null` if the ciphertext is invalid. The plugin propagates that as a cache miss.

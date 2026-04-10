@@ -1,0 +1,50 @@
+---
+title: Introduction
+description: Unified key-value cache with interchangeable adapters, TTL, tag invalidation, and plugins.
+icon: Database
+---
+
+## What is @justwant/cache?
+
+`@justwant/cache` is a **headless cache layer** for TypeScript applications. It provides a single, consistent API for caching values regardless of the storage backend — memory, Redis, Upstash, Cloudflare KV, or Vercel KV.
+
+**Use it when** you need to:
+- Cache API responses, computed values, or session state
+- Swap storage backends without changing application code
+- Invalidate groups of entries using tags
+- Extend behavior via plugins (namespace, encrypt, stats, stale-while-revalidate)
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Adapter pattern** | Swap storage — memory, Redis, Upstash, CF KV, Vercel KV |
+| **TTL** | String format (`5m`, `1h`) or number (milliseconds) |
+| **Tags** | Group entries and invalidate by tag (`invalidateTag("user:123")`) |
+| **wrap** | Cache-aside: compute on miss, cache on hit |
+| **Namespace** | Create isolated sub-caches from a shared adapter |
+| **Plugins** | Namespace, serialize, encrypt, stats, stale, dedupe, prefetch |
+| **Tiered** | L1 (memory) + L2 (Redis) with promotion and write-through |
+
+## How it works
+
+1. **Create a cache** with `createCache({ adapter, plugins })`. The adapter implements `CacheAdapter`.
+2. **Set values** with `cache.set(key, value, { ttl, tags })`.
+3. **Get values** with `cache.get(key)` or `cache.wrap(key, fn)` for cache-aside.
+4. **Invalidate** by key (`cache.delete`) or by tag (`cache.invalidateTag`).
+
+## Core principles
+
+- **Pure core** — The core has no knowledge of Redis or any runtime. It works with `CacheAdapter` interfaces that you inject.
+- **Interface-first** — Core defines `CacheAdapter`; adapters implement it.
+- **Zero vendor** — No required SaaS. Self-host with any compatible adapter.
+- **Framework-agnostic** — Works in Node.js, Bun, Deno, Edge, and Workers.
+
+## Next steps
+
+- [Installation](/docs/cache/installation) — Install and create your first cache
+- [Basic Usage](/docs/cache/basic-usage) — get, set, wrap, delete, namespace
+- [TTL](/docs/cache/ttl) — Time-to-live format
+- [Tags](/docs/cache/tags) — Tag-based invalidation
+- [Adapters](/docs/cache/adapters) — Available storage backends
+- [Plugins](/docs/cache/plugins) — Available plugins

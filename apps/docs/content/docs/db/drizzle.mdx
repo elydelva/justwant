@@ -1,0 +1,179 @@
+---
+title: Drizzle Adapter
+description: Use @justwant/db with Drizzle ORM for PostgreSQL, MySQL, and SQLite.
+icon: Zap
+---
+
+## Overview
+
+The Drizzle adapter wraps any Drizzle client and adds the `MappedTable` interface on top. It supports PostgreSQL, MySQL, SQLite (including Bun SQLite), and any other Drizzle-compatible database.
+
+## Setup
+
+```ts title="lib/db.ts"
+import { createDrizzleAdapter } from "@justwant/db/drizzle";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import { Database } from "bun:sqlite";
+
+const sqlite = new Database("app.db");
+export const adapter = createDrizzleAdapter(drizzle(sqlite), { dialect: "sqlite" });
+```
+
+**Note**: The dialect is usually inferred automatically, but passing `dialect` explicitly is recommended when using Bun SQLite or other drivers that may not be detected reliably.
+
+## defineMappedTable
+
+`defineMappedTable` creates a table definition before binding it to a client. This is useful when you want to define the schema separately from the adapter (e.g. in a shared module).
+
+```ts title="tables/posts.ts"
+import { defineMappedTable } from "@justwant/db/drizzle/defineMappedTable";
+import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { postContract } from "@/contracts/post";
+
+const postsTable = pgTable("posts", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  authorId: text("author_id").notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const postsDef = defineMappedTable(postsTable, postContract, {
+  id: postsTable.id,
+  title: postsTable.title,
+  body: postsTable.body,
+  authorId: postsTable.authorId,
+  createdAt: postsTable.createdAt,
+  deletedAt: postsTable.deletedAt,
+});
+```
+
+The returned `DrizzleMappedTable` has no client injected yet. Calling any method before `createDrizzleAdapter` throws an error. Use `adapter.defineTable` directly if you want a fully bound table immediately.
+
+## createDrizzleAdapter options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `dialect` | `"pg" \| "mysql" \| "sqlite"` | auto | Override dialect detection |
+| `debug` | `boolean` | `false` | Log queries to console |
+| `onQuery` | `(sql, params) => void` | — | Query hook for logging/tracing |
+
+## buildWhere
+
+Build a Drizzle `WHERE` clause from a partial contract object.
+
+```ts
+import { buildWhere } from "@justwant/db/drizzle/buildWhere";
+import { db } from "drizzle-orm";
+
+const condition = buildWhere(mapping, { authorId: "usr_01" });
+const rows = await db.select().from(postsTable).where(condition);
+```
+
+## buildOrderBy
+
+Build a Drizzle `ORDER BY` expression from a sort specification.
+
+```ts
+import { buildOrderBy } from "@justwant/db/drizzle/buildOrderBy";
+
+const order = buildOrderBy(mapping, [{ field: "createdAt", direction: "desc" }]);
+const rows = await db.select().from(postsTable).orderBy(...order);
+```
+
+## buildPagination
+
+Build `LIMIT` and `OFFSET` values for pagination.
+
+```ts
+import { buildPagination } from "@justwant/db/drizzle/buildPagination";
+
+const { limit, offset } = buildPagination({ page: 2, pageSize: 20 });
+const rows = await db.select().from(postsTable).limit(limit).offset(offset);
+```
+
+## upsert
+
+Insert or update on conflict.
+
+```ts
+import { upsert } from "@justwant/db/drizzle/upsert";
+
+await upsert(db, postsTable, data, { conflictColumn: postsTable.id });
+```
+
+## bulkInsert
+
+Insert multiple rows efficiently.
+
+```ts
+import { bulkInsert } from "@justwant/db/drizzle/bulkInsert";
+
+await bulkInsert(db, postsTable, [
+  { id: "p1", title: "Hello", body: "World", authorId: "usr_01", createdAt: new Date() },
+  { id: "p2", title: "Bye", body: "World", authorId: "usr_01", createdAt: new Date() },
+]);
+```
+
+## Soft delete
+
+By default the adapter treats `deletedAt` as the soft-delete column. Rows with a non-null `deletedAt` are excluded from all `find*` queries.
+
+To use a different column name:
+
+```ts
+adapter.defineTable(postsTable, postContract, mapping, {
+  softDeleteColumn: "archivedAt",
+});
+```
+
+To disable soft delete entirely:
+
+```ts
+adapter.defineTable(postsTable, postContract, mapping, {
+  softDeleteColumn: null,
+});
+```
+
+## Full example
+
+```ts title="lib/posts.ts"
+import { createDrizzleAdapter } from "@justwant/db/drizzle";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { defineContract, field } from "@justwant/contract";
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle(pool);
+const adapter = createDrizzleAdapter(db);
+
+const postsTable = pgTable("posts", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+const postContract = defineContract({
+  id: field.string(),
+  title: field.string(),
+  createdAt: field.string(),
+  deletedAt: field.string().optional(),
+});
+
+const posts = adapter.defineTable(postsTable, postContract, {
+  id: postsTable.id,
+  title: postsTable.title,
+  createdAt: postsTable.createdAt,
+  deletedAt: postsTable.deletedAt,
+});
+
+// Usage
+const post = await posts.create({ title: "Hello", createdAt: new Date().toISOString() });
+const found = await posts.findById(post.id);
+await posts.update(post.id, { title: "Updated" });
+await posts.delete(post.id);   // soft delete
+await posts.hardDelete(post.id); // permanent
+```

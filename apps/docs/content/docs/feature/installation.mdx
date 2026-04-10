@@ -1,0 +1,67 @@
+---
+title: Installation
+description: Install @justwant/feature and define your first feature.
+icon: Download
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/feature
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/feature
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/feature
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/feature
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Define a feature
+
+Create a file that exports your feature definitions so they can be shared across packages.
+
+```ts title="lib/features.ts"
+import { defineFeature } from "@justwant/feature";
+
+export const billing = defineFeature({ name: "billing" });
+export const analytics = defineFeature({ name: "analytics" });
+```
+
+Pass the result to any `@justwant` package that accepts a `FeatureDef`:
+
+```ts title="lib/flags.ts"
+import { defineFlag } from "@justwant/flag";
+import { billing } from "./features";
+
+export const billingFlag = defineFlag(billing, {
+  default: false,
+  rules: [],
+});
+```

@@ -1,0 +1,32 @@
+---
+title: Stale
+description: Stale-while-revalidate — currently a stub.
+icon: Clock
+---
+
+<Callout type="warn">
+  `stalePlugin` is currently a stub. It passes values through without implementing stale-while-revalidate behavior. The `staleTtl` option is accepted but has no effect.
+</Callout>
+
+Intended to serve stale cached values while revalidating in the background, extending the effective TTL beyond the adapter's expiry. The API is stable and you can add it to your pipeline today — the behavior will be filled in when the implementation lands.
+
+## Setup
+
+```ts
+import { stalePlugin } from "@justwant/cache/plugins/stale";
+import { createCache } from "@justwant/cache";
+import { redisAdapter } from "@justwant/cache/adapters/redis";
+
+const cache = createCache({
+  adapter: redisAdapter({ redis }),
+  plugins: [stalePlugin({ staleTtl: "1m" })],
+});
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `staleTtl` | `string \| number` | Yes | How long after expiry to consider a value stale (no effect yet) |
+
+TTL strings follow the same format as the rest of the cache package (e.g. `"1m"`, `"30s"`, `3600`).

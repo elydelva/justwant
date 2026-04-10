@@ -1,0 +1,71 @@
+---
+title: Introduction
+description: Multi-tenant organisation entity with integrated membership and permission — all through a single façade service.
+icon: Building2
+---
+
+## What is @justwant/organisation?
+
+`@justwant/organisation` is a **façade package** that wires together `@justwant/membership` and `@justwant/permission` behind a single `OrganisationApi`. It handles the full lifecycle of an organisation: creation, CRUD, member management, role assignment, and permission checks.
+
+**Use it when** you need to:
+- Model tenants, teams, workspaces, or any named group with members and roles
+- Enforce who can update or delete an organisation (permission-gated operations)
+- Support multiple organisation types in the same application (e.g. `team` and `workspace`)
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **`defineOrganisation()`** | Binds a name, a `RealmDef` (permission), and a `GroupDef` (membership) |
+| **`createStandardOrganisationMembership()`** | Generates the `GroupDef` for an org type |
+| **`createStandardOrganisationPermission()`** | Generates a `RealmDef` with standard CRUD + member permissions and four roles |
+| **`createOrganisationService()`** | Single façade API: create, find, update, delete, addMember, removeMember, can, assignRole |
+| **Multi-type** | Register multiple org definitions — service routes by `organisation.type` |
+| **Slug uniqueness** | `create` and `update` guard against duplicate slugs |
+
+## Architecture
+
+```
+createOrganisationService
+├── repo          (OrganisationsRepo — your database)
+├── deps.membership  (MembershipApi from @justwant/membership)
+└── deps.permission  (PermissionApi from @justwant/permission)
+```
+
+`createOrganisationService` orchestrates the three layers but owns no storage itself.
+
+## How it works
+
+1. Define member and group with `createStandardOrganisationMembership`.
+2. Define realm and roles with `createStandardOrganisationPermission`.
+3. Bind them with `defineOrganisation`.
+4. Pass everything to `createOrganisationService` along with your `membership` and `permission` service instances.
+
+```ts
+import {
+  defineOrganisation,
+  createStandardOrganisationMembership,
+  createStandardOrganisationPermission,
+  createOrganisationService,
+} from "@justwant/organisation";
+
+const { group } = createStandardOrganisationMembership({ name: "team", member: User });
+const { realm } = createStandardOrganisationPermission({ name: "team", actor: User });
+const Team = defineOrganisation({ name: "team", realm, group });
+
+const orgs = createOrganisationService({
+  repo: orgRepo,
+  deps: { membership, permission },
+  organisations: [Team],
+});
+```
+
+## Next steps
+
+- [Installation](/docs/organisation/installation)
+- [Basic Usage](/docs/organisation/basic-usage)
+- [defineOrganisation](/docs/organisation/define-organisation)
+- [Membership](/docs/organisation/membership)
+- [Permission](/docs/organisation/permission)
+- [Errors](/docs/organisation/errors)

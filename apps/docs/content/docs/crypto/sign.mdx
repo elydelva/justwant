@@ -1,0 +1,83 @@
+---
+title: Sign
+description: Sign and verify arbitrary payloads with HS256 JWS compact signatures.
+icon: PenTool
+---
+
+## Overview
+
+The `/sign` module provides compact JWS (JSON Web Signature) signing for arbitrary payloads — objects or strings. Unlike JWTs, there are no standard claims (`exp`, `iat`, `sub`). Use it when you need to sign a payload without expiry semantics, such as webhook event bodies.
+
+Internally it uses [jose](https://github.com/panva/jose)'s `CompactSign` and `compactVerify` with HS256.
+
+## Import
+
+```ts
+import { sign, verify } from "@justwant/crypto/sign";
+// Aliases
+import { signMessage, verifySignedMessage } from "@justwant/crypto/sign";
+```
+
+## API
+
+### `sign(payload, secret)`
+
+Signs an object or string with HS256. Returns a compact JWS string (`header.payload.signature`).
+
+```ts
+const token = await sign({ event: "user.created", userId: "123" }, process.env.WEBHOOK_SECRET!);
+```
+
+### `verify<T>(token, secret)`
+
+Verifies the signature of a compact JWS and returns the decoded payload. Returns `null` if the token is invalid or the signature does not match.
+
+```ts
+const payload = await verify<{ event: string; userId: string }>(token, process.env.WEBHOOK_SECRET!);
+if (!payload) {
+  throw new Error("Invalid signature");
+}
+```
+
+## Webhook signing pattern
+
+```ts title="lib/webhooks.ts"
+import { sign, verify } from "@justwant/crypto/sign";
+
+const SECRET = process.env.WEBHOOK_SECRET!;
+
+// Signing: called when dispatching an outgoing webhook
+export async function signWebhookPayload(event: object): Promise<string> {
+  return sign(event, SECRET);
+}
+
+// Verification: called when receiving an incoming webhook
+export async function verifyWebhookSignature(signature: string): Promise<unknown | null> {
+  return verify(signature, SECRET);
+}
+```
+
+```ts title="routes/webhook.ts"
+import { verifyWebhookSignature } from "@/lib/webhooks";
+
+export async function POST(request: Request) {
+  const signature = request.headers.get("x-signature");
+  if (!signature) return new Response("Missing signature", { status: 400 });
+
+  const payload = await verifyWebhookSignature(signature);
+  if (!payload) return new Response("Invalid signature", { status: 401 });
+
+  // Process the verified payload
+  console.log("Received event:", payload);
+  return new Response("OK");
+}
+```
+
+## Aliases
+
+| Alias | Canonical |
+|-------|-----------|
+| `signMessage` | `sign` |
+| `verifySignedMessage` | `verify` |
+
+**Note**: The `/sign` module produces JWS tokens with no expiry. If you need time-bounded tokens with standard JWT claims, use [/jwt](/docs/crypto/jwt) instead.

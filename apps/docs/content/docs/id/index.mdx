@@ -1,0 +1,54 @@
+---
+title: Introduction
+description: Two ID strategies — ULID (time-sortable) and nanoid (short, URL-safe). Subpath-only imports.
+icon: Hash
+---
+
+## What is @justwant/id?
+
+`@justwant/id` provides two ID generation strategies as separate, tree-shakeable subpaths:
+
+| Strategy | Subpath | Algorithm | Format | Use case |
+|----------|---------|-----------|--------|----------|
+| Sortable | `@justwant/id/sortable` | ULID | 26-char base32 | Database primary keys |
+| Short | `@justwant/id/short` | nanoid | 21-char URL-safe | Public IDs, tokens, slugs |
+
+**Note**: There is no root import (`@justwant/id`). Always import from a subpath. This ensures only the algorithm you use is bundled.
+
+## When to use each
+
+### Sortable (`/sortable`)
+
+ULID IDs encode a millisecond timestamp in the first 10 characters and random data in the remaining 16. They are **lexicographically sortable by creation time**, making them ideal as database primary keys:
+
+- Natural sort order in B-tree indexes
+- No additional `createdAt` column needed for basic ordering
+- UUID-compatible format (can be stored in UUID columns)
+
+```ts
+import { createId, getTimestamp } from "@justwant/id/sortable";
+
+const id = createId();  // "01ARYZ6S41TPTWJ6SXKWG5FPFR"
+const ms = getTimestamp(id); // 1469918176385
+```
+
+### Short (`/short`)
+
+nanoid IDs are random, URL-safe, and compact. They are **not time-sortable** and contain no embedded metadata:
+
+- Shorter and more human-friendly
+- Suitable for public-facing URLs, invite codes, tokens
+- Configurable length
+
+```ts
+import { createId } from "@justwant/id/short";
+
+const id = createId();     // "V1StGXR8_Z5jdHi6B-myT"
+const short = createId(8); // "V1StGXR8"
+```
+
+## Next steps
+
+- [Installation](/docs/id/installation) — Install and import
+- [Sortable](/docs/id/sortable) — ULID details and timestamp decoding
+- [Short](/docs/id/short) — nanoid details and custom length

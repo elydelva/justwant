@@ -1,0 +1,13 @@
+{
+  "title": "Bezier",
+  "icon": "Spline",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

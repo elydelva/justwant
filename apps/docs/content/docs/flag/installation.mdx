@@ -1,0 +1,92 @@
+---
+title: Installation
+description: Install @justwant/flag and wire up a minimal flag service.
+icon: Download
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/flag
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/flag
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/flag
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/flag
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Quick setup
+
+The three steps to get a flag running are: define a rule, define a flag, create a service.
+
+```ts title="lib/flags.ts"
+import { defineRule, defineFlag, createFlagService, createMemoryFlagConfigRepo } from "@justwant/flag";
+import { defineFeature } from "@justwant/feature";
+import * as v from "valibot";
+
+// 1. Define a rule
+const betaRule = defineRule({
+  name: "beta-access",
+  config: v.object({ enabled: v.boolean() }),
+  context: v.object({ userId: v.string() }),
+  defaultConfig: { enabled: false },
+  logic: ({ config }) => config.enabled,
+});
+
+// 2. Define a flag
+const betaFeature = defineFeature({ name: "beta" });
+const betaFlag = defineFlag(betaFeature, {
+  default: false,
+  rules: [betaRule],
+});
+
+// 3. Create a service
+const repo = createMemoryFlagConfigRepo(); // swap for a DB-backed repo in production
+export const flagService = createFlagService({ flags: [betaFlag], repo });
+```
+
+## Evaluate a flag
+
+```ts title="app/route.ts"
+import { flagService, betaFlag } from "@/lib/flags";
+
+const enabled = await flagService.evaluate(betaFlag, { userId: "user_123" });
+
+if (enabled) {
+  // show beta feature
+}
+```
+
+## Dev vs. production repos
+
+`createMemoryFlagConfigRepo` stores overrides in memory — ideal for tests and local development. In production, replace it with a database-backed implementation that satisfies the `FlagConfigRepo` interface.
+
+**Note**: See [Config Overrides](/docs/flag/config-overrides) for the full `FlagConfigRepo` interface and remote config patterns.

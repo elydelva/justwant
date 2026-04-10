@@ -1,0 +1,125 @@
+---
+title: Basic Usage
+description: Define buckets, create a storage service, and perform file operations.
+icon: Play
+---
+
+## Overview
+
+Using `@justwant/storage` follows three steps:
+
+1. **Define a source** — which backend to connect to
+2. **Define buckets** — logical named containers within that source
+3. **Create a service** — the entry point for all operations
+
+## Step 1: Define a source
+
+```ts title="lib/storage.ts"
+import { defineLocalSource } from "@justwant/storage/local";
+
+const source = defineLocalSource({ rootDir: "./uploads" });
+```
+
+For production, swap `defineLocalSource` for `defineS3Source`, `defineR2Source`, etc. — the rest of your code does not change. See [Adapters](/docs/storage/adapters).
+
+## Step 2: Define buckets
+
+```ts title="lib/storage.ts"
+import { defineBucket } from "@justwant/storage";
+
+const avatarsBucket = defineBucket({ source, name: "avatars" });
+const documentsBucket = defineBucket({ source, name: "documents" });
+```
+
+For local, `name` becomes a subfolder under `rootDir`. For S3/R2, `name` is the bucket name.
+
+## Step 3: Create the service
+
+```ts title="lib/storage.ts"
+import { createStorageService } from "@justwant/storage";
+
+export const storage = createStorageService({
+  buckets: [avatarsBucket, documentsBucket],
+  defaultBucket: avatarsBucket,
+});
+```
+
+## Upload a file
+
+```ts
+const result = await storage.upload({
+  path: "users/123/avatar.png",
+  data: fileBuffer, // Buffer, Blob, ReadableStream, or string
+  options: {
+    contentType: "image/png",
+  },
+});
+// result.path, result.url, result.size, result.etag
+```
+
+When no `bucket` is specified, the `defaultBucket` is used. To target a specific bucket:
+
+```ts
+await storage.upload({
+  bucket: documentsBucket,
+  path: "contracts/2025/agreement.pdf",
+  data: pdfBuffer,
+  options: { contentType: "application/pdf" },
+});
+```
+
+## Download a file
+
+```ts
+const buffer = await storage.download({ path: "users/123/avatar.png" });
+```
+
+## Delete a file
+
+```ts
+await storage.delete({ path: "users/123/avatar.png" });
+```
+
+## Get a public URL
+
+```ts
+const url = await storage.getUrl({ path: "users/123/avatar.png" });
+// "https://my-bucket.s3.us-east-1.amazonaws.com/users/123/avatar.png"
+```
+
+## Get a signed URL
+
+```ts
+const signedUrl = await storage.getSignedUrl({
+  path: "contracts/2025/agreement.pdf",
+  options: {
+    expiresIn: 3600,  // seconds
+    method: "GET",    // or "PUT" for presigned upload
+  },
+});
+```
+
+## Check if a file exists
+
+```ts
+const exists = await storage.exists({ path: "users/123/avatar.png" });
+```
+
+## Error handling
+
+By default `onError` is `"silent"` — errors are logged and a safe fallback is returned. Set `onError: "throw"` to handle errors explicitly:
+
+```ts
+export const storage = createStorageService({
+  buckets: [avatarsBucket],
+  onError: "throw",
+});
+
+try {
+  await storage.download({ path: "missing.png" });
+} catch (err) {
+  if (err instanceof StorageError) {
+    console.error(err.code, err.message);
+  }
+}
+```

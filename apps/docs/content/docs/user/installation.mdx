@@ -1,0 +1,66 @@
+---
+title: Installation
+description: Install @justwant/user and its peer dependencies.
+icon: Download
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/user
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/user
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/user
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/user
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+`@justwant/user` has no required runtime dependencies beyond `@justwant/meta` (automatically installed as a transitive dependency).
+
+## TypeScript
+
+The package ships with full TypeScript types. No `@types/*` package is needed.
+
+Ensure your `tsconfig.json` targets at least ES2020 and uses `"moduleResolution": "bundler"` or `"node16"`:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "moduleResolution": "bundler",
+    "strict": true
+  }
+}
+```
+
+## Next step
+
+[Basic Usage](/docs/user/basic-usage) — define your user, wire up a repo, and start creating accounts.

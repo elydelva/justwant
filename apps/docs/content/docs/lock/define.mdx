@@ -1,0 +1,128 @@
+---
+title: Definitions
+description: defineLockable and defineLockOwner — typed, reusable resource and owner declarations.
+icon: BookOpen
+---
+
+## Overview
+
+`defineLockable` and `defineLockOwner` are factory functions that create typed, callable definitions. They separate **what can be locked** from **who can lock it**, and infer literal type names at compile time via generics.
+
+## defineLockable
+
+```ts
+import { defineLockable } from "@justwant/lock";
+
+const userLock = defineLockable({
+  name: "user",
+  singular: false,
+  prefix: "app",   // optional — prepended to the key
+});
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `N extends string` | Yes | Literal name, inferred as type parameter |
+| `singular` | `boolean` | Yes | `true` = one global key, `false` = key per params |
+| `prefix` | `string` | No | Prepended to the generated key (e.g. tenant prefix) |
+
+### Calling a lockable definition
+
+`LockableDef<N>` is callable. How you call it depends on `singular`:
+
+```ts
+// Singular — no params
+const billing = defineLockable({ name: "billing", singular: true });
+const resource = billing(); // key: "billing"
+
+// Plural — string param
+const user = defineLockable({ name: "user", singular: false });
+const resource = user("user-42"); // key: "user:user-42"
+
+// Plural — record param (keys sorted alphabetically for determinism)
+const item = defineLockable({ name: "item", singular: false });
+const resource = item({ tenantId: "t1", itemId: "i99" }); // key: "item:itemId:i99:tenantId:t1"
+
+// With prefix
+const order = defineLockable({ name: "order", singular: false, prefix: "shop" });
+const resource = order("order-7"); // key: "shop:order:order-7"
+```
+
+**Record params — key ordering**: When a record is passed, its keys are always sorted alphabetically before serialization. This means `{ b: "2", a: "1" }` and `{ a: "1", b: "2" }` produce the identical key regardless of insertion order, guaranteeing determinism across calls.
+
+**Important**: Calling a singular lockable with params, or calling a plural lockable without params, throws `LockableParamsError`.
+
+### Returned `Lockable`
+
+```ts
+interface Lockable<N extends string = string> {
+  type: N;   // literal name
+  key: string; // deterministic lock key used as storage identifier
+}
+```
+
+## defineLockOwner
+
+```ts
+import { defineLockOwner } from "@justwant/lock";
+
+const Worker = defineLockOwner({ name: "worker" });
+const OrgUser = defineLockOwner({ name: "user", within: "org" });
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | `N extends string` | Yes | Literal owner type name |
+| `within` | `string` | No | Parent scope type (e.g. `"org"`, `"team"`) |
+
+### Calling an owner definition
+
+```ts
+// Simple owner — just an id
+const worker = Worker("worker-1");
+// → { type: "worker", id: "worker-1" }
+
+// Scoped owner — withinId first, then owner id
+const user = OrgUser("org-abc", "user-42");
+// → { type: "user", id: "user-42", within: { type: "org", id: "org-abc" } }
+```
+
+Calling `defineLockOwner` without an id argument throws an error.
+
+## Full example
+
+```ts title="lib/lockDefs.ts"
+import { defineLockable, defineLockOwner } from "@justwant/lock";
+
+// Resources
+export const DocumentLock = defineLockable({
+  name: "document",
+  singular: false,
+  prefix: "cms",
+});
+
+export const GlobalMaintenance = defineLockable({
+  name: "maintenance",
+  singular: true,
+});
+
+// Owners
+export const EditorUser = defineLockOwner({ name: "editor", within: "workspace" });
+export const SystemWorker = defineLockOwner({ name: "system" });
+```
+
+```ts title="lib/useDocumentLock.ts"
+import { createLock } from "@justwant/lock";
+import { DocumentLock, EditorUser } from "./lockDefs";
+
+const lock = createLock({ repo });
+
+const doc = DocumentLock("doc-123");            // key: "cms:document:doc-123"
+const editor = EditorUser("ws-7", "editor-5"); // type: "editor", within: { type: "workspace", id: "ws-7" }
+
+const acquired = await lock.acquire(editor, doc, { ttlMs: 60_000 });
+```

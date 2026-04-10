@@ -15,6 +15,8 @@ import { mergeSources } from "./utils-edge.js";
 export type {
   CreateEnvOptions,
   CreateEnvResult,
+  EnvInclude,
+  EnvProxy,
   EnvSchema,
   GroupSchema,
   InferEnv,

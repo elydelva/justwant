@@ -1,0 +1,197 @@
+---
+title: Indexing
+description: Prepare content for vector search — defineEmbeddable, defineUniverse, upsertFrom, batch indexing, and keeping indexes in sync.
+icon: Upload
+---
+
+## Overview
+
+Indexing is the process of converting your application objects into vectors and storing them. Three concepts are involved:
+
+1. **`defineEmbeddable`** — describes how to reduce an object to embeddable text and which fields to store as metadata.
+2. **`defineUniverse`** — names a logical index and binds it to an embeddable.
+3. **`upsertFrom`** — runs the full pipeline: text extraction → embedding → storage.
+
+---
+
+## defineEmbeddable
+
+`defineEmbeddable<T>` tells the service how to handle an object of type `T`.
+
+```ts
+import { defineEmbeddable } from "@justwant/embedding";
+
+type Article = {
+  id: string;
+  title: string;
+  body: string;
+  authorId: string;
+  publishedAt: string;
+};
+
+const articleEmbeddable = defineEmbeddable<Article>({
+  idField: "id",
+  toText: (article) => `${article.title}\n\n${article.body}`,
+  metadataFields: ["title", "authorId", "publishedAt"],
+});
+```
+
+### `toText` — what to embed
+
+The quality of `toText` directly affects search relevance. More context produces better results:
+
+```ts
+// Minimal — title only
+toText: (a) => a.title,
+
+// Better — title + body
+toText: (a) => `${a.title}\n\n${a.body}`,
+
+// Best — add structured context
+toText: (a) => `Title: ${a.title}\nAuthor: ${a.authorName}\n\n${a.body}`,
+```
+
+Avoid including volatile fields (like `updatedAt` or `viewCount`) in `toText` — they would invalidate the vector on every update.
+
+### `metadataFields` — what to filter by
+
+Fields listed in `metadataFields` are stored alongside the vector in the index. You can then use them in `filter` when calling `similar`. Only include fields you actually need to filter on — most storage backends have metadata size limits.
+
+```ts
+// ✓ Fields you filter on
+metadataFields: ["authorId", "category", "publishedAt"],
+
+// ✗ Don't include large text fields — they waste space and aren't indexed
+metadataFields: ["body"],
+```
+
+---
+
+## defineUniverse
+
+A universe is a named logical index scoped to one object type.
+
+```ts
+import { defineUniverse } from "@justwant/embedding";
+
+const articles = defineUniverse<Article>({
+  id: "articles",   // used as the first argument to all service calls
+  dimension: 1536,  // must match the engine output and storage configuration
+  embeddable: articleEmbeddable,
+});
+```
+
+### Multiple universes
+
+Register multiple universes for different object types:
+
+```ts
+const users = defineUniverse<User>({
+  id: "users",
+  dimension: 1536,
+  embeddable: userEmbeddable,
+});
+
+const products = defineUniverse<Product>({
+  id: "products",
+  dimension: 1536,
+  embeddable: productEmbeddable,
+});
+
+export const embedding = createEmbeddingService({
+  engine,
+  storage,
+  universes: [articles, users, products],
+});
+```
+
+Each universe is stored in isolation — searching `"articles"` never returns results from `"users"`.
+
+### Dimension alignment
+
+The `dimension` in the universe must match the engine's output dimension and the storage's configured dimension. A mismatch causes an error at upsert time.
+
+| Engine | Model | Dimension |
+|--------|-------|-----------|
+| OpenAI | `text-embedding-3-small` | 1536 |
+| OpenAI | `text-embedding-3-large` | 3072 |
+| Cloudflare AI | `@cf/baai/bge-base-en-v1.5` | 768 |
+| Cloudflare AI | `@cf/baai/bge-small-en-v1.5` | 384 |
+
+---
+
+## upsertFrom
+
+`upsertFrom(universeId, item)` runs the full pipeline and stores the vector. Calling it again with the same `id` overwrites the previous vector — safe to call on every create or update.
+
+```ts
+// Index a single article
+await embedding.upsertFrom("articles", article);
+```
+
+### Indexing on create/update
+
+Hook into your data mutations to keep the index in sync:
+
+```ts title="services/articles.ts"
+export async function createArticle(data: CreateArticleInput) {
+  const article = await db.articles.create(data);
+  await embedding.upsertFrom("articles", article); // index immediately
+  return article;
+}
+
+export async function updateArticle(id: string, data: Partial<Article>) {
+  const article = await db.articles.update(id, data);
+  await embedding.upsertFrom("articles", article); // re-index with new content
+  return article;
+}
+```
+
+### Batch indexing
+
+To index many items at once (e.g., during a migration), use the engine's `embedMany` for efficiency, then upsert directly via storage:
+
+```ts
+import { EMBEDDING_CAPABILITY } from "@justwant/embedding";
+
+const articles = await db.articles.findMany({});
+
+// Embed all at once — one API call instead of N
+const texts = articles.map((a) => `${a.title}\n\n${a.body}`);
+const vectors = await engine.embedMany(texts);
+
+await storage.upsert("articles", articles.map((a, i) => ({
+  id: a.id,
+  vector: vectors[i],
+  metadata: { title: a.title, authorId: a.authorId },
+})));
+```
+
+Not all engines implement `embedMany` — check before using. Fall back to sequential `embed` calls otherwise:
+
+```ts
+const vectors = engine.embedMany
+  ? await engine.embedMany(texts)
+  : await Promise.all(texts.map((t) => engine.embed(t)));
+```
+
+---
+
+## delete
+
+Remove a vector from the index when the source object is deleted:
+
+```ts
+export async function deleteArticle(id: string) {
+  await db.articles.hardDelete(id);
+  await embedding.delete("articles", [id]); // remove from vector index
+}
+```
+
+Bulk removal:
+
+```ts
+await embedding.delete("articles", ["article-1", "article-2", "article-3"]);
+```
+
+If the storage does not implement `delete` (e.g., Cloudflare Vectorize with old bindings), the call is a no-op. Check your storage's page for delete support.

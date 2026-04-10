@@ -83,162 +83,240 @@ export interface WaitlistService {
   unsubscribeMany(list: WaitlistDef | string, actors: Actor[]): Promise<void>;
 }
 
+async function runWithPlugins<T>(
+  plugins: WaitlistPlugin[],
+  ctx: {
+    operation: string;
+    listKey: string;
+    actor?: Actor;
+    entry?: WaitlistEntry;
+    [key: string]: unknown;
+  },
+  fn: () => Promise<T>
+): Promise<T> {
+  let next: () => Promise<T> = fn;
+  for (let i = plugins.length - 1; i >= 0; i--) {
+    const p = plugins[i];
+    const before = p?.beforeExecute;
+    if (before) {
+      const n = next;
+      next = () => before(ctx, () => n()) as Promise<T>;
+    }
+  }
+
+  let result: T;
+  try {
+    result = await next();
+  } catch (err) {
+    for (const plugin of plugins) {
+      await plugin.onError?.({ operation: ctx.operation, error: err });
+    }
+    throw err;
+  }
+
+  for (const plugin of plugins) {
+    await plugin.afterExecute?.(ctx, async () => result);
+  }
+
+  return result;
+}
+
 export function createWaitlistService(options: CreateWaitlistServiceOptions): WaitlistService {
   const { repo, plugins = [], referralService, offerKeyForList } = options;
+
+  for (const plugin of plugins) {
+    plugin.init?.({ setContext: undefined });
+  }
 
   const service: WaitlistService = {
     async invite(list, inviter, invitee, metadata = {}) {
       const key = toListKey(list);
-      const offerKey = offerKeyForList ? offerKeyForList(key) : key;
-
-      if (referralService) {
-        await referralService.refer(offerKey, inviter, invitee, metadata);
-      }
-
-      return service.subscribe(list, invitee, {
-        metadata: { ...metadata, referredBy: actorKey(inviter) },
-      });
+      return runWithPlugins(
+        plugins,
+        { operation: "invite", listKey: key, actor: invitee },
+        async () => {
+          const offerKey = offerKeyForList ? offerKeyForList(key) : key;
+          if (referralService) {
+            await referralService.refer(offerKey, inviter, invitee, metadata);
+          }
+          return service.subscribe(list, invitee, {
+            metadata: { ...metadata, referredBy: actorKey(inviter) },
+          });
+        }
+      );
     },
 
     async subscribe(list, actor, opts = {}) {
       const key = toListKey(list);
-      const listDef = typeof list === "string" ? undefined : list;
-      const rawMetadata = opts.metadata ?? {};
-      let metadata: Record<string, unknown>;
-      if (listDef?.schema) {
-        metadata = validateMetadata(listDef.schema, rawMetadata, key) as Record<string, unknown>;
-      } else if (typeof rawMetadata === "object" && rawMetadata !== null) {
-        metadata = rawMetadata;
-      } else {
-        metadata = {};
-      }
+      return runWithPlugins(plugins, { operation: "subscribe", listKey: key, actor }, async () => {
+        const listDef = typeof list === "string" ? undefined : list;
+        const rawMetadata = opts.metadata ?? {};
+        let metadata: Record<string, unknown>;
+        if (listDef?.schema) {
+          metadata = validateMetadata(listDef.schema, rawMetadata, key) as Record<string, unknown>;
+        } else if (typeof rawMetadata === "object" && rawMetadata !== null) {
+          metadata = rawMetadata;
+        } else {
+          metadata = {};
+        }
 
-      const shape = toRepo(actor);
-      const existing = await repo.findOne({
-        listKey: key,
-        actorType: shape.actorType,
-        actorId: shape.actorId,
-        actorOrgId: shape.actorOrgId,
+        const shape = toRepo(actor);
+        const existing = await repo.findOne({
+          listKey: key,
+          actorType: shape.actorType,
+          actorId: shape.actorId,
+          actorOrgId: shape.actorOrgId,
+        });
+        if (existing) {
+          throw new AlreadySubscribedError(key, actorKey(actor));
+        }
+
+        const entry: Omit<WaitlistEntry, "id" | "createdAt"> = {
+          listKey: key,
+          actorType: shape.actorType,
+          actorId: shape.actorId,
+          actorOrgId: shape.actorOrgId,
+          priority: opts.priority,
+          metadata: Object.keys(metadata).length ? metadata : undefined,
+          expiresAt: opts.expiresAt,
+        };
+        return repo.subscribe(entry);
       });
-      if (existing) {
-        throw new AlreadySubscribedError(key, actorKey(actor));
-      }
-
-      const entry: Omit<WaitlistEntry, "id" | "createdAt"> = {
-        listKey: key,
-        actorType: shape.actorType,
-        actorId: shape.actorId,
-        actorOrgId: shape.actorOrgId,
-        priority: opts.priority,
-        metadata: Object.keys(metadata).length ? metadata : undefined,
-        expiresAt: opts.expiresAt,
-      };
-      return repo.subscribe(entry);
     },
 
     async unsubscribe(list, actor) {
       const key = toListKey(list);
-      const shape = toRepo(actor);
-      const existing = await repo.findOne({
-        listKey: key,
-        actorType: shape.actorType,
-        actorId: shape.actorId,
-        actorOrgId: shape.actorOrgId,
-      });
-      if (!existing) {
-        throw new NotSubscribedError(key, actorKey(actor));
-      }
-      await repo.unsubscribe(key, actorKey(actor));
+      return runWithPlugins(
+        plugins,
+        { operation: "unsubscribe", listKey: key, actor },
+        async () => {
+          const shape = toRepo(actor);
+          const existing = await repo.findOne({
+            listKey: key,
+            actorType: shape.actorType,
+            actorId: shape.actorId,
+            actorOrgId: shape.actorOrgId,
+          });
+          if (!existing) {
+            throw new NotSubscribedError(key, actorKey(actor));
+          }
+          await repo.unsubscribe(key, actorKey(actor));
+        }
+      );
     },
 
     async isSubscribed(list, actor) {
       const key = toListKey(list);
-      const shape = toRepo(actor);
-      const entry = await repo.findOne({
-        listKey: key,
-        actorType: shape.actorType,
-        actorId: shape.actorId,
-        actorOrgId: shape.actorOrgId,
-      });
-      return !!entry;
+      return runWithPlugins(
+        plugins,
+        { operation: "isSubscribed", listKey: key, actor },
+        async () => {
+          const shape = toRepo(actor);
+          const entry = await repo.findOne({
+            listKey: key,
+            actorType: shape.actorType,
+            actorId: shape.actorId,
+            actorOrgId: shape.actorOrgId,
+          });
+          return !!entry;
+        }
+      );
     },
 
     async count(list) {
       const key = toListKey(list);
-      return repo.count({ listKey: key });
+      return runWithPlugins(plugins, { operation: "count", listKey: key }, async () => {
+        return repo.count({ listKey: key });
+      });
     },
 
     async listSubscribers(list, opts = {}) {
       const key = toListKey(list);
-      const { limit = 50, offset = 0, orderBy = "asc" } = opts;
-      return repo.findMany(
-        { listKey: key },
-        {
-          orderBy: { field: "createdAt", direction: orderBy },
-          limit,
-          offset,
-        }
-      );
+      return runWithPlugins(plugins, { operation: "listSubscribers", listKey: key }, async () => {
+        const { limit = 50, offset = 0, orderBy = "asc" } = opts;
+        return repo.findMany(
+          { listKey: key },
+          {
+            orderBy: { field: "createdAt", direction: orderBy },
+            limit,
+            offset,
+          }
+        );
+      });
     },
 
     async getPosition(list, actor) {
       const key = toListKey(list);
-      const shape = toRepo(actor);
-      const entries = await repo.findMany(
-        { listKey: key },
-        { orderBy: { field: "createdAt", direction: "asc" } }
+      return runWithPlugins(
+        plugins,
+        { operation: "getPosition", listKey: key, actor },
+        async () => {
+          const shape = toRepo(actor);
+          const entries = await repo.findMany(
+            { listKey: key },
+            { orderBy: { field: "createdAt", direction: "asc" } }
+          );
+          const total = entries.length;
+          const idx = entries.findIndex(
+            (e) =>
+              e.actorType === shape.actorType &&
+              e.actorId === shape.actorId &&
+              (e.actorOrgId ?? undefined) === (shape.actorOrgId ?? undefined)
+          );
+          if (idx < 0) {
+            throw new NotSubscribedError(key, actorKey(actor));
+          }
+          return { position: idx + 1, total };
+        }
       );
-      const total = entries.length;
-      const idx = entries.findIndex(
-        (e) =>
-          e.actorType === shape.actorType &&
-          e.actorId === shape.actorId &&
-          (e.actorOrgId ?? undefined) === (shape.actorOrgId ?? undefined)
-      );
-      if (idx < 0) {
-        throw new NotSubscribedError(key, actorKey(actor));
-      }
-      return { position: idx + 1, total };
     },
 
     async pop(list) {
       const key = toListKey(list);
-      const entries = await repo.findMany(
-        { listKey: key },
-        {
-          orderBy: { field: "createdAt", direction: "asc" },
-          limit: 1,
-        }
-      );
-      const first = entries[0];
-      if (!first) return null;
-      await repo.unsubscribe(key, actorKey(fromRepo(first)));
-      return first;
+      return runWithPlugins(plugins, { operation: "pop", listKey: key }, async () => {
+        const entries = await repo.findMany(
+          { listKey: key },
+          {
+            orderBy: { field: "createdAt", direction: "asc" },
+            limit: 1,
+          }
+        );
+        const first = entries[0];
+        if (!first) return null;
+        await repo.unsubscribe(key, actorKey(fromRepo(first)));
+        return first;
+      });
     },
 
     async subscribeMany(list, actors, opts = {}) {
-      const results: WaitlistEntry[] = [];
-      for (const actor of actors) {
-        try {
-          const entry = await service.subscribe(list, actor, {
-            metadata: opts.metadata,
-          });
-          results.push(entry);
-        } catch (err) {
-          if (!(err instanceof AlreadySubscribedError)) throw err;
+      const key = toListKey(list);
+      return runWithPlugins(plugins, { operation: "subscribeMany", listKey: key }, async () => {
+        const results: WaitlistEntry[] = [];
+        for (const actor of actors) {
+          try {
+            const entry = await service.subscribe(list, actor, {
+              metadata: opts.metadata,
+            });
+            results.push(entry);
+          } catch (err) {
+            if (!(err instanceof AlreadySubscribedError)) throw err;
+          }
         }
-      }
-      return results;
+        return results;
+      });
     },
 
     async unsubscribeMany(list, actors) {
-      for (const actor of actors) {
-        try {
-          await service.unsubscribe(list, actor);
-        } catch (err) {
-          if (!(err instanceof NotSubscribedError)) throw err;
+      const key = toListKey(list);
+      return runWithPlugins(plugins, { operation: "unsubscribeMany", listKey: key }, async () => {
+        for (const actor of actors) {
+          try {
+            await service.unsubscribe(list, actor);
+          } catch (err) {
+            if (!(err instanceof NotSubscribedError)) throw err;
+          }
         }
-      }
+      });
     },
   };
 

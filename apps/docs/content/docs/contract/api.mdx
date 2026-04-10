@@ -1,0 +1,305 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/contract — defineContract, field builders, validation, conformity, and types.
+icon: BookOpen
+---
+
+## defineContract
+
+```ts
+// TableContract overload (primary)
+function defineContract<T extends TableFields>(
+  tableName: string,
+  fields: T,
+  options?: DefineContractOptions
+): TableContract<T>
+
+// Legacy overload — returns the contract as-is
+function defineContract<T extends AnyContract>(contract: T): T
+```
+
+### DefineContractOptions
+
+```ts
+interface DefineContractOptions {
+  /** Convert every camelCase field key to snake_case for the column name. */
+  defaultMapping?: "camelToSnake";
+  /** Per-key column name overrides. Takes precedence over defaultMapping. */
+  mapping?: Partial<Record<string, { name: string }>>;
+}
+```
+
+### TableContract
+
+```ts
+interface TableContract<T extends TableFields> {
+  readonly tableName: string;
+  readonly fields: T;
+  readonly mapping: StringMapping<T>;
+}
+```
+
+`mapping` is a `Record<keyof T, { name: string }>` that maps each field key to its database column name.
+
+---
+
+## Field builders
+
+All field builders are exported from `@justwant/contract/fields`.
+
+### Primitives
+
+| Export | Signature | TypeScript type | Column type |
+|--------|-----------|----------------|-------------|
+| `uuid` | `uuid()` | `string` | `TEXT` |
+| `string` | `string()` | `string` | `TEXT` |
+| `number` | `number()` | `number` | `REAL` |
+| `integer` | `integer()` | `number` | `INTEGER` |
+| `boolean` | `boolean()` | `boolean` | `INTEGER` |
+| `date` | `date()` | `Date` | `TEXT` |
+| `json` | `json()` | `unknown` | `TEXT` |
+
+### Semantic (string with built-in schema)
+
+| Export | Validates |
+|--------|-----------|
+| `email` | RFC 5321 email address |
+| `url` | HTTP/HTTPS URL |
+| `ip` | IPv4 or IPv6 address |
+| `ipv4` | IPv4 address |
+| `ipv6` | IPv6 address |
+| `hostname` | DNS hostname |
+| `slug` | URL-safe slug (`[a-z0-9-]+`) |
+
+### FieldBuilder interface
+
+```ts
+interface FieldBuilder<T> {
+  // State
+  readonly _type: T;
+  readonly _columnType: string;
+  readonly _kind?: "date" | "string" | "uuid" | "json";
+  readonly _required: boolean;
+  readonly _nullable: boolean;
+  readonly _schema?: StandardSchemaV1<unknown, T>;
+  readonly _primaryKey?: boolean;
+  readonly _unique?: boolean;
+  readonly _default?: string;
+
+  // Chainable methods
+  required(): FieldBuilder<T>;
+  optional(): FieldBuilder<T>;
+  primaryKey(): FieldBuilder<T>;
+  unique(): FieldBuilder<T>;
+  default(val: string): FieldBuilder<T>;
+  schema<S>(s: StandardSchemaV1<unknown, S>): FieldBuilder<S>;
+}
+```
+
+All methods return a new `FieldBuilder` — builders are immutable.
+
+---
+
+## TypeScript types
+
+### InferContract
+
+```ts
+type InferContract<T> =
+  T extends { fields: infer F }
+    ? F extends AnyContract ? InferContractFromFields<F> : never
+    : T extends AnyContract ? InferContractFromFields<T> : never;
+```
+
+Accepts either a `TableContract` (uses `.fields`) or a bare `AnyContract`. Required fields (`_required: true`) produce required properties; optional fields produce optional properties.
+
+### Infer
+
+```ts
+type Infer<T extends AnyContract | { fields: AnyContract }> = InferContract<T>;
+```
+
+Shorter alias for `InferContract`.
+
+### AnyContract
+
+```ts
+type AnyContract = Record<string, FieldDef<unknown, boolean>>;
+```
+
+### FieldDef
+
+```ts
+type FieldDef<T, Req extends boolean> = {
+  readonly _type: T;
+  readonly _required: Req;
+  readonly _nullable: boolean;
+  readonly _columnType?: string;
+  readonly _kind?: "date" | "string" | "uuid" | "json";
+  readonly _schema?: StandardSchemaV1<unknown, T>;
+  readonly _primaryKey?: boolean;
+  readonly _unique?: boolean;
+  readonly _default?: string;
+};
+```
+
+---
+
+## Validation
+
+Entry point: `@justwant/contract/validate`
+
+### validateContractData
+
+```ts
+function validateContractData<T extends Record<string, unknown>>(
+  data: T,
+  contract: AnyContract,
+  options?: ValidateOptions
+): ValidateResult<T>
+```
+
+Iterates over `contract` (or `options.keys` if provided), finds fields with a `_schema`, runs the Standard Schema validator, and accumulates issues. Returns `{ ok: true, value }` on success or `{ ok: false, issues }` on failure.
+
+Only fields present in `data` are validated — missing keys are silently skipped.
+
+### ValidateOptions
+
+```ts
+interface ValidateOptions {
+  /** Only validate these keys. Keys absent from data are skipped. */
+  keys?: string[];
+}
+```
+
+### ValidateResult
+
+```ts
+type ValidateResult<T> = ValidationResult<T> | ValidationError;
+
+interface ValidationResult<T> {
+  ok: true;
+  value: T;
+}
+
+interface ValidationError {
+  ok: false;
+  issues: ValidationIssue[];
+}
+```
+
+### ValidationIssue
+
+```ts
+interface ValidationIssue {
+  path: string;   // field key, or "" for root-level issues
+  message: string;
+}
+```
+
+### ContractValidationError
+
+```ts
+class ContractValidationError extends Error {
+  readonly issues: ValidationIssue[];
+  constructor(issues: ValidationIssue[]);
+}
+```
+
+`message` is automatically set to `"<path>: <message>; ..."` joining all issues.
+
+---
+
+## Conformity
+
+Entry point: `@justwant/contract/conforms`
+
+### conformsTo
+
+```ts
+function conformsTo<TTable extends AnyContract, TExpected extends AnyContract>(
+  table: ConformsTo<TTable, TExpected> extends true ? ConformableTable : never,
+  expectedContract: TExpected | TableContract<TExpected>
+): void
+```
+
+Compile-time assertion only. Does nothing at runtime. TypeScript rejects the call if the table contract does not satisfy `expectedContract`.
+
+### assertTableConforms
+
+```ts
+function assertTableConforms<TExpected extends AnyContract>(
+  table: ConformableTable,
+  expectedContract: TExpected | TableContract<TExpected>
+): void
+```
+
+Runtime assertion. Throws `ContractConformityError` if any required field of `expectedContract` is missing from `table.contract` or is not marked required.
+
+### tableConforms
+
+```ts
+function tableConforms<T extends TableContract<AnyContract>>(
+  table: ConformableTable,
+  expected: T
+): ConformableTable & { contract: T["fields"] }
+```
+
+Runtime assertion + type cast. Calls `assertTableConforms` internally, then returns the table typed with the expected fields.
+
+### ConformableTable
+
+```ts
+interface ConformableTable {
+  readonly contract: AnyContract;
+}
+```
+
+Any object with a `contract` property satisfies this interface. `MappedTable` from `@justwant/db` implements it automatically.
+
+### ContractConformityError
+
+```ts
+class ContractConformityError extends Error {
+  readonly missing?: string[];
+  constructor(message: string, missing?: string[]);
+}
+```
+
+`missing` contains the field keys that were absent from the table contract.
+
+### ConformsTo (type)
+
+```ts
+type ConformsTo<
+  TTableContract extends AnyContract,
+  TExpectedContract extends AnyContract,
+> = /* true | false */
+```
+
+Evaluates to `true` if every required field of `TExpectedContract` exists in `TTableContract` with an assignable type. Used internally by `conformsTo`.
+
+---
+
+## Built-in schemas
+
+The following schemas are exported from `@justwant/contract/fields` and used internally by the semantic builders. You can import and compose them directly.
+
+| Export | Used by |
+|--------|---------|
+| `uuidSchema` | `uuid()` |
+| `emailSchema` | `email()` |
+| `urlSchema` | `url()` |
+| `ipSchema` | `ip()` |
+| `ipv4Schema` | `ipv4()` |
+| `ipv6Schema` | `ipv6()` |
+| `hostnameSchema` | `hostname()` |
+| `slugSchema` | `slug()` |
+
+```ts
+import { uuidSchema, emailSchema } from "@justwant/contract/fields";
+import { string } from "@justwant/contract/fields";
+
+// Attach manually
+const emailField = string().schema(emailSchema).required();
+```

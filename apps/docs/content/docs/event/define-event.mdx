@@ -1,0 +1,84 @@
+---
+title: defineEvent
+description: Create a typed event definition with a name and payload builder.
+icon: Tag
+---
+
+## Overview
+
+`defineEvent` creates a typed event object. It binds together:
+
+- A **name** (string literal) — used as the event type on the bus
+- A **payload builder** — a function that constructs the payload from emit arguments
+
+```ts
+import { defineEvent } from "@justwant/event";
+
+const userCreated = defineEvent(
+  "user.created",
+  (id: string, email: string) => ({ id, email })
+);
+```
+
+The return value is a `TypedEvent` object:
+
+```ts
+interface TypedEvent<TArgs, TPayload, TType extends string> {
+  readonly type: TType;
+  createPayload(...args: TArgs): TPayload;
+}
+```
+
+## Payload builder
+
+The second argument to `defineEvent` is a function that takes the emit arguments and returns the payload. TypeScript infers the argument types and the payload type from this function.
+
+```ts
+// Simple: one arg, payload = same value
+const pageViewed = defineEvent("page.viewed", (path: string) => ({ path }));
+
+// Multiple args with derived fields
+const orderPlaced = defineEvent(
+  "order.placed",
+  (orderId: string, userId: string, total: number) => ({
+    orderId,
+    userId,
+    total,
+    placedAt: new Date(),
+  })
+);
+
+// No args
+const appStarted = defineEvent("app.started", () => ({ startedAt: Date.now() }));
+```
+
+## Naming convention
+
+Event names use `domain.action` format by convention — this is what enables wildcard matching on `domain.*`. The separator must be `.`.
+
+```ts
+// Good — enables "user.*" wildcard
+const userUpdated = defineEvent("user.updated", (id: string) => ({ id }));
+
+// Also valid — no prefix, matches only exact name
+const ping = defineEvent("ping", () => ({}));
+```
+
+## Using with createEventBus
+
+Pass all your event definitions to `createEventBus` using `as const` to preserve literal types:
+
+```ts
+export const bus = createEventBus({
+  events: [userCreated, userUpdated, orderPlaced] as const,
+});
+```
+
+**Important**: `as const` is required to preserve the string literal types. Without it, TypeScript widens the event names to `string`.
+
+## TypedEvent type
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | `TType` (string literal) | The event name |
+| `createPayload` | `(...args: TArgs) => TPayload` | Constructs the payload from emit arguments |

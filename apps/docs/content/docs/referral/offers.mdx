@@ -1,0 +1,100 @@
+---
+title: Offers
+description: defineReferralOffer — configure names, params, code generation, and defaults.
+icon: Tag
+---
+
+## Overview
+
+`defineReferralOffer` creates a portable **offer definition** — the configuration that describes how a referral program behaves. It is decoupled from the service so it can be defined at module level and shared across packages.
+
+```ts
+import { defineReferralOffer } from "@justwant/referral";
+
+const betaOffer = defineReferralOffer({ name: "beta" });
+```
+
+## Signature
+
+```ts
+function defineReferralOffer<N extends string>(
+  config: DefineReferralOfferConfig<N>
+): ReferralOfferDef<N>
+```
+
+### DefineReferralOfferConfig
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `N extends string` | Offer name — used as the base offer key |
+| `params` | `string[]` (optional) | Parameter names for parameterized offers |
+| `codeGenerator` | `(offerKey: string, referrer: Actor) => string \| Promise<string>` (optional) | Custom code generator |
+| `defaultReferrerType` | `string` (optional) | Referrer type to use when resolving a code before any referral exists |
+
+## Offer keys
+
+A simple offer has a flat key:
+
+```ts
+const betaOffer = defineReferralOffer({ name: "beta" });
+betaOffer.key(); // "beta"
+```
+
+A parameterized offer generates a unique key per parameter set:
+
+```ts
+const waitlistOffer = defineReferralOffer({
+  name: "waitlist",
+  params: ["listId"],
+});
+waitlistOffer.key({ listId: "prod-launch" }); // "waitlist:listId:prod-launch"
+```
+
+## Custom code generator
+
+By default, `getReferralCode` returns the referrer's id (or a UUID if the id is empty). Override with `codeGenerator` for short codes, slugs, or hashed values:
+
+```ts
+import { defineReferralOffer } from "@justwant/referral";
+
+const betaOffer = defineReferralOffer({
+  name: "beta",
+  codeGenerator: (offerKey, referrer) => {
+    // Generate a short 8-character code
+    return crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+  },
+});
+```
+
+The generator receives the resolved `offerKey` (including params if any) and the `referrer` actor.
+
+## defaultReferrerType
+
+When `resolveCode` is called before any referral has been created (e.g. a fresh signup flow where the code is the referrer's id), the service needs to know which actor type to construct. Set `defaultReferrerType` to enable this:
+
+```ts
+const betaOffer = defineReferralOffer({
+  name: "beta",
+  defaultReferrerType: "user",
+});
+
+// Before any referral exists:
+const referrer = await referral.resolveCode(betaOffer, "u-1");
+// { type: "user", id: "u-1" }
+```
+
+Without `defaultReferrerType`, `resolveCode` returns `null` if no existing referral matches the code.
+
+## ReferralOfferDef
+
+```ts
+interface ReferralOfferDef<N extends string> extends Definable<N> {
+  readonly name: N;
+  readonly params?: string[];
+  readonly codeGenerator?: (offerKey: string, referrer: Actor) => string | Promise<string>;
+  readonly defaultReferrerType?: string;
+  key(params?: Record<string, string>): string;
+}
+```
+
+The def is also callable: `betaOffer(referralId)` → `{ type: N; id: referralId }`, for use in contexts requiring a `Definable`.

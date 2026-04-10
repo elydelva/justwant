@@ -1,0 +1,75 @@
+---
+title: defineUser
+description: Define the canonical user identity factory and its UserRef type.
+icon: ScanLine
+---
+
+## Overview
+
+`defineUser()` defines the **canonical user identity** in the `@justwant` ecosystem. It returns a callable `UserDef` that produces `UserRef` values — lightweight identity references used by `@justwant/membership`, `@justwant/permission`, and other packages.
+
+```ts
+import { defineUser } from "@justwant/user";
+
+const User = defineUser();
+```
+
+## Signature
+
+```ts
+function defineUser(): UserDef
+```
+
+`defineUser` takes no options. The name `"user"` is fixed — it is the canonical identity type.
+
+## UserDef
+
+`UserDef` is a callable with a `name` property:
+
+```ts
+interface UserDef extends Definable<"user"> {
+  readonly name: "user";
+  (id: string): UserRef;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `"user"` | Always `"user"` — used for type discrimination |
+| `(id)` | `(id: string) => UserRef` | Produces a `UserRef` for the given id |
+
+## UserRef
+
+`UserRef` is a structural reference used to identify a user in membership and permission contexts:
+
+```ts
+interface UserRef extends RefLike<"user"> {
+  // { type: "user"; id: string }
+}
+```
+
+```ts
+const ref = User("user-123");
+// { type: "user", id: "user-123" }
+```
+
+## Usage pattern
+
+Call `defineUser()` once at the module level and export the result:
+
+```ts title="lib/user.ts"
+import { defineUser } from "@justwant/user";
+
+export const User = defineUser();
+```
+
+Then use the factory wherever a `UserRef` is required:
+
+```ts
+import { User } from "./lib/user.ts";
+
+const ref = User(userId); // UserRef
+await membership.add(ref, group);
+```
+
+**Note**: `defineUser` is side-effect-free and creates no runtime state. It is safe to call at module load time.

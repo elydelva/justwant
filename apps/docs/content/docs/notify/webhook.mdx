@@ -1,0 +1,54 @@
+---
+title: Webhook
+description: Custom webhook notification canal using createCanal().
+icon: Webhook
+---
+
+## Overview
+
+`webhook` is not provided out-of-the-box — there is no `createWebhookCanal()` helper. The `WebhookMessage` type and `WebhookCanal` type exist, but you must implement the canal using `createCanal()`.
+
+## Usage
+
+```ts title="lib/notify.ts"
+import { createCanal } from "@justwant/notify";
+import type { WebhookCanal } from "@justwant/notify";
+
+const webhookCanal: WebhookCanal = createCanal({
+  kind: "webhook",
+  adapter: {
+    async send(message) {
+      await fetch(message.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...message.headers },
+        body: JSON.stringify(message.body),
+      });
+    },
+  },
+}) as WebhookCanal;
+```
+
+## Message type
+
+```ts
+interface WebhookMessage {
+  url: string;
+  body: unknown;
+  headers?: Record<string, string>;
+}
+```
+
+## Registering the canal
+
+```ts
+export const notify = createNotify({
+  templates: [...],
+  canals: { webhook: webhookCanal },
+});
+
+await notify.send({
+  templateId: "order-shipped",
+  canalId: "webhook",
+  args: { orderId: "ord_123", trackingUrl: "https://track.example.com/..." },
+});
+```

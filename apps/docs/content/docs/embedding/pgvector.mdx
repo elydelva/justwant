@@ -1,0 +1,101 @@
+---
+title: pgvector
+description: Vector storage backed by PostgreSQL with the pgvector extension.
+icon: Database
+---
+
+## When to use
+
+Use `pgvector` when you already run PostgreSQL in production and want vector similarity search without adding a separate service. The pgvector extension adds a `vector` column type and HNSW/IVFFlat indexes.
+
+## Installation
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add pg pgvector
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install pg pgvector
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add pg pgvector
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add pg pgvector
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Table schema
+
+Create the table before using the adapter. The `pgvector` extension must be enabled.
+
+```sql title="migrations/001_embeddings.sql"
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE embeddings (
+  id         TEXT        NOT NULL,
+  index_id   TEXT        NOT NULL,
+  embedding  vector(1536) NOT NULL,
+  metadata   JSONB,
+  PRIMARY KEY (id, index_id)
+);
+
+-- Optional: index for faster ANN search
+CREATE INDEX ON embeddings USING hnsw (embedding vector_cosine_ops);
+```
+
+Adjust the dimension (`1536`) to match your engine.
+
+## Setup
+
+```ts title="lib/embedding.ts"
+import { createEmbeddingService } from "@justwant/embedding";
+import { pgvectorStorageAdapter } from "@justwant/embedding/storages/pgvector";
+import { Pool } from "pg";
+
+const storage = pgvectorStorageAdapter({
+  db: new Pool({ connectionString: process.env.DATABASE_URL }),
+  tableName: "embeddings",
+  dimension: 1536,
+});
+
+export const embedding = createEmbeddingService({ engine, storage });
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `db` | `PgVectorClient` | Yes | `pg` Client, Pool, or any object with a `query()` method |
+| `tableName` | `string` | Yes | Table name |
+| `dimension` | `number` | Yes | Vector dimension — validated on upsert |
+| `indexIdColumn` | `string` | No | Column for the universe id. Default: `"index_id"` |
+| `formatVector` | `(v: number[]) => string` | No | Custom vector serialization. Default uses `pgvector/pg` if available |
+
+## Notes
+
+- Scores are computed as `1 - cosine_distance` (range 0–1, higher is more similar).
+- Metadata filtering is performed in PostgreSQL using exact metadata matches.
+- The adapter uses `ON CONFLICT (id, index_id) DO UPDATE` — upserting the same id overwrites the vector and metadata.

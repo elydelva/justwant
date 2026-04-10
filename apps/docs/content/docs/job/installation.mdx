@@ -1,0 +1,260 @@
+---
+title: Installation
+description: Install @justwant/job and add your chosen engine.
+icon: Download
+---
+
+## Install core
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/job
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/job
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/job
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/job
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Install engine dependencies
+
+Choose the engine that matches your infrastructure:
+
+<CodeBlockTabs>
+<CodeBlockTabsList>
+  <CodeBlockTabsTrigger value="bullmq">BullMQ (Redis)</CodeBlockTabsTrigger>
+  <CodeBlockTabsTrigger value="qstash">QStash (serverless)</CodeBlockTabsTrigger>
+  <CodeBlockTabsTrigger value="pg">PostgreSQL</CodeBlockTabsTrigger>
+  <CodeBlockTabsTrigger value="node">node-cron (in-process)</CodeBlockTabsTrigger>
+</CodeBlockTabsList>
+<CodeBlockTab value="bullmq">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add bullmq
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install bullmq
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add bullmq
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add bullmq
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+BullMQ requires a Redis connection. Use `Bun.redis` or any ioredis-compatible client for the connection parameter.
+
+</CodeBlockTab>
+<CodeBlockTab value="qstash">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @upstash/qstash
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @upstash/qstash
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @upstash/qstash
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @upstash/qstash
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+QStash requires an Upstash account. Get your token from the [Upstash Console](https://console.upstash.com/).
+
+</CodeBlockTab>
+<CodeBlockTab value="pg">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add cron-parser
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install cron-parser
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add cron-parser
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add cron-parser
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+The pg engine uses `Bun.sql` (built-in). `cron-parser` is optional — the engine falls back to a 60-second interval if not installed.
+
+</CodeBlockTab>
+<CodeBlockTab value="node">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add node-cron
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install node-cron
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add node-cron
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add node-cron
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+The node engine runs entirely in-process. No external dependencies required beyond `node-cron`.
+
+</CodeBlockTab>
+</CodeBlockTabs>
+
+## Quick start
+
+```ts title="lib/jobs.ts"
+import { createJob, defineJob, defineCron } from "@justwant/job";
+import { nodeEngine } from "@justwant/job/engines/node";
+
+const sendWelcomeEmail = defineJob({
+  name: "send-welcome-email",
+});
+
+const dailyDigest = defineCron({
+  job: defineJob({ name: "daily-digest" }),
+  cron: "0 9 * * *",
+});
+
+const handler = sendWelcomeEmail.handle(async ({ data, logger }) => {
+  logger.info("Sending welcome email", { data });
+});
+
+const jobs = createJob({
+  engine: nodeEngine(),
+  crons: [dailyDigest],
+  handlers: {
+    "daily-digest": dailyDigest.job.handle(async ({ logger }) => {
+      logger.info("Sending daily digest");
+    }),
+  },
+});
+
+await jobs.start();
+
+// Manually trigger
+await jobs.enqueue(sendWelcomeEmail, { userId: "u-1" });
+```

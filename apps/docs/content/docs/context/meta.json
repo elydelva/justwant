@@ -1,0 +1,14 @@
+{
+  "title": "Context",
+  "icon": "Layers",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "scopes",
+    "---Reference---",
+    "api"
+  ]
+}

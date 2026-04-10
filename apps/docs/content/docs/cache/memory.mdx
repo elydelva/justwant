@@ -1,0 +1,41 @@
+---
+title: Memory
+description: In-process, volatile cache for development and tests.
+icon: Cpu
+---
+
+## When to use
+
+Use the memory adapter during development and in tests. It stores entries in a JavaScript `Map`, requires no external infrastructure, and is reset when the process exits.
+
+**Do not use** in production if you need persistence or shared state across multiple instances.
+
+## Installation
+
+```bash
+bun add @justwant/cache
+```
+
+No additional packages required.
+
+## Setup
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { memoryAdapter } from "@justwant/cache/adapters/memory";
+
+export const cache = createCache({
+  adapter: memoryAdapter(),
+});
+```
+
+## Options
+
+`memoryAdapter()` takes no options.
+
+## Behavior
+
+- TTL is enforced lazily via `Date.now()` comparison on read — no background timer.
+- Expired entries are pruned on access, not proactively.
+- Tag invalidation is tracked via an internal reverse-index (`tag → Set<key>`).
+- State is local to the process — not shared across instances or restarts.

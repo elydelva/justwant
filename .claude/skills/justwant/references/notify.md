@@ -1,86 +1,183 @@
 # @justwant/notify
 
-Notifications: templates (one version per channel) + canals (email, SMS, console). Send = template + canal + args.
+Multi-channel notification system. Separates *what* (templates) from *where* (canals). Send = template + canal + args.
+
+## Install
+
+```bash
+bun add @justwant/notify
+# Email: bun add resend
+# SMS:   bun add twilio
+```
 
 ## Usage
 
 ```ts
-import { createTemplate, createCanal, createNotify } from "@justwant/notify";
-import { createResendAdapter } from "@justwant/notify/channels/email/resend";
-import { createTwilioSmsAdapter } from "@justwant/notify/channels/sms/twilio";
+import { createNotify, createTemplate, createCanal } from "@justwant/notify";
+import { createResendCanal } from "@justwant/notify/channels/email/resend";
+import { createTwilioSmsCanal } from "@justwant/notify/channels/sms/twilio";
 import { consoleCanal } from "@justwant/notify/channels/console";
-import { createMemoryNotifyRepository } from "@justwant/notify/repo/memory";
 import { auditPlugin } from "@justwant/notify/plugins/audit";
+import { Resend } from "resend";
+import twilio from "twilio";
 
-const welcome = createTemplate<{ to: string; name: string }>({
+const welcome = createTemplate<{ name: string; email: string; phone: string }>({
   id: "welcome",
-  email: (args) => ({ to: args.to, subject: "Hi", html: `<p>Hi ${args.name}</p>` }),
-  sms: (args) => ({ to: args.to, body: `Hi ${args.name}` }),
-  console: (args) => ({ level: "info", text: `Welcome ${args.to}` }),
+  email:   (args) => ({ to: args.email, subject: `Welcome, ${args.name}!`, html: `<p>Hi ${args.name}</p>`, text: `Hi ${args.name}` }),
+  sms:     (args) => ({ to: args.phone, body: `Hi ${args.name}, welcome!` }),
+  console: (args) => ({ level: "info", text: `Welcome ${args.email}` }),
 });
 
 const notify = createNotify({
   templates: [welcome],
   canals: {
-    "email:default": createCanal({ kind: "email", adapter: createResendAdapter({ client: resend, from }) }),
-    "sms:twilio": createCanal({ kind: "sms", adapter: createTwilioSmsAdapter({ client: twilio, from }) }),
-    "console:dev": consoleCanal(),
+    email: createResendCanal({ client: new Resend(process.env.RESEND_API_KEY!), from: "Acme <no-reply@acme.com>" }),
+    sms:   createTwilioSmsCanal({ client: twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!), from: "+15005550006" }),
+    dev:   consoleCanal(),
   },
-  repo: createMemoryNotifyRepository(),
-  plugins: [auditPlugin({ onSend: ({ templateId, canalId }) => console.log(templateId, canalId) })],
+  plugins: [auditPlugin({ onSend: async ({ templateId, canalId, phase, result }) => { /* log */ } })],
+  onError: "throw",
 });
 
-await notify.send({ templateId: "welcome", canalId: "email:default", args: { to: "a@b.com", name: "Alice" } });
+await notify.send({ templateId: "welcome", canalId: "email", args: { name: "Alice", email: "alice@example.com", phone: "+14155552671" } });
 ```
 
 ## createTemplate
 
-`createTemplate<TArgs>({ id, email?, sms?, console?, webhook?, slack? })` — each key is `(args: TArgs) => Message` for that channel. Returns `Template<TArgs>`.
+`createTemplate<TArgs>({ id, email?, sms?, console?, webhook?, slack? })` — each key is `(args: TArgs) => <ChannelMessage>`. All channel keys are optional. Returns `Template<TArgs>`.
 
-## createCanal
+## createNotify options
 
-`createCanal({ kind, adapter })` — `kind`: `"email" | "sms" | "console" | "webhook" | "slack"`. `adapter`: `{ send(message): Promise<void> }`. Helpers: `createEmailCanal`, `createSmsCanal`, `createConsoleCanal`.
+| Option    | Type                        | Default    | Description |
+|-----------|-----------------------------|------------|-------------|
+| `templates` | `Template[]`              | —          | Initial template registry |
+| `canals`    | `Record<string, Canal>`   | —          | Named canal instances |
+| `repo`      | `NotifyRepository?`       | —          | Optional persistence for dynamic template management |
+| `plugins`   | `NotifyPlugin[]?`         | `[]`       | Plugin pipeline |
+| `onError`   | `"throw" \| "silent"`     | `"throw"`  | Error handling mode |
 
-## createNotify
+## NotifyInstance API
 
-| Option    | Type                    | Description |
-|-----------|-------------------------|-------------|
-| templates | Template[]              | Initial templates (used for send) |
-| canals    | Record<string, Canal>   | Canal instances by id |
-| repo      | NotifyRepository?       | Optional persistence |
-| plugins   | NotifyPlugin[]?        | e.g. audit |
-| onError   | "throw" \| "silent"?   | Default "throw" |
+| Method | Requires | Description |
+|--------|----------|-------------|
+| `send({ templateId, canalId, args })` | — | Send a notification |
+| `listTemplates()` | `repo` | List all templates |
+| `getTemplate({ id })` | `repo` | Get template by ID |
+| `createTemplate(template)` | `repo` | Add a template |
+| `updateTemplate({ id, versions })` | `repo` | Update a template |
+| `deleteTemplate({ id })` | `repo` | Delete a template |
 
-With `repo`: `listTemplates()`, `getTemplate({ id })`, `createTemplate(template)`, `updateTemplate({ id, versions })`, `deleteTemplate({ id })`.
+## Channels
+
+| Channel   | Kind        | Import                                   | Peer dep | Helper |
+|-----------|-------------|------------------------------------------|----------|--------|
+| Email     | `"email"`   | `@justwant/notify/channels/email/resend` | `resend` | `createResendCanal(options)` |
+| SMS       | `"sms"`     | `@justwant/notify/channels/sms/twilio`   | `twilio` | `createTwilioSmsCanal(options)` |
+| Console   | `"console"` | `@justwant/notify/channels/console`      | none     | `consoleCanal()` |
+| Webhook   | `"webhook"` | — (no helper; implement via `createCanal`) | — | — |
+| Slack     | `"slack"`   | — (no helper; implement via `createCanal`) | — | — |
+
+### ResendAdapterOptions
+
+| Field    | Type     | Required | Description |
+|----------|----------|----------|-------------|
+| `client` | `Resend` | Yes      | `new Resend(apiKey)` |
+| `from`   | `string` | Yes      | Default from address |
+
+### TwilioSmsAdapterOptions
+
+| Field    | Type           | Required | Description |
+|----------|----------------|----------|-------------|
+| `client` | `TwilioClient` | Yes      | `twilio(accountSid, authToken)` |
+| `from`   | `string`       | Yes      | Sending number (E.164) |
+
+### Custom canal (webhook / slack)
+
+```ts
+import { createCanal } from "@justwant/notify";
+
+const webhookCanal = createCanal({
+  kind: "webhook",
+  adapter: {
+    async send(message) {
+      await fetch(message.url, { method: "POST", headers: message.headers, body: JSON.stringify(message.body) });
+    },
+  },
+});
+```
+
+## Message types
+
+### EmailMessage
+
+| Field         | Type                                                      | Required |
+|---------------|-----------------------------------------------------------|----------|
+| `to`          | `string`                                                  | Yes |
+| `subject`     | `string`                                                  | Yes |
+| `html`        | `string`                                                  | Yes |
+| `text`        | `string`                                                  | No |
+| `replyTo`     | `string`                                                  | No |
+| `cc`          | `string[]`                                                | No |
+| `bcc`         | `string[]`                                                | No |
+| `attachments` | `Array<{ filename: string; content: string \| Buffer }>` | No |
+
+### SmsMessage
+
+| Field  | Type     | Required |
+|--------|----------|----------|
+| `to`   | `string` | Yes — E.164 |
+| `body` | `string` | Yes |
+
+### ConsoleMessage
+
+| Field   | Type                                      | Required |
+|---------|-------------------------------------------|----------|
+| `level` | `"info" \| "warn" \| "error" \| "debug"` | Yes |
+| `text`  | `string`                                  | Yes |
+
+### WebhookMessage
+
+| Field     | Type                     | Required |
+|-----------|--------------------------|----------|
+| `url`     | `string`                 | Yes |
+| `body`    | `unknown`                | Yes |
+| `headers` | `Record<string, string>` | No |
+
+## Plugins
+
+| Plugin | Import | Description |
+|--------|--------|-------------|
+| `auditPlugin` | `@justwant/notify/plugins/audit` | Log/record every notification send |
+
+### auditPlugin `onSend` callback fields
+
+| Field        | Type                   | Description |
+|--------------|------------------------|-------------|
+| `templateId` | `string`               | Template identifier |
+| `canalId`    | `string`               | Canal identifier |
+| `args`       | `unknown`              | Args passed to `notify.send` |
+| `message`    | `ChannelMessage`       | Rendered message |
+| `phase`      | `"before" \| "after"` | Before or after canal.send |
+| `result`     | `unknown`              | `undefined` on success, error on failure (after only) |
+
+### Custom plugin
+
+```ts
+import type { NotifyPlugin } from "@justwant/notify";
+
+const metricsPlugin: NotifyPlugin = {
+  onSend({ templateId, phase }) {
+    if (phase === "before") metrics.increment(`notify.${templateId}`);
+  },
+};
+```
 
 ## Repo
 
 | Adapter | Import |
 |---------|--------|
-| createMemoryNotifyRepository | repo/memory |
+| `createMemoryNotifyRepository()` | `@justwant/notify/repo/memory` |
 
-## Canaux / providers
+## Errors
 
-| Canal   | Adapter / helper           | Import |
-|---------|----------------------------|--------|
-| console | createConsoleAdapter, consoleCanal | channels/console |
-| email   | createResendAdapter        | channels/email/resend |
-| sms     | createTwilioSmsAdapter     | channels/sms/twilio |
-
-## Plugins
-
-| Plugin       | Options | Import |
-|-------------|---------|--------|
-| auditPlugin | `{ onSend? }` | plugins/audit |
-
-## createAlertNotifier (job alertPlugin)
-
-```ts
-import { createAlertNotifier } from "@justwant/notify";
-const notifier = createAlertNotifier(notify, { templateId: "job-failed", canalId: "slack" });
-// alertPlugin({ notify: notifier })
-```
-
-## API
-
-send, listTemplates?, getTemplate?, createTemplate?, updateTemplate?, deleteTemplate?. Errors: TemplateNotFoundError, CanalNotFoundError, TemplateVersionNotFoundError.
+`TemplateNotFoundError`, `CanalNotFoundError`, `TemplateVersionNotFoundError`

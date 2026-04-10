@@ -1,0 +1,105 @@
+---
+title: Membership
+description: createStandardOrganisationMembership — generate the GroupDef for an organisation type.
+icon: Users
+---
+
+## Overview
+
+`createStandardOrganisationMembership` is a convenience helper that generates the `GroupDef` needed by `defineOrganisation`. It calls `defineGroup` from `@justwant/membership` internally.
+
+```ts
+import { createStandardOrganisationMembership } from "@justwant/organisation";
+import { User } from "./user.ts";
+
+const { member, group } = createStandardOrganisationMembership({
+  name: "team",
+  member: User,
+});
+```
+
+## Signature
+
+```ts
+function createStandardOrganisationMembership<N extends string>(
+  options: CreateStandardOrganisationMembershipOptions<N>
+): StandardOrganisationMembershipResult<N>
+```
+
+### Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `N extends string` | Organisation type name — also becomes the group name |
+| `member` | `MemberLike` | Member definition (e.g. `User` from `@justwant/user`) |
+
+### Result
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `member` | `MemberLike` | The member definition passed in (passed through) |
+| `group` | `GroupDef<N>` | A group definition named `N`, accepting `member` |
+
+## How it integrates
+
+The `group` is passed to `defineOrganisation` and to `createMembershipService`:
+
+```ts
+// 1. create the group
+const { group: teamGroup } = createStandardOrganisationMembership({
+  name: "team",
+  member: User,
+});
+
+// 2. register with the membership service
+const membership = createMembershipService({
+  repo: membershipsRepo,
+  groups: [teamGroup],
+});
+
+// 3. pass to defineOrganisation
+const Team = defineOrganisation({ name: "team", realm, group: teamGroup });
+```
+
+## OrganisationApi — membership methods
+
+Once the service is created, use these methods via `OrganisationApi`:
+
+### addMember
+
+```ts
+await orgs.addMember({
+  organisation: team,
+  member: { id: userId },   // type defaults to "user"
+  role: "member",
+});
+```
+
+Adds the member to the group **and** assigns them the given role in the permission layer simultaneously.
+
+### removeMember
+
+```ts
+await orgs.removeMember({
+  organisation: team,
+  member: { id: userId },
+});
+```
+
+Unassigns all roles then removes from the group.
+
+### listMembers
+
+```ts
+const members = await orgs.listMembers({ organisation: team });
+// [{ type: "user", id: "..." }, ...]
+```
+
+### listForMember
+
+```ts
+const teams = await orgs.listForMember({ member: { id: userId } });
+// Organisation[]
+```
+
+Returns all organisations across all registered types that the member belongs to.

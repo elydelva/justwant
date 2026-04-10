@@ -1,0 +1,98 @@
+---
+title: Node
+description: In-process job engine backed by node-cron — for local development and simple apps.
+icon: Terminal
+---
+
+## When to use
+
+Use the node engine for **local development**, simple apps, or CLIs that run scheduled tasks in-process. No persistence — state is lost on restart.
+
+**Best for**: Development environments, simple scheduled tasks, one-off scripts.
+
+## Installation
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add node-cron
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install node-cron
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add node-cron
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add node-cron
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Setup
+
+```ts title="lib/jobs.ts"
+import { createJob, defineJob, defineCron } from "@justwant/job";
+import { nodeEngine } from "@justwant/job/engines/node";
+
+const engine = nodeEngine({
+  timezone: "Europe/Paris", // optional global timezone
+});
+
+const cleanupJob = defineJob({ name: "cleanup" });
+const dailyCleanup = defineCron({
+  job: cleanupJob,
+  cron: "0 2 * * *", // 2am daily
+});
+
+export const jobs = createJob({
+  engine,
+  crons: [dailyCleanup],
+  handlers: {
+    cleanup: cleanupJob.handle(async ({ logger }) => {
+      logger.info("Running cleanup...");
+    }),
+  },
+});
+
+await jobs.start();
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `timezone` | `string` | No | Default timezone for all cron expressions (e.g. `"Europe/Paris"`) |
+
+## Limitations
+
+| Feature | Supported |
+|---------|-----------|
+| Retry | No |
+| Delay | No |
+| Priority | No |
+| Concurrency | No |
+| Persistent state | No |
+| Edge / serverless | No |
+
+For production workloads with persistence and retries, use [BullMQ](/docs/job/bullmq). For serverless, use [QStash](/docs/job/qstash).

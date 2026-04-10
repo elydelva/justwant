@@ -1,0 +1,5 @@
+{
+  "title": "Actor",
+  "icon": "Users",
+  "pages": ["index", "---Get Started---", "installation", "basic-usage", "---Reference---", "api"]
+}

@@ -1,0 +1,95 @@
+---
+title: Derive Key
+description: Derive deterministic keys from a secret using HKDF-SHA256.
+icon: GitBranch
+---
+
+## Overview
+
+The `/derive-key` module provides HKDF-SHA256 key derivation. Use it to derive multiple distinct keys from a single master secret — one per purpose (encryption, signing, etc.) — without ever reusing the same key for two different operations.
+
+Internally it uses `@noble/hashes/hkdf` with SHA-256.
+
+**Note**: `encryptWithPassword()` in `/encrypt` also uses HKDF-SHA256 (the same `deriveKey` function) — not PBKDF2. Both modules derive keys with HKDF, which is fast and suitable when the input is already a secret or a sufficiently random password. If you need intentionally slow password-based key stretching (e.g. for user-chosen low-entropy passwords), use the `/password` module (Argon2id) to hash the password first.
+
+## Import
+
+```ts
+import { deriveKey } from "@justwant/crypto/derive-key";
+```
+
+## API
+
+### `deriveKey(secret, salt, info, length?)`
+
+Derives a `Uint8Array` key using HKDF-SHA256.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `secret` | `string \| Uint8Array` | Master secret or key material |
+| `salt` | `string \| Uint8Array` | Salt (can be a fixed string per environment) |
+| `info` | `string \| Uint8Array` | Context string that scopes this key's purpose |
+| `length` | `number` | Output length in bytes (default: 32) |
+
+Returns `Uint8Array`.
+
+```ts
+const key = deriveKey(
+  process.env.MASTER_SECRET!,
+  "production",
+  "encrypt/user-pii",
+  32
+);
+// Uint8Array(32) [...]
+```
+
+## Pattern: one master secret, many keys
+
+```ts title="lib/keys.ts"
+import { deriveKey } from "@justwant/crypto/derive-key";
+
+const MASTER = process.env.MASTER_SECRET!;
+const ENV = process.env.NODE_ENV ?? "development";
+
+export const keys = {
+  encryptPii: deriveKey(MASTER, ENV, "encrypt/pii", 32),
+  encryptDocuments: deriveKey(MASTER, ENV, "encrypt/documents", 32),
+  hmacWebhooks: deriveKey(MASTER, ENV, "hmac/webhooks", 32),
+  cacheEncryption: deriveKey(MASTER, ENV, "cache/encrypt", 32),
+};
+```
+
+Each key is deterministic — it will always produce the same bytes for the same inputs — so you do not need to store derived keys.
+
+## Usage with @justwant/cache encrypt plugin
+
+The `@justwant/cache` encrypt plugin accepts a `Uint8Array` key. Use `deriveKey` to produce it:
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { createRedisAdapter } from "@justwant/cache/adapters/redis";
+import { encryptPlugin } from "@justwant/cache/plugins/encrypt";
+import { deriveKey } from "@justwant/crypto/derive-key";
+
+const key = deriveKey(process.env.CACHE_SECRET!, "cache-salt", "cache/encrypt", 32);
+
+export const cache = createCache({
+  adapter: createRedisAdapter({ client: redis }),
+  plugins: [encryptPlugin({ key })],
+});
+```
+
+## Usage with @justwant/storage encryption plugin
+
+```ts title="lib/storage.ts"
+import { createStorageService } from "@justwant/storage";
+import { encryptionPlugin } from "@justwant/storage/plugins/encryption";
+import { deriveKey } from "@justwant/crypto/derive-key";
+
+const key = deriveKey(process.env.STORAGE_SECRET!, "storage-salt", "storage/encrypt", 32);
+
+export const storage = createStorageService({
+  buckets: [bucket],
+  plugins: [encryptionPlugin({ key })],
+});
+```

@@ -1,0 +1,126 @@
+---
+title: Installation
+description: Install @justwant/env and set up validated environment variables with Zod.
+icon: Download
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/env
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/env
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/env
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/env
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+Install a schema validator. Zod 4 is the most common choice:
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add zod
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install zod
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add zod
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add zod
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+**Note**: `@justwant/env` works with any `@standard-schema/spec`-compatible validator. The `@standard-schema/spec` peer dependency is bundled.
+
+## Quick setup
+
+```ts title="lib/env.ts"
+import { createEnv } from "@justwant/env";
+import { z } from "zod";
+
+export const env = createEnv({
+  vars: {
+    PORT: z.string().transform(Number).pipe(z.number().int().min(1).max(65535)),
+    DATABASE_URL: z.string().url(),
+    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+    SECRET_KEY: z.string().min(32),
+  },
+});
+```
+
+```ts title="index.ts"
+import { env } from "@/lib/env";
+
+console.log(env.PORT);         // number
+console.log(env.DATABASE_URL); // string
+console.log(env.NODE_ENV);     // "development" | "production" | "test"
+```
+
+If any variable is missing or fails validation, `createEnv` throws an `EnvironmentError` at module load time — before your server starts.
+
+## .env file
+
+`@justwant/env` automatically reads `.env`, `.env.local`, `.env.{NODE_ENV}`, and `.env.{NODE_ENV}.local` in Node.js and Bun. No `dotenv` required.
+
+```bash title=".env"
+PORT=3000
+DATABASE_URL=postgres://localhost:5432/mydb
+SECRET_KEY=supersecretkeythatisatleast32chars
+```
+
+## Next steps
+
+- [Basic Usage](/docs/env/basic-usage) — Groups, sources, client prefix, validation options
+- [Edge](/docs/env/edge) — Cloudflare Workers and Vercel Edge

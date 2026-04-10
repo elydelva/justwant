@@ -1,0 +1,96 @@
+---
+title: OpenAI
+description: Embedding engine backed by the OpenAI Embeddings API.
+icon: Sparkles
+---
+
+## When to use
+
+Use the OpenAI engine when you want high-quality embeddings from a managed API. It works with any OpenAI-compatible client.
+
+## Installation
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/embedding openai
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/embedding openai
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/embedding openai
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/embedding openai
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Setup
+
+```ts title="lib/embedding.ts"
+import { createEmbeddingService } from "@justwant/embedding";
+import { openAiEmbeddingEngine } from "@justwant/embedding/engines/openai";
+import OpenAI from "openai";
+
+const engine = openAiEmbeddingEngine({
+  client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
+  model: "text-embedding-3-small",
+  dimension: 1536,
+});
+
+export const embedding = createEmbeddingService({ engine, storage });
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `client` | `{ embeddings: OpenAiEmbeddingsClient }` | Yes | OpenAI client with `embeddings` API |
+| `model` | `string` | Yes | Model id, e.g. `text-embedding-3-small` |
+| `dimension` | `number` | No | Dimension for truncated embeddings (passed as `dimensions` to the API) |
+
+## Models
+
+| Model | Dimensions | Notes |
+|-------|-----------|-------|
+| `text-embedding-3-small` | 1536 | Recommended — good balance of quality and cost |
+| `text-embedding-3-large` | 3072 | Higher quality, higher cost |
+| `text-embedding-ada-002` | 1536 | Legacy |
+
+Truncation is supported by `text-embedding-3-*` models — pass `dimension` to reduce vector size for storage savings.
+
+## Batch embedding
+
+The OpenAI engine implements `embedMany` — it sends all texts in a single API call:
+
+```ts
+const vectors = await engine.embedMany(["text one", "text two", "text three"]);
+```
+
+## Per-call model override
+
+```ts
+const vector = await embedding.embed("text", { model: "text-embedding-3-large" });
+```

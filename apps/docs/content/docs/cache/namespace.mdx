@@ -1,0 +1,64 @@
+---
+title: Namespace
+description: Create isolated sub-caches with a shared adapter using key prefixes.
+icon: FolderOpen
+---
+
+## What is a namespace?
+
+A namespace is a scoped sub-cache built on top of the same adapter. Every key operation is automatically prefixed with `prefix:`, so different namespaces cannot collide.
+
+```ts
+const userCache = cache.namespace("user");
+const sessionCache = cache.namespace("session");
+
+await userCache.set("1", userData);       // stored as "user:1"
+await sessionCache.set("1", sessionData); // stored as "session:1"
+```
+
+## Creating a namespace
+
+```ts
+const ns = cache.namespace("prefix");
+
+await ns.set("key", value, { ttl: "5m" });
+const value = await ns.get("key");
+await ns.delete("key");
+await ns.has("key");
+```
+
+All `CacheInstance` methods are available on the namespace object.
+
+## Namespace options
+
+`cache.namespace(prefix, opts?)` accepts an optional second argument to override defaults for the sub-cache:
+
+```ts
+const ns = cache.namespace("session", {
+  ttl: "30m",       // default TTL for this namespace
+  onError: "throw", // override error handling
+});
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `ttl` | `TTL` | Default TTL for `set` / `wrap` in this namespace |
+| `tags` | `string[]` | Default tags for entries in this namespace |
+| `onError` | `OnError` | Error handling for this namespace |
+
+The separator between prefix and key is always `:` — it is not configurable.
+
+## Nested namespaces
+
+Namespaces can be nested — each adds a prefix layer:
+
+```ts
+const org = cache.namespace("org:42");
+const orgPosts = org.namespace("posts");
+
+await orgPosts.set("1", post); // stored as "org:42:posts:1"
+```
+
+## Namespace plugin
+
+For static namespaces applied at cache creation time, use the `namespacePlugin` instead of calling `cache.namespace()`. See [Plugins](/docs/cache/plugins) for details.

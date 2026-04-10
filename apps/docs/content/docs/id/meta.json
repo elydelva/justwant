@@ -1,0 +1,14 @@
+{
+  "title": "ID",
+  "icon": "Hash",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "---Guides---",
+    "sortable",
+    "short",
+    "---Reference---",
+    "api"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "title": "User",
+  "icon": "User",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Concepts---",
+    "define-user",
+    "repositories",
+    "---Reference---",
+    "errors",
+    "api"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "title": "Preference",
+  "icon": "SlidersHorizontal",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Providers---",
+    "adapters",
+    "memory",
+    "db",
+    "---Reference---",
+    "api"
+  ]
+}

@@ -1,0 +1,115 @@
+---
+title: Basic Usage
+description: End-to-end example — defineSlot, createContextService, forRequest, get.
+icon: Play
+---
+
+## Full example: authenticated request context
+
+This walkthrough resolves a `user` slot from an auth token and a `tenantDb` slot from the user's tenant ID. Both values are resolved at most once per request, regardless of how many times `get()` is called.
+
+### 1. Define the slots
+
+```ts title="lib/context/slots.ts"
+import { defineSlot } from "@justwant/context";
+
+// Resolved eagerly at forRequest() — database connection is always needed
+export const dbSlot = defineSlot<DatabaseConnection>({
+  key: "db",
+  scope: "eager",
+  resolve: async () => {
+    return openDatabaseConnection(process.env.DATABASE_URL!);
+  },
+});
+
+// Resolved at forRequest() — auth is always needed for authenticated routes
+export const userSlot = defineSlot<{ id: string; role: "admin" | "member" }>({
+  key: "user",
+  scope: "request",
+  resolve: async (ctx) => {
+    const token = ctx.initial["authToken"] as string;
+    return verifyAndDecodeToken(token);
+  },
+});
+
+// Resolved lazily — only fetched when a handler actually calls ctx.get(settingsSlot)
+export const settingsSlot = defineSlot<UserSettings>({
+  key: "settings",
+  scope: "on-demand",
+  resolve: async (ctx) => {
+    const user = await ctx.get(userSlot); // slots can depend on other slots
+    return fetchUserSettings(user.id);
+  },
+});
+```
+
+### 2. Create the service
+
+```ts title="lib/context/service.ts"
+import { createContextService } from "@justwant/context";
+import { dbSlot, userSlot, settingsSlot } from "./slots";
+
+export const contextService = createContextService({
+  slots: [dbSlot, userSlot, settingsSlot],
+});
+```
+
+### 3. Fork per request
+
+```ts title="server.ts"
+import { contextService } from "@/lib/context/service";
+import { handleProfile } from "@/handlers/profile";
+
+Bun.serve({
+  async fetch(req) {
+    const ctx = contextService.forRequest({
+      authToken: req.headers.get("authorization") ?? "",
+    });
+
+    // Pass ctx explicitly to every handler that needs it
+    return handleProfile(req, ctx);
+  },
+});
+```
+
+### 4. Consume in handlers
+
+```ts title="handlers/profile.ts"
+import type { RequestContext } from "@justwant/context";
+import { userSlot, settingsSlot } from "@/lib/context/slots";
+
+export async function handleProfile(req: Request, ctx: RequestContext) {
+  const user = await ctx.get(userSlot);
+
+  // settingsSlot is on-demand — only fetched here, not at forRequest()
+  const settings = await ctx.get(settingsSlot);
+
+  return Response.json({ user, settings });
+}
+```
+
+## Memoization
+
+Slots are resolved **at most once** per `RequestContext`. Calling `ctx.get(userSlot)` a second time returns the same promise — the resolver function is not called again.
+
+```ts
+const a = ctx.get(userSlot);
+const b = ctx.get(userSlot);
+
+console.log(a === b); // true — same Promise instance
+```
+
+## Accessing initial values
+
+The `initial` object passed to `forRequest` is available as `ctx.initial` inside resolvers and handlers. It is frozen after creation.
+
+```ts
+const ctx = contextService.forRequest({ requestId: "req_abc", locale: "en" });
+
+console.log(ctx.initial["requestId"]); // "req_abc"
+```
+
+## Next steps
+
+- [Scopes](/docs/context/scopes) — When each scope resolves and when to use it
+- [API Reference](/docs/context/api) — Complete function and type signatures

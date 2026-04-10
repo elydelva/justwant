@@ -1,0 +1,52 @@
+---
+title: Upstash
+description: Serverless-compatible cache backed by Upstash Redis (HTTP).
+icon: Cloud
+---
+
+## When to use
+
+Use the Upstash adapter for serverless or edge deployments where you cannot maintain a persistent TCP connection. Upstash Redis communicates over HTTP, making it compatible with Cloudflare Workers, Vercel Edge, and other edge runtimes.
+
+## Installation
+
+```bash
+bun add @justwant/cache @upstash/redis
+```
+
+## Setup
+
+```ts title="lib/cache.ts"
+import { createCache } from "@justwant/cache";
+import { upstashAdapter } from "@justwant/cache/adapters/upstash";
+import { Redis } from "@upstash/redis";
+
+const redisClient = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+export const cache = createCache({
+  adapter: upstashAdapter({ redis: redisClient }),
+});
+```
+
+## Options
+
+```ts
+upstashAdapter({
+  redis: UpstashRedisClient;  // @upstash/redis client (required)
+  keyPrefix?: string;         // Key prefix applied to all entries
+  tagPrefix?: string;         // Prefix for tag set keys (default: "tag:")
+})
+```
+
+## Environment variables
+
+```bash
+# .env
+UPSTASH_REDIS_REST_URL=https://...upstash.io
+UPSTASH_REDIS_REST_TOKEN=AX...
+```
+
+Get these from the [Upstash Console](https://console.upstash.com).

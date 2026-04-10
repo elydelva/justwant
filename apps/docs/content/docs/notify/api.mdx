@@ -1,0 +1,128 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/notify.
+icon: BookOpen
+---
+
+## Main entry (`@justwant/notify`)
+
+### `createNotify(options)`
+
+Creates a notify instance.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `templates` | `Template[]` | — | Initial template registry |
+| `canals` | `Record<string, Canal>` | — | Named canal map |
+| `repo` | `NotifyRepository` | — | Optional repository for dynamic template management |
+| `plugins` | `NotifyPlugin[]` | `[]` | Plugin pipeline |
+| `onError` | `"throw" \| "silent"` | `"throw"` | Error mode |
+
+Returns `NotifyInstance`.
+
+### `NotifyInstance`
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `send` | `<TArgs>(options: SendOptions<TArgs>) => Promise<void>` | Send a notification |
+| `listTemplates` | `() => Promise<Template[]>` | List all templates (requires `repo`) |
+| `getTemplate` | `({ id }) => Promise<Template \| null>` | Get template by ID (requires `repo`) |
+| `createTemplate` | `(template: Template) => Promise<void>` | Add template (requires `repo`) |
+| `updateTemplate` | `({ id, versions }) => Promise<void>` | Update template (requires `repo`) |
+| `deleteTemplate` | `({ id }) => Promise<void>` | Delete template (requires `repo`) |
+
+### `SendOptions`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `templateId` | `string` | Template to use |
+| `canalId` | `string` | Canal to send through |
+| `args` | `TArgs` | Arguments passed to the template factory |
+
+### `createTemplate<TArgs>(options)`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique template ID |
+| `email` | `(args: TArgs) => EmailMessage` | Email version |
+| `sms` | `(args: TArgs) => SmsMessage` | SMS version |
+| `console` | `(args: TArgs) => ConsoleMessage` | Console version |
+| `webhook` | `(args: TArgs) => WebhookMessage` | Webhook version |
+| `slack` | `(args: TArgs) => SlackMessage` | Slack version |
+
+Returns `Template<TArgs>`.
+
+### `createCanal(options)` / `createEmailCanal` / `createSmsCanal` / `createConsoleCanal`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `kind` | `ChannelKind` | Channel kind: `"email"`, `"sms"`, `"console"`, `"webhook"`, `"slack"` |
+| `adapter` | `{ send(message): Promise<void> }` | Delivery adapter |
+
+## Email adapter (`@justwant/notify/channels/email/resend`)
+
+| Export | Description |
+|--------|-------------|
+| `createResendAdapter(options)` | Creates a Resend send adapter |
+| `createResendCanal(options)` | Creates an email canal using Resend |
+
+### `ResendAdapterOptions`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `client` | `Resend` | Resend client instance |
+| `from` | `string` | Default from address |
+
+## SMS adapter (`@justwant/notify/channels/sms/twilio`)
+
+| Export | Description |
+|--------|-------------|
+| `createTwilioSmsAdapter(options)` | Creates a Twilio SMS send adapter |
+| `createTwilioSmsCanal(options)` | Creates an SMS canal using Twilio |
+
+### `TwilioSmsAdapterOptions`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `client` | `TwilioClient` | Twilio client instance |
+| `from` | `string` | Sending phone number (E.164) |
+
+## Console (`@justwant/notify/channels/console`)
+
+| Export | Description |
+|--------|-------------|
+| `consoleCanal()` | Creates a console canal that logs to stdout |
+| `createConsoleAdapter()` | Creates the underlying console adapter |
+
+## Audit plugin (`@justwant/notify/plugins/audit`)
+
+| Export | Description |
+|--------|-------------|
+| `auditPlugin(options)` | Creates an audit plugin |
+
+### `AuditPluginOptions`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `onSend` | `(options) => void \| Promise<void>` | Called before/after each send |
+
+## Memory repository (`@justwant/notify/repo/memory`)
+
+| Export | Description |
+|--------|-------------|
+| `createMemoryNotifyRepository()` | In-memory `NotifyRepository` for testing |
+
+## Types
+
+| Type | Description |
+|------|-------------|
+| `ChannelKind` | `"email" \| "sms" \| "console" \| "webhook" \| "slack"` |
+| `EmailMessage` | Email message shape |
+| `SmsMessage` | SMS message shape |
+| `ConsoleMessage` | Console message shape |
+| `WebhookMessage` | Webhook message shape |
+| `SlackMessage` | Slack message shape |
+| `Template<TArgs>` | `{ id: string; versions: TemplateVersions<TArgs> }` |
+| `Canal` | Union of all canal types |
+| `NotifyPlugin` | Plugin interface |
+| `NotifyRepository` | Repository interface for dynamic template management |

@@ -1,0 +1,48 @@
+---
+title: Audit
+description: Log a structured audit entry for every job execution, including duration, status, and payload hash.
+icon: ClipboardList
+---
+
+## Overview
+
+The audit plugin logs a structured entry for every job execution: job ID, start time, duration, outcome, and a non-cryptographic hash of the payload.
+
+## Import
+
+```ts
+import { auditPlugin } from "@justwant/job/plugins/audit";
+```
+
+## Setup
+
+```ts
+import { auditPlugin } from "@justwant/job/plugins/audit";
+
+const plugin = auditPlugin({
+  audit: {
+    log(entry) {
+      // entry: { jobId, startedAt, durationMs, status, payloadHash }
+      db.insert("job_audit", entry);
+    },
+  },
+});
+
+const jobs = createJob({ engine, plugins: [plugin] });
+```
+
+## AuditPluginOptions
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `audit.log` | `(entry: AuditEntry) => void \| Promise<void>` | Yes | Audit sink |
+
+## AuditEntry
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `jobId` | `string` | Queue / job identifier |
+| `startedAt` | `Date` | Execution start time |
+| `durationMs` | `number` | Elapsed milliseconds |
+| `status` | `"success" \| "failure"` | Outcome |
+| `payloadHash` | `string \| undefined` | Non-cryptographic hash of the payload |

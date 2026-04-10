@@ -1,0 +1,152 @@
+---
+title: Cookie Store
+description: Share typed cookie definitions across routes, manage multiple cookies atomically, and serialize without an adapter.
+icon: Box
+---
+
+## Overview
+
+`createCookieStore` bundles several typed cookie definitions into a single store object. The store handles parsing, validation, serialization, and writing through an adapter — your code only deals with typed values.
+
+---
+
+## Sharing definitions across routes
+
+Define cookies and their schemas once, then import them wherever you need:
+
+```ts title="lib/cookies.ts"
+import { defineCookie } from "@justwant/cookie";
+import { z } from "zod";
+
+export const themeCookie = defineCookie("theme", {
+  schema: z.enum(["light", "dark"]),
+  default: "light",
+});
+
+export const localeCookie = defineCookie("locale", {
+  schema: z.string().min(2).max(5),
+  default: "en",
+});
+
+export const sessionCookie = defineCookie("session", {
+  schema: z.string().uuid(),
+  onMismatch: "remove",
+});
+
+export const cookieDefs = { theme: themeCookie, locale: localeCookie, session: sessionCookie };
+```
+
+In each route or server action, instantiate the store with the appropriate adapter:
+
+```ts title="app/api/preferences/route.ts"
+import { NextJSAdapter, createCookieStore } from "@justwant/cookie";
+import { cookies } from "next/headers";
+import { cookieDefs } from "@/lib/cookies";
+
+export async function GET() {
+  const store = createCookieStore(cookieDefs, { adapter: NextJSAdapter(await cookies()) });
+  const { theme, locale } = store.get();
+  return Response.json({ theme, locale });
+}
+
+export async function POST(req: Request) {
+  const { theme } = await req.json();
+  const store = createCookieStore(cookieDefs, { adapter: NextJSAdapter(await cookies()) });
+  store.set("theme", theme, { path: "/", httpOnly: true, maxAge: 60 * 60 * 24 * 365 });
+  return new Response(null, { status: 204 });
+}
+```
+
+---
+
+## Reading cookies
+
+`store.get()` returns all cookies at once, fully typed:
+
+```ts
+const { theme, locale, session } = store.get();
+// theme: "light" | "dark"
+// locale: string
+// session: string | undefined
+```
+
+- Missing cookies return their `default` value.
+- Cookies that fail schema validation follow `onMismatch` — either return `default` (`"fallback"`) or return `default` and delete the cookie (`"remove"`).
+
+---
+
+## Writing cookies
+
+`store.set(name, value, options)` writes a single cookie through the adapter:
+
+```ts
+store.set("theme", "dark", {
+  path: "/",
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax",
+  maxAge: 60 * 60 * 24 * 365, // 1 year
+});
+```
+
+Only cookies registered in the store's definitions can be written — TypeScript enforces the name and value type.
+
+---
+
+## Pruning untracked cookies
+
+Set `pruneUntracked: true` to automatically delete any cookie not registered in the store when `store.get()` is called. Useful for cleaning up stale cookies after schema changes.
+
+```ts
+const store = createCookieStore(cookieDefs, {
+  adapter,
+  pruneUntracked: true, // deletes untracked cookies with path: "/"
+});
+
+// Or specify a scope:
+const store = createCookieStore(cookieDefs, {
+  adapter,
+  pruneUntracked: { path: "/", domain: "example.com" },
+});
+```
+
+Requires an adapter — `pruneUntracked` is ignored when no adapter is provided.
+
+---
+
+## Without an adapter — parse and serialize
+
+When you only have a raw `Cookie` header (e.g., in middleware or edge functions), skip the adapter and use `parse` and `serialize` directly:
+
+```ts
+const store = createCookieStore(cookieDefs);
+
+// Parse from a raw Cookie header string
+const values = store.parse("theme=dark; locale=fr");
+// { theme: "dark", locale: "fr", session: undefined }
+
+// Produce a Set-Cookie header string
+const header = store.serialize("theme", "dark", { path: "/", secure: true });
+// "theme=dark; Path=/; Secure"
+```
+
+---
+
+## JSON cookies
+
+For cookies that hold structured data, use a Zod schema with `z.object()` — the store serializes to JSON automatically:
+
+```ts
+const prefCookie = defineCookie("prefs", {
+  schema: z.object({ locale: z.string(), timezone: z.string() }),
+  default: { locale: "en", timezone: "UTC" },
+  onMismatch: "remove",
+});
+
+// Writing
+store.set("prefs", { locale: "fr", timezone: "Europe/Paris" }, { path: "/" });
+
+// Reading — fully typed object
+const { prefs } = store.get();
+console.log(prefs.locale); // "fr"
+```

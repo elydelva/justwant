@@ -1,0 +1,187 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/lock.
+icon: BookOpen
+---
+
+## createLock
+
+```ts
+function createLock(options: CreateLockOptions): LockApi
+```
+
+### CreateLockOptions
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `repo` | `LockRepository` | Yes | Storage backend |
+| `hooks` | `LockHooks` | No | Lifecycle hooks |
+
+### LockApi
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `acquire` | `(owner, lockable, opts?) => Promise<boolean>` | Acquire mutex. Returns `false` if held by another owner. |
+| `release` | `(owner, lockable) => Promise<void>` | Release. Throws `LockNotHeldError` if not held. |
+| `isLocked` | `(lockable) => Promise<boolean>` | Check if currently held and not expired. |
+| `forceRelease` | `(lockable) => Promise<void>` | Remove all locks for lockable regardless of owner. |
+| `extend` | `(owner, lockable, ttlMs) => Promise<boolean>` | Extend TTL. Throws `LockNotHeldError` if not held. |
+
+---
+
+## createSemaphore
+
+```ts
+function createSemaphore(options: CreateSemaphoreOptions): SemaphoreApi
+```
+
+### CreateSemaphoreOptions
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `repo` | `LockRepository` | Yes | Storage backend |
+| `max` | `number` | Yes | Maximum concurrent units |
+| `hooks` | `LockHooks` | No | Lifecycle hooks |
+
+### SemaphoreApi
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `acquire` | `(owner, lockable, count?) => Promise<boolean>` | Acquire `count` units (default 1). Returns `false` if unavailable. |
+| `release` | `(owner, lockable, count?) => Promise<void>` | Release `count` units (default 1). Throws `LockNotHeldError` if insufficient. |
+| `available` | `(lockable) => Promise<number>` | Returns free unit count (`max - held`). |
+
+---
+
+## defineLockable
+
+```ts
+function defineLockable<N extends string>(
+  options: DefineLockableOptions<N>
+): LockableDef<N>
+```
+
+### DefineLockableOptions
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | `N` | Yes | Lockable type name (literal) |
+| `singular` | `boolean` | Yes | `true` = global key, `false` = per-params key |
+| `prefix` | `string` | No | Key prefix |
+
+### `LockableDef<N>`
+
+Callable function that returns a `Lockable<N>`. Read-only properties: `name`, `singular`, `prefix`.
+
+---
+
+## defineLockOwner
+
+```ts
+function defineLockOwner<N extends string>(
+  options: DefineLockOwnerOptions<N>
+): LockOwnerDef<N>
+```
+
+### DefineLockOwnerOptions
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | `N` | Yes | Owner type name (literal) |
+| `within` | `string` | No | Parent scope type |
+
+### `LockOwnerDef<N>`
+
+Callable function that returns a `LockOwner<N>`. Read-only properties: `name`, `within`.
+
+---
+
+## auditLockHooks
+
+```ts
+function auditLockHooks(options: AuditLockHooksOptions): LockHooks
+```
+
+### AuditLockHooksOptions
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `onAcquire` | `(ctx, { acquired }) => void \| Promise<void>` | Called after acquire |
+| `onRelease` | `(ctx, { released }) => void \| Promise<void>` | Called after release |
+| `onExtend` | `(ctx, { extended }) => void \| Promise<void>` | Called after extend |
+| `onForceRelease` | `(ctx) => void \| Promise<void>` | Called after force release |
+
+---
+
+## Core types
+
+### Lockable
+
+```ts
+interface Lockable<N extends string = string> {
+  type: N;
+  key: string;
+}
+```
+
+### LockOwner
+
+```ts
+// Alias for Actor from @justwant/actor
+type LockOwner<T extends string = string> = Actor<T>;
+```
+
+### Lock
+
+```ts
+interface Lock {
+  id: string;
+  lockableKey: string;
+  ownerType: string;
+  ownerId: string;
+  ownerOrgId?: string;
+  count: number;
+  expiresAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+```
+
+### LockRepository
+
+```ts
+interface LockRepository {
+  findOne(where: Partial<Lock>): Promise<Lock | null>;
+  findMany(where: Partial<Lock>): Promise<Lock[]>;
+  create(data: CreateInput<Lock>): Promise<Lock>;
+  update(id: string, data: Partial<Lock>): Promise<Lock>;
+  delete(id: string): Promise<void>;
+}
+```
+
+### LockHooks
+
+```ts
+interface LockHooks {
+  beforeAcquire?(ctx: LockHookContext): void | Promise<void>;
+  afterAcquire?(ctx: LockHookContext, result: { acquired: boolean }): void | Promise<void>;
+  beforeRelease?(ctx: LockHookContext): void | Promise<void>;
+  afterRelease?(ctx: LockHookContext, result: { released: boolean }): void | Promise<void>;
+  beforeExtend?(ctx: LockHookContext): void | Promise<void>;
+  afterExtend?(ctx: LockHookContext, result: { extended: boolean }): void | Promise<void>;
+  beforeForceRelease?(ctx: LockHookContext): void | Promise<void>;
+  afterForceRelease?(ctx: LockHookContext): void | Promise<void>;
+}
+```
+
+### LockHookContext
+
+```ts
+interface LockHookContext {
+  owner: LockOwner;
+  lockable: Lockable;
+  operation: "acquire" | "release" | "extend" | "forceRelease";
+  ttlMs?: number;
+  count?: number;
+}
+```

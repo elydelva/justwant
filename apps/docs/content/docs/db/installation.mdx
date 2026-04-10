@@ -1,0 +1,353 @@
+---
+title: Installation
+description: Install @justwant/db and the peer dependencies for your ORM or query builder.
+icon: Download
+---
+
+## Install the core
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @justwant/db
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @justwant/db
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @justwant/db
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @justwant/db
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+Then install the peer dependency for your ORM.
+
+<CodeBlockTabs defaultValue="drizzle">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="drizzle">Drizzle</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="prisma">Prisma</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler-sqlite">Waddler (SQLite)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler-pg">Waddler (PostgreSQL)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler-neon">Waddler (Neon)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler-turso">Waddler (Turso)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="waddler-d1">Waddler (D1)</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="drizzle">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add drizzle-orm
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install drizzle-orm
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add drizzle-orm
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add drizzle-orm
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+  <CodeBlockTab value="prisma">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add @prisma/client
+bunx prisma generate
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install @prisma/client
+npx prisma generate
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add @prisma/client
+pnpm dlx prisma generate
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add @prisma/client
+yarn dlx prisma generate
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler-sqlite">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add waddler
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install waddler
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add waddler
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add waddler
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+Bun SQLite is built into Bun — no extra install needed.
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler-pg">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add waddler pg
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install waddler pg
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add waddler pg
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add waddler pg
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler-neon">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add waddler @neondatabase/serverless
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install waddler @neondatabase/serverless
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add waddler @neondatabase/serverless
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add waddler @neondatabase/serverless
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler-turso">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add waddler @libsql/client
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install waddler @libsql/client
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add waddler @libsql/client
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add waddler @libsql/client
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+  </CodeBlockTab>
+  <CodeBlockTab value="waddler-d1">
+
+<CodeBlockTabs defaultValue="bun">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="bun">Bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="yarn">Yarn</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="bun">
+
+```bash
+bun add waddler
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="npm">
+
+```bash
+npm install waddler
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="pnpm">
+
+```bash
+pnpm add waddler
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="yarn">
+
+```bash
+yarn add waddler
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+D1 is a Cloudflare runtime binding — no npm package required.
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Next steps
+
+- [Basic Usage](/docs/db/basic-usage) — Define a table and run queries
+- [Drizzle](/docs/db/drizzle) — Drizzle adapter setup
+- [Prisma](/docs/db/prisma) — Prisma adapter setup
+- [Waddler](/docs/db/waddler) — Waddler adapter and sub-drivers

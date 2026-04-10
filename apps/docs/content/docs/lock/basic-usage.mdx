@@ -1,0 +1,110 @@
+---
+title: Basic Usage
+description: Define a lockable resource and lock owner, acquire and release a mutex, and use a semaphore.
+icon: Play
+---
+
+## Define a lockable resource
+
+Use `defineLockable` to describe the resource being locked. A **singular** lockable has one global key; a **plural** lockable accepts params to produce a per-instance key.
+
+```ts title="lib/lockables.ts"
+import { defineLockable } from "@justwant/lock";
+
+// Singular — one global key: "billing"
+export const billingLock = defineLockable({
+  name: "billing",
+  singular: true,
+});
+
+// Plural — one key per user: "user:<userId>"
+export const userLock = defineLockable({
+  name: "user",
+  singular: false,
+});
+```
+
+## Define a lock owner
+
+Use `defineLockOwner` to describe who can hold a lock.
+
+```ts title="lib/owners.ts"
+import { defineLockOwner } from "@justwant/lock";
+
+// Simple owner by id
+export const Worker = defineLockOwner({ name: "worker" });
+
+// Owner scoped within an org
+export const OrgUser = defineLockOwner({ name: "user", within: "org" });
+```
+
+## Acquire and release a mutex
+
+```ts title="lib/billing.ts"
+import { createLock } from "@justwant/lock";
+import { billingLock, userLock } from "./lockables";
+import { Worker, OrgUser } from "./owners";
+import { repo } from "./lock";
+
+const lock = createLock({ repo });
+
+// Singular lockable — no params needed
+const resource = billingLock();
+const owner = Worker("worker-1");
+
+const acquired = await lock.acquire(owner, resource);
+
+if (acquired) {
+  try {
+    // critical section
+  } finally {
+    await lock.release(owner, resource);
+  }
+} else {
+  console.log("Lock already held, skipping");
+}
+```
+
+## Plural lockable with params
+
+```ts
+// Lock per user id
+const resource = userLock("user-42");
+const owner = Worker("worker-1");
+
+const acquired = await lock.acquire(owner, resource, { ttlMs: 30_000 });
+```
+
+## Semaphore example
+
+A semaphore allows up to `max` concurrent holders. Acquire N units and release them when done.
+
+```ts title="lib/pipeline.ts"
+import { createSemaphore } from "@justwant/lock";
+import { defineLockable, defineLockOwner } from "@justwant/lock";
+import { repo } from "./lock";
+
+const pipelineSlot = defineLockable({ name: "pipeline", singular: false });
+const Worker = defineLockOwner({ name: "worker" });
+
+// At most 5 concurrent pipeline workers
+const semaphore = createSemaphore({ repo, max: 5 });
+
+const resource = pipelineSlot("batch-job");
+const worker = Worker("worker-7");
+
+// Check availability
+const available = await semaphore.available(resource);
+console.log(`${available} slots free`);
+
+// Acquire 1 unit (default)
+const acquired = await semaphore.acquire(worker, resource);
+
+if (acquired) {
+  try {
+    // do work
+  } finally {
+    await semaphore.release(worker, resource);
+  }
+}
+```

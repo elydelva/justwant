@@ -1,0 +1,48 @@
+---
+title: Expiration
+description: Remove expired waitlist entries past their expiresAt date.
+icon: TimerOff
+---
+
+## Overview
+
+`cleanupExpired` is a utility function (not a middleware plugin) that scans a waitlist for entries whose `expiresAt` is in the past and removes them by calling `repo.unsubscribe`. Call it on a schedule (e.g. a cron job) or on-demand before reading the list.
+
+## Import
+
+```ts
+import { cleanupExpired } from "@justwant/waitlist";
+```
+
+## Setup
+
+Pass the repository and the list key to clean up:
+
+```ts
+import { cleanupExpired } from "@justwant/waitlist";
+
+// Remove all expired entries from the "beta" list
+const removed = await cleanupExpired(repo, "beta");
+console.log(`Removed ${removed} expired entries`);
+```
+
+To run on a schedule, wrap it in whatever cron mechanism your runtime provides:
+
+```ts
+// Example: run every hour with Bun's built-in cron (or any scheduler)
+setInterval(async () => {
+  const removed = await cleanupExpired(repo, "beta");
+  if (removed > 0) console.log(`Cleaned up ${removed} expired entries`);
+}, 60 * 60 * 1000);
+```
+
+## Options
+
+`cleanupExpired` takes two positional arguments — there is no options object.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | `WaitlistRepository` | Yes | The repository instance to read from and call `unsubscribe` on |
+| `listKey` | `string` | Yes | The waitlist key to clean up |
+
+**Returns:** `Promise<number>` — the number of entries removed.

@@ -1,0 +1,44 @@
+---
+title: Encryption
+description: AES-256-GCM encrypt on upload, decrypt transparently on download.
+icon: Lock
+---
+
+## Overview
+
+The encryption plugin encrypts every file with AES-256-GCM before it reaches the adapter and decrypts it transparently on download. The encryption key is derived from a string password using `scrypt`, so you never need to manage raw key bytes manually. Passing a `Buffer` directly skips derivation and uses the first 32 bytes as-is.
+
+This plugin only intercepts `upload` and `download`. URL generation and deletion are unaffected.
+
+## Import
+
+```ts
+import { encryptionPlugin } from "@justwant/storage/plugins/encryption";
+```
+
+## Setup
+
+```ts
+import { createStorageService } from "@justwant/storage";
+import { encryptionPlugin } from "@justwant/storage/plugins/encryption";
+
+export const storage = createStorageService({
+  buckets: [bucket],
+  plugins: [
+    encryptionPlugin({ key: process.env.STORAGE_ENCRYPTION_KEY! }),
+  ],
+});
+```
+
+Pass a `Buffer` key if you derive it elsewhere (e.g. with `@justwant/crypto/derive-key`):
+
+```ts
+encryptionPlugin({ key: derivedKeyBuffer })
+```
+
+## Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `key` | `string \| Buffer` | yes | Encryption key. Strings are derived with `scrypt`; `Buffer` values are used directly (first 32 bytes). |
+| `algorithm` | `string` | no | Cipher algorithm. Defaults to `"aes-256-gcm"`. |

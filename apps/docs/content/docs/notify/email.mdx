@@ -1,0 +1,63 @@
+---
+title: Email
+description: Send transactional emails with @justwant/notify.
+icon: Mail
+---
+
+## Overview
+
+The email channel (`kind: "email"`) delivers notifications as transactional emails. A canal wraps a provider-specific adapter and is registered under a string key in `createNotify`.
+
+## Message type
+
+Your template's `email` factory must return an `EmailMessage`:
+
+```ts
+interface EmailMessage {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  replyTo?: string;
+  cc?: string[];
+  bcc?: string[];
+  attachments?: Array<{ filename: string; content: string | Buffer }>;
+}
+```
+
+## Template factory
+
+```ts
+import { createTemplate } from "@justwant/notify";
+
+const orderConfirmationTemplate = createTemplate({
+  id: "order-confirmation",
+  email: (args: { email: string; orderId: string; total: number }) => ({
+    to: args.email,
+    subject: `Order #${args.orderId} confirmed`,
+    html: `<p>Your order of $${args.total} has been confirmed.</p>`,
+    text: `Your order of $${args.total} has been confirmed.`,
+  }),
+});
+```
+
+## Registering the canal
+
+```ts
+export const notify = createNotify({
+  templates: [orderConfirmationTemplate],
+  canals: { email: emailCanal },
+});
+
+await notify.send({
+  templateId: "order-confirmation",
+  canalId: "email",
+  args: { email: "user@example.com", orderId: "123", total: 49.99 },
+});
+```
+
+## Providers
+
+Pick a provider to create an `emailCanal`:
+
+- [Resend](/docs/notify/resend)

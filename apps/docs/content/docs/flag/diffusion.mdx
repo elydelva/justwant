@@ -1,0 +1,125 @@
+---
+title: Diffusion
+description: Time-based gradual rollout with diffusionBezier and diffusionStepped.
+icon: TrendingUp
+---
+
+## Overview
+
+Diffusion functions compute a rollout percentage `[0, 1]` based on elapsed time. Combine them with [`rollout`](/docs/flag/rollout) to gradually increase exposure as a deployment window progresses.
+
+Both functions are imported from `@justwant/flag/helpers`.
+
+## `diffusionBezier`
+
+Smooth, curve-shaped progression using a `BezierCurve` from `@justwant/bezier`.
+
+```ts
+import { diffusionBezier } from "@justwant/flag/helpers";
+import { BezierCurve } from "@justwant/bezier";
+
+const percentage = diffusionBezier({
+  curve,   // BezierCurve instance
+  start,   // Date — rollout start
+  end,     // Date — rollout end
+  at?,     // Date — current time (defaults to new Date())
+});
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `curve` | `BezierCurve` | Yes | Defines the acceleration shape of the rollout. |
+| `start` | `Date` | Yes | When the rollout begins (percentage = 0). |
+| `end` | `Date` | Yes | When the rollout completes (percentage = 1). |
+| `at` | `Date` | No | Point in time to evaluate. Defaults to `new Date()`. |
+
+### How it works
+
+```
+progress = clamp((at - start) / (end - start), 0, 1)
+percentage = curve.at(progress)
+```
+
+The Bézier curve maps linear time progress to a non-linear rollout percentage — useful for slow-start or fast-finish shapes.
+
+### Example
+
+```ts title="rules/bezierRollout.ts"
+import { defineRule } from "@justwant/flag";
+import { hashContext, rollout, diffusionBezier } from "@justwant/flag/helpers";
+import { BezierCurve } from "@justwant/bezier";
+import * as v from "valibot";
+
+const easeIn = new BezierCurve([0, 0, 0.58, 1]); // ease-in shape
+
+export const bezierRolloutRule = defineRule({
+  name: "bezier-rollout",
+  config: v.object({
+    startIso: v.string(),
+    endIso: v.string(),
+  }),
+  context: v.object({ userId: v.string() }),
+  defaultConfig: { startIso: "", endIso: "" },
+  logic: ({ config, context }) => {
+    if (!config.startIso || !config.endIso) return false;
+    const threshold = diffusionBezier({
+      curve: easeIn,
+      start: new Date(config.startIso),
+      end: new Date(config.endIso),
+    });
+    return rollout(hashContext(context.userId), threshold);
+  },
+});
+```
+
+## `diffusionStepped`
+
+Discrete step-based progression. Each step is a percentage value; time is interpolated linearly between adjacent steps.
+
+```ts
+import { diffusionStepped } from "@justwant/flag/helpers";
+
+const percentage = diffusionStepped({
+  steps,  // number[] — percentage values at each step boundary
+  start,  // Date
+  end,    // Date
+  at?,    // Date (defaults to new Date())
+});
+```
+
+### Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `steps` | `number[]` | Yes | Percentage at each step. E.g. `[0, 0.1, 0.3, 1]`. |
+| `start` | `Date` | Yes | Rollout start. |
+| `end` | `Date` | Yes | Rollout end. |
+| `at` | `Date` | No | Point in time to evaluate. Defaults to `new Date()`. |
+
+### How it works
+
+Time is divided evenly into `steps.length - 1` segments. The percentage is linearly interpolated between the two surrounding step values.
+
+### Example
+
+```ts
+// Rollout: 0% → 10% → 30% → 100% over 3 days
+const steps = [0, 0.1, 0.3, 1];
+const start = new Date("2025-06-01");
+const end = new Date("2025-06-04");
+
+const threshold = diffusionStepped({ steps, start, end });
+// At day 1: ~10%, day 2: ~30%, day 3: 100%
+```
+
+## Combining diffusion with a rule
+
+```ts
+const threshold = diffusionStepped({ steps: [0, 0.1, 0.5, 1], start, end });
+const hash = hashContext(userId);
+const isEnabled = rollout(hash, threshold);
+```
+
+**Important**: Store `startIso`/`endIso` in the rule's remote config so you can update the rollout window via `setConfigOverride` without redeploying.

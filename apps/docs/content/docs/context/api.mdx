@@ -1,0 +1,144 @@
+---
+title: API Reference
+description: Complete API reference for @justwant/context.
+icon: BookOpen
+---
+
+## Core functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `defineSlot<T>(options)` | `SlotDef<T>` | Define a typed context slot |
+| `createContextService(options)` | `ContextApi` | Create a factory for request contexts |
+
+## `defineSlot` options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `key` | `string` | Yes | Unique identifier for this slot |
+| `scope` | `SlotScope` | Yes | When the slot resolves — `"eager"`, `"request"`, or `"on-demand"` |
+| `resolve` | `(ctx: RequestContext) => Promise<T>` | Yes | Async function that produces the slot value |
+
+```ts title="Example"
+import { defineSlot } from "@justwant/context";
+
+const userSlot = defineSlot<{ id: string }>({
+  key: "user",
+  scope: "request",
+  resolve: async (ctx) => {
+    const token = ctx.initial["authToken"] as string;
+    return verifyToken(token);
+  },
+});
+```
+
+## `createContextService` options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `slots` | `readonly SlotDef<unknown>[]` | Yes | All slot definitions managed by this service |
+
+```ts title="Example"
+import { createContextService } from "@justwant/context";
+
+const contextService = createContextService({
+  slots: [dbSlot, userSlot, settingsSlot],
+});
+```
+
+## `ContextApi` methods
+
+Returned by `createContextService`.
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `forRequest` | `(initial: Record<string, unknown>) => RequestContext` | Create a new request context. Eager and request slots begin resolving immediately. |
+
+```ts title="Example"
+const ctx = contextService.forRequest({
+  authToken: req.headers.get("authorization") ?? "",
+  requestId: crypto.randomUUID(),
+});
+```
+
+## `RequestContext` shape
+
+Returned by `forRequest`. Pass this object explicitly to any function that needs context data.
+
+| Property / Method | Type | Description |
+|-------------------|------|-------------|
+| `initial` | `Readonly<Record<string, unknown>>` | The frozen object passed to `forRequest` |
+| `get<T>(slot)` | `(slot: SlotDef<T>) => Promise<T>` | Resolve and return the slot value. Memoized — the resolver runs at most once per context instance. |
+
+```ts title="Example"
+const user = await ctx.get(userSlot);
+const db   = await ctx.get(dbSlot);
+```
+
+## `SlotDef<T>` shape
+
+A frozen object produced by `defineSlot`. You do not construct this manually.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `key` | `string` | Unique slot identifier |
+| `scope` | `SlotScope` | `"eager"` \| `"request"` \| `"on-demand"` |
+| `resolve` | `(ctx: RequestContext) => Promise<T>` | Resolver function |
+
+## `SlotScope` type
+
+```ts
+type SlotScope = "eager" | "request" | "on-demand";
+```
+
+| Value | Resolves at |
+|-------|-------------|
+| `"eager"` | Immediately inside `forRequest()` |
+| `"request"` | Immediately inside `forRequest()` (same as `"eager"`, semantic distinction only) |
+| `"on-demand"` | First call to `ctx.get(slot)` |
+
+## Errors
+
+All errors extend `ContextError`.
+
+| Class | When thrown | Key properties |
+|-------|-------------|----------------|
+| `ContextError` | Base class — not thrown directly | `message` |
+| `SlotNotFoundError` | `ctx.get(slot)` called with a slot not registered in the service | `slotKey: string` |
+| `ResolutionError` | The slot's `resolve` function threw an error | `slotKey: string`, `cause: unknown` |
+
+```ts title="Error handling example"
+import { SlotNotFoundError, ResolutionError } from "@justwant/context";
+
+try {
+  const user = await ctx.get(userSlot);
+} catch (err) {
+  if (err instanceof SlotNotFoundError) {
+    console.error("Slot not registered:", err.slotKey);
+  } else if (err instanceof ResolutionError) {
+    console.error("Resolver failed for slot:", err.slotKey, err.cause);
+  }
+}
+```
+
+## TypeScript types
+
+All types are exported from the package root.
+
+```ts
+import type {
+  SlotDef,
+  SlotScope,
+  RequestContext,
+  ContextApi,
+  ContextOptions,
+} from "@justwant/context";
+```
+
+| Type | Description |
+|------|-------------|
+| `SlotDef<T>` | A defined slot carrying its key, scope, and resolver |
+| `SlotScope` | Union of valid scope strings |
+| `RequestContext` | Per-request context with `initial` and `get` |
+| `ContextApi` | Service returned by `createContextService` |
+| `ContextOptions` | Options accepted by `createContextService` |

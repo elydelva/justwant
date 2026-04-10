@@ -34,7 +34,6 @@ describe("adapter-prisma integration (SQLite)", () => {
     console.log("Skipping E2E Prisma SQLite: client not generated (run: prisma generate)");
     test.skip("prisma not generated", () => {});
     // @ts-ignore
-    // biome-ignore lint/correctness/noUnreachable: intentional early exit
     return;
   }
   const adapter = createPrismaAdapter(prisma, { dialect: "sqlite" });

@@ -1,0 +1,61 @@
+---
+title: Supabase Adapter
+description: Use Supabase Storage as your file storage backend.
+icon: Database
+---
+
+## Overview
+
+The Supabase adapter uses `@supabase/supabase-js` to integrate with Supabase Storage. It is ideal for applications that already use Supabase for their database.
+
+## Install peer dependencies
+
+```bash
+bun add @supabase/supabase-js
+```
+
+## Import
+
+```ts
+import { defineSupabaseStorageSource } from "@justwant/storage/supabase-storage";
+```
+
+## Setup
+
+```ts title="lib/storage.ts"
+import { defineSupabaseStorageSource } from "@justwant/storage/supabase-storage";
+import { defineBucket, createStorageService } from "@justwant/storage";
+
+const source = defineSupabaseStorageSource({
+  url: process.env.SUPABASE_URL!,
+  key: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+});
+
+// "avatars" must be a bucket you have created in Supabase Storage
+const avatarsBucket = defineBucket({ source, name: "avatars" });
+
+export const storage = createStorageService({
+  buckets: [avatarsBucket],
+  defaultBucket: avatarsBucket,
+});
+```
+
+## Configuration
+
+### `DefineSupabaseStorageSourceConfig`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `url` | `string` | Yes | Your Supabase project URL (`https://<ref>.supabase.co`) |
+| `key` | `string` | Yes | Supabase service role key (has full storage access) |
+
+## Environment variables
+
+```bash title=".env"
+SUPABASE_URL=https://xxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhb...
+```
+
+**Important**: Use the **service role key** (not the `anon` key) so the adapter has full read/write access to all buckets. Keep this key server-side only — never expose it to the browser.
+
+**Note**: The `name` passed to `defineBucket` must match an existing bucket in your Supabase Storage dashboard. Create buckets there before using them.

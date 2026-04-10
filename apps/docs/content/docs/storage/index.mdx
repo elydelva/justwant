@@ -1,0 +1,44 @@
+---
+title: Introduction
+description: Unified file storage abstraction — upload, download, delete, getUrl, and getSignedUrl across any backend.
+icon: HardDrive
+---
+
+## What is @justwant/storage?
+
+`@justwant/storage` is a **unified file storage layer** for TypeScript applications. It provides a single, consistent API for working with files regardless of the underlying storage backend — local filesystem, AWS S3, Cloudflare R2, Vercel Blob, or Supabase Storage.
+
+**Use it when** you need to:
+- Upload and download files from any cloud storage service
+- Swap storage backends without changing application code
+- Generate public or signed URLs for stored files
+- Encrypt files at rest, add watermarks, or transform images via plugins
+- Fan out uploads across multiple buckets
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Adapter pattern** | Swap backends — local, S3, R2, Vercel Blob, Supabase |
+| **Bucket abstraction** | Logical named buckets mapped to any source |
+| **Plugin pipeline** | Intercept upload/download/delete/getUrl/getSignedUrl |
+| **Encryption plugin** | AES-256-GCM encrypt on upload, decrypt on download |
+| **Rename plugin** | Transform paths before they reach the adapter |
+| **Watermark plugin** | Stamp images on upload |
+| **Multi-bucket plugin** | Route files across multiple buckets |
+| **Image transform plugin** | Resize and convert images via `sharp` |
+| **Error normalization** | `StorageError` with typed codes |
+
+## How it works
+
+1. **Define a source** with `defineLocalSource`, `defineS3Source`, `defineR2Source`, etc.
+2. **Define buckets** with `defineBucket({ source, name })`.
+3. **Create a service** with `createStorageService({ buckets, defaultBucket, plugins })`.
+4. **Use the service** — `upload`, `download`, `delete`, `getUrl`, `getSignedUrl`, `exists`.
+
+## Next steps
+
+- [Installation](/docs/storage/installation) — Install and configure a source
+- [Basic Usage](/docs/storage/basic-usage) — Upload, download, delete, getUrl
+- [Adapters](/docs/storage/adapters) — Choose the right backend
+- [Plugins](/docs/storage/plugins) — Extend with encryption, watermarks, and more

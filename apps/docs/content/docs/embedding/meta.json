@@ -1,0 +1,24 @@
+{
+  "title": "Embedding",
+  "icon": "Brain",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "installation",
+    "basic-usage",
+    "---Guides---",
+    "indexing",
+    "searching",
+    "---Engines---",
+    "engines",
+    "openai",
+    "cloudflare-ai",
+    "---Vector Storages---",
+    "storages",
+    "pgvector",
+    "sqlite-vec",
+    "cloudflare-vectorize",
+    "---Reference---",
+    "api"
+  ]
+}

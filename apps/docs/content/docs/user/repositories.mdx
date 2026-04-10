@@ -1,0 +1,94 @@
+---
+title: Repositories
+description: Implement UsersRepo to connect @justwant/user to your database.
+icon: DatabaseZap
+---
+
+## Overview
+
+`@justwant/user` is storage-agnostic. You provide a `UsersRepo` implementation and the service handles business logic (uniqueness checks, not-found guards) on top of it.
+
+## UsersRepo interface
+
+```ts
+interface UsersRepo {
+  findById(id: string): Promise<User | null>;
+  findOne(where: Partial<User>): Promise<User | null>;
+  findMany(where: Partial<User>): Promise<User[]>;
+  create(data: CreateInput<User>): Promise<User>;
+  update(id: string, data: Partial<User>): Promise<User>;
+  delete(id: string): Promise<void>;
+}
+```
+
+| Method | Description |
+|--------|-------------|
+| `findById` | Fetch a single user by primary key |
+| `findOne` | Fetch the first user matching the partial filter |
+| `findMany` | Fetch all users matching the partial filter |
+| `create` | Persist a new user; must generate `id` |
+| `update` | Apply a partial patch to an existing user |
+| `delete` | Remove a user by id |
+
+`CreateInput<User>` is `Omit<User, "id" | "createdAt" | "updatedAt">`.
+
+## Minimal in-memory implementation
+
+Useful for tests and prototyping:
+
+```ts title="lib/memory-users-repo.ts"
+import type { UsersRepo, User, CreateInput } from "@justwant/user";
+
+export function createMemoryUsersRepo(): UsersRepo {
+  const store = new Map<string, User>();
+
+  function matches(user: User, where: Partial<User>): boolean {
+    return Object.entries(where).every(
+      ([k, v]) => (user as Record<string, unknown>)[k] === v
+    );
+  }
+
+  return {
+    async findById(id) {
+      return store.get(id) ?? null;
+    },
+    async findOne(where) {
+      return [...store.values()].find((u) => matches(u, where)) ?? null;
+    },
+    async findMany(where) {
+      return [...store.values()].filter((u) => matches(u, where));
+    },
+    async create(data: CreateInput<User>) {
+      const user: User = { id: crypto.randomUUID(), ...data };
+      store.set(user.id, user);
+      return user;
+    },
+    async update(id, data) {
+      const existing = store.get(id);
+      if (!existing) throw new Error(`User ${id} not found`);
+      const updated = { ...existing, ...data };
+      store.set(id, updated);
+      return updated;
+    },
+    async delete(id) {
+      store.delete(id);
+    },
+  };
+}
+```
+
+## Using with @justwant/db
+
+If you use `@justwant/db`, a table adapter satisfies `UsersRepo` automatically. See the `@justwant/db` documentation for details.
+
+## User shape
+
+```ts
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
+```
+
+Your database column set can extend this shape; extra columns are passed through transparently by the service.
